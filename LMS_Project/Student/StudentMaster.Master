@@ -1,0 +1,617 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true"
+    CodeBehind="StudentMaster.Master.cs"
+    Inherits="LMS_Project.Student.StudentMaster" %>
+
+<!DOCTYPE html>
+<html>
+<head runat="server">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LMS Student Portal</title>
+
+<asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder>
+
+<link href="../assets/css/bootstrap.min.css" rel="stylesheet" />
+<link href="../assets/icons/fontawesome/css/all.min.css" rel="stylesheet" />
+
+<style>
+
+/* ================= BASE ================= */
+body {
+    margin: 0;
+    background: #f0f4f8;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, "Noto Sans",
+                 "Liberation Sans", sans-serif;
+    font-size: 16px;
+}
+
+#main-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+    width: 240px;
+    background: #f0f4fa;
+    border-right: 3px solid #42a5f5;
+    color: #333;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    transition: .3s;
+    z-index: 999;
+}
+
+#main-wrapper.sidebar-collapsed .sidebar {
+    width: 40px;
+}
+
+/* ---- Logo area ---- */
+.sidebar-header {
+    padding: 15px 15px;
+    background: #ffffff;
+}
+
+.logo-wrapper {
+    width: 100%;
+    height: 80px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 5px;
+}
+
+.sidebar-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.sidebar-header h6 {
+    margin-top: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #1565c0;
+}
+
+#main-wrapper.sidebar-collapsed .sidebar-header h6 {
+    display: none;
+}
+
+/* ---- Menu ---- */
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    transition: .2s;
+}
+
+.sidebar-icon {
+    width: 18px;
+    text-align: center;
+    font-size: 15px;
+    color: #1976d2;
+}
+
+.sidebar-menu li a:hover {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.sidebar-link.active {
+    background: #1565c0;
+    color: #fff !important;
+    position: relative;
+}
+
+.sidebar-link.active .sidebar-icon {
+    color: #fff;
+}
+
+.sidebar-link.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: #90caf9;
+}
+
+/* ---- Submenu ---- */
+.sidebar-submenu {
+    display: none;
+    padding-left: 35px;
+    border-left: 2px solid #e0e0e0;
+}
+
+.sidebar-submenu li a {
+    padding: 7px 18px;
+    font-size: 13px;
+}
+
+.submenu.open .sidebar-submenu {
+    display: block;
+}
+
+.right-icon {
+    margin-left: auto;
+    transition: .3s;
+    font-size: 11px;
+    color: #90a4ae;
+}
+
+.submenu.open .right-icon {
+    transform: rotate(90deg);
+}
+
+/* ---- Section label ---- */
+.sidebar-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #90a4ae;
+    letter-spacing: 1.2px;
+    padding: 14px 18px 4px 18px;
+}
+
+#main-wrapper.sidebar-collapsed .sidebar-section-label,
+#main-wrapper.sidebar-collapsed span,
+#main-wrapper.sidebar-collapsed .right-icon {
+    display: none;
+}
+
+/* ================= HEADER ================= */
+.header {
+    height: 65px;
+    background: linear-gradient(135deg, #1565c0, #1976d2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    position: fixed;
+    top: 0;
+    left: 240px;
+    right: 0;
+    z-index: 1000;
+    transition: left .3s;
+}
+
+#main-wrapper.sidebar-collapsed .header {
+    left: 40px;
+}
+
+.header-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: .5px;
+}
+
+.collapse-sidebar i {
+    color: #fff;
+}
+
+/* ---- Student badge in header ---- */
+.student-badge {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-left: 10px;
+    letter-spacing: .5px;
+}
+
+/* ---- Profile image ---- */
+.profile-img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #90caf9;
+}
+
+/* ---- Notification dot ---- */
+.notify-dot {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    height: 8px;
+    width: 8px;
+    background: #ef5350;
+    border-radius: 50%;
+}
+
+/* ---- Notification count badge ---- */
+.notify-count {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    background: #ef5350;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+}
+
+/* ================= CONTENT ================= */
+.content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f0f4f8;
+    transition: all .3s ease;
+    margin-left: 240px;
+    min-width: 0;
+    margin-top: 65px;
+}
+
+#main-wrapper.sidebar-collapsed .content-wrapper {
+    margin-left: 40px;
+}
+
+.content-body {
+    padding: 25px;
+}
+
+/* ================= PAGE TITLE STRIP ================= */
+.page-title-bar {
+    background: #fff;
+    border-bottom: 1px solid #e3e8f0;
+    padding: 14px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.page-title-bar h5 {
+    margin: 0;
+    font-weight: 700;
+    color: #1565c0;
+    font-size: 16px;
+}
+
+.breadcrumb {
+    margin: 0;
+    font-size: 12px;
+}
+
+/* ================= CARDS ================= */
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    transition: transform .2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-card .icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.stat-card .stat-info .label {
+    font-size: 12px;
+    color: #78909c;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.stat-card .stat-info .value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #263238;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 992px) {
+    .sidebar {
+        left: -260px;
+    }
+
+    #main-wrapper.sidebar-collapsed .sidebar {
+        left: 0;
+    }
+
+    .content-wrapper {
+        margin-left: 0 !important;
+    }
+
+    .header {
+        left: 0 !important;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<form id="form1" runat="server">
+<asp:ScriptManager ID="ScriptManager1" runat="server" />
+
+<div id="main-wrapper">
+
+<!-- ================= SIDEBAR ================= -->
+<div class="sidebar">
+
+    <div class="sidebar-header text-start ps-3">
+        <div class="logo-wrapper">
+            <asp:Image ID="imgInstituteLogo" runat="server" CssClass="sidebar-logo" />
+        </div>
+        <h6 runat="server" id="hInstituteName"></h6>
+    </div>
+
+    <ul class="sidebar-menu">
+
+        <!-- MAIN -->
+        <li class="sidebar-section-label">Main</li>
+
+        <li>
+            <a href="Dashboard.aspx" class="sidebar-link">
+                <i class="fas fa-home sidebar-icon"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        <!-- LEARNING -->
+        <li class="sidebar-section-label">Learning</li>
+
+        <li>
+            <a href="MySubjects.aspx" class="sidebar-link">
+                <i class="fas fa-book-open sidebar-icon"></i>
+                <span>My Subjects</span>
+            </a>
+        </li>
+
+        <!--
+        <li>
+            <a href="StudyMaterial.aspx" class="sidebar-link">
+                <i class="fas fa-folder-open sidebar-icon"></i>
+                <span>Study Material</span>
+            </a>
+        </li>
+        -->
+
+        <!-- ASSESSMENTS -->
+        <li class="sidebar-section-label">Assessments</li>
+
+        <li>
+            <a href="Assignments.aspx" class="sidebar-link">
+                <i class="fas fa-tasks sidebar-icon"></i>
+                <span>Assignments</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="Quizzes.aspx" class="sidebar-link">
+                <i class="fas fa-clipboard-list sidebar-icon"></i>
+                <span>Quizzes</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="Results.aspx" class="sidebar-link">
+                <i class="fas fa-chart-bar sidebar-icon"></i>
+                <span>Results</span>
+            </a>
+        </li>
+
+        <!-- ACADEMIC -->
+        <li class="sidebar-section-label">Academic</li>
+
+        <li>
+            <a href="Attendance.aspx" class="sidebar-link">
+                <i class="fas fa-calendar-check sidebar-icon"></i>
+                <span>Attendance</span>
+            </a>
+        </li>
+
+        <!-- COMMUNICATION -->
+        <li class="sidebar-section-label">Communication</li>
+
+        <li>
+            <a href="Notifications.aspx" class="sidebar-link">
+                <i class="fas fa-bell sidebar-icon"></i>
+                <span>Notifications</span>
+                <asp:Label ID="lblNotifyCount" runat="server" CssClass="badge bg-danger ms-auto"
+                    Visible="false" />
+            </a>
+        </li>
+
+        <li>
+            <a href="HelpSupport.aspx" class="sidebar-link">
+                <i class="fas fa-life-ring sidebar-icon"></i>
+                <span>Help &amp; Support</span>
+            </a>
+        </li>
+
+        <!-- ACCOUNT -->
+        <li class="sidebar-section-label">Account</li>
+
+        <li>
+            <a href="Profile.aspx" class="sidebar-link">
+                <i class="fas fa-user-circle sidebar-icon"></i>
+                <span>My Profile</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="../Default.aspx" class="sidebar-link"
+               onclick="return confirm('Are you sure you want to logout?');">
+                <i class="fas fa-sign-out-alt sidebar-icon"></i>
+                <span>Logout</span>
+            </a>
+        </li>
+
+    </ul>
+
+</div>
+<!-- /SIDEBAR -->
+
+<!-- ================= CONTENT ================= -->
+<div class="content-wrapper">
+
+    <!-- HEADER -->
+    <div class="header">
+
+        <div class="d-flex align-items-center">
+            <div class="collapse-sidebar me-3" style="cursor:pointer;">
+                <i class="fas fa-bars fa-lg"></i>
+            </div>
+            <div class="header-title">
+                <i class="fas fa-graduation-cap me-2"></i>
+                <asp:Label ID="lblHeaderInstituteName" runat="server" />
+            </div>
+            <span class="student-badge">Student Portal</span>
+        </div>
+
+        <ul class="nav align-items-center">
+
+            <!-- Notifications bell -->
+            <li class="nav-item dropdown me-3 position-relative">
+                <a href="#" data-bs-toggle="dropdown" id="notifyBell">
+                    <i class="far fa-bell fa-lg text-white"></i>
+                    <asp:Label ID="lblHeaderNotifyCount" runat="server"
+                        CssClass="notify-count" Visible="false" />
+                </a>
+                <div class="dropdown-menu dropdown-menu-end p-3" style="min-width:280px;">
+                    <div class="fw-bold mb-2 text-primary">Notifications</div>
+                    <asp:Repeater ID="rptHeaderNotifications" runat="server">
+                        <ItemTemplate>
+                            <div class="border-bottom py-1" style="font-size:13px;">
+                                <i class="fas fa-circle text-primary me-1" style="font-size:7px;"></i>
+                                <%# Eval("Message") %>
+                                <div class="text-muted" style="font-size:11px;"><%# Eval("CreatedOn", "{0:dd MMM, hh:mm tt}") %></div>
+                            </div>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                    <div class="mt-2 text-end">
+                        <a href="Notifications.aspx" class="text-primary" style="font-size:12px;">View all</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Profile dropdown -->
+            <li class="nav-item dropdown">
+                <a href="#" class="d-flex align-items-center" data-bs-toggle="dropdown">
+                    <asp:Image ID="imgProfilePhoto" runat="server" CssClass="profile-img me-2" />
+                    <span class="text-white" style="font-size:13px;">
+                        <asp:Label ID="lblStudentName" runat="server" />
+                    </span>
+                    <i class="fas fa-chevron-down text-white ms-1" style="font-size:11px;"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <div class="px-3 py-2 border-bottom">
+                            <div class="fw-bold" style="font-size:13px;">
+                                <asp:Label ID="lblDropdownName" runat="server" /></div>
+                            <div class="text-muted" style="font-size:11px;">Student</div>
+                        </div>
+                    </li>
+                    <li><a class="dropdown-item" href="Profile.aspx">
+                        <i class="fas fa-user me-2 text-primary"></i>My Profile</a></li>
+                    <li><a class="dropdown-item" href="ChangePassword.aspx">
+                        <i class="fas fa-key me-2 text-primary"></i>Change Password</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item text-danger" href="../Default.aspx"
+                           onclick="return confirm('Are you sure you want to logout?');">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                </ul>
+            </li>
+
+        </ul>
+
+    </div>
+    <!-- /HEADER -->
+
+    <!-- PAGE CONTENT -->
+    <div class="content-body">
+        <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server" />
+    </div>
+
+</div>
+<!-- /CONTENT -->
+
+</div>
+<!-- /MAIN WRAPPER -->
+
+<script src="../assets/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // ── Sidebar collapse toggle ──
+    const wrapper = document.getElementById("main-wrapper");
+    document.querySelector(".collapse-sidebar").addEventListener("click", function () {
+        wrapper.classList.toggle("sidebar-collapsed");
+    });
+
+    // ── Submenu accordion ──
+    document.querySelectorAll(".submenu-parent").forEach(function (menu) {
+        menu.addEventListener("click", function (e) {
+            e.preventDefault();
+            let parent = this.closest(".submenu");
+            parent.classList.toggle("open");
+        });
+    });
+
+    // ── Active link highlight ──
+    const currentPage = window.location.pathname.split("/").pop().toLowerCase();
+    document.querySelectorAll(".sidebar-link").forEach(function (link) {
+        const href = link.getAttribute("href");
+        if (href && href.toLowerCase() === currentPage) {
+            link.classList.add("active");
+            // Open parent submenu if inside one
+            const submenu = link.closest(".submenu");
+            if (submenu) submenu.classList.add("open");
+        }
+    });
+
+});
+</script>
+
+</form>
+</body>
+</html>
