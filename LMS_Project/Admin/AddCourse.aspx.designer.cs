@@ -33,40 +33,58 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.Label lblMsg;
 
         /// <summary>
-        /// lnkAll control.
+        /// lblTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton lnkAll;
+        protected global::System.Web.UI.WebControls.Label lblTotal;
 
         /// <summary>
-        /// lnkActive control.
+        /// lblActive control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton lnkActive;
+        protected global::System.Web.UI.WebControls.Label lblActive;
 
         /// <summary>
-        /// lnkInactive control.
+        /// lblInactive control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton lnkInactive;
+        protected global::System.Web.UI.WebControls.Label lblInactive;
 
         /// <summary>
-        /// gvCourses control.
+        /// txtSearch control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvCourses;
+        protected global::System.Web.UI.HtmlControls.HtmlInputText txtSearch;
+
+        /// <summary>
+        /// rptCourseSuggestions control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptCourseSuggestions;
+
+        /// <summary>
+        /// rptStreams control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptStreams;
 
         /// <summary>
         /// ddlStream control.

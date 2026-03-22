@@ -45,43 +45,62 @@ namespace LearningManagementSystem.Admin
 
             throw new Exception("No Current Academic Session Set.");
         }
-        private void BindGrid(string status = "All")
+        private void BindGrid()
         {
-            gvSubjects.DataSource =
-                bl.GetSubjects(InstituteId, status, txtSearch.Text.Trim());
+            string status = ViewStateStatus;
+            string search = txtSearch?.Text?.Trim() ?? "";
 
+            DataTable dt = bl.GetSubjects(InstituteId, status, search);
+
+            gvSubjects.DataSource = dt;
             gvSubjects.DataBind();
+
+            lblTotal.Text = dt.Rows.Count.ToString();
+            lblActive.Text = dt.Select("IsActive = 1").Length.ToString();
+            lblInactive.Text = dt.Select("IsActive = 0").Length.ToString();
         }
 
         protected void btnSave_Click(object sender, EventArgs e)
         {
-            AddSubjectGC obj = new AddSubjectGC
+            try
             {
-                SubjectId = string.IsNullOrEmpty(hfSubjectId.Value)
-                    ? 0
-                    : Convert.ToInt32(hfSubjectId.Value),
+                if (string.IsNullOrWhiteSpace(txtSubjectCode.Text) ||
+                    string.IsNullOrWhiteSpace(txtSubjectName.Text))
+                {
+                    ShowToast("Code & Name required", false);
+                    return;
+                }
 
-                SocietyId = SocietyId,
-                InstituteId = InstituteId,
-                SessionId = CurrentSessionId,
-                SubjectCode = txtSubjectCode.Text.Trim(),
-                SubjectName = txtSubjectName.Text.Trim(),
-                Description = txtDescription.Text.Trim(),
-                Duration = txtDuration.Text.Trim()
-            };
+                AddSubjectGC obj = new AddSubjectGC
+                {
+                    SubjectId = string.IsNullOrEmpty(hfSubjectId.Value)
+                        ? 0
+                        : Convert.ToInt32(hfSubjectId.Value),
 
-            if (obj.SubjectId == 0)
-                bl.Insert(obj);
-            else
-                bl.Update(obj);
+                    SocietyId = SocietyId,
+                    InstituteId = InstituteId,
+                    SessionId = CurrentSessionId,
 
-            BindGrid();
+                    SubjectCode = txtSubjectCode.Text.Trim(),
+                    SubjectName = txtSubjectName.Text.Trim(),
+                    Description = txtDescription.Text.Trim(),
+                    Duration = txtDuration.Text.Trim()
+                };
 
-            lblMsg.Text = "Subject Saved Successfully";
+                if (obj.SubjectId == 0)
+                    bl.Insert(obj);
+                else
+                    bl.Update(obj);
 
-            ScriptManager.RegisterStartupScript(
-                this, GetType(), "hideModal",
-                "$('#CreateModal').modal('hide');", true);
+                BindGrid();
+                Clear();
+
+                ShowToast("Saved successfully", true);
+            }
+            catch (Exception ex)
+            {
+                ShowToast("Error: " + ex.Message, false);
+            }
         }
 
         protected void gvSubjects_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -105,8 +124,8 @@ namespace LearningManagementSystem.Admin
                     txtDuration.Text = dr["Duration"].ToString();
 
                     ScriptManager.RegisterStartupScript(
-                        this, GetType(),
-                        "edit", "showCreateModal();", true);
+                            this, GetType(),
+                            "open", "openModal();", true);
                 }
             }
             else if (e.CommandName == "Toggle")
@@ -130,9 +149,9 @@ namespace LearningManagementSystem.Admin
                 SocietyId = SocietyId,
                 InstituteId = InstituteId,
 
-                SubjectCode = txtSubjectCodeEdit.Text.Trim(),
-                SubjectName = txtSubjectNameEdit.Text.Trim(),
-                Duration = txtDurationEdit.Text.Trim(),
+                SubjectCode = txtSubjectCode.Text.Trim(),
+                SubjectName = txtSubjectName.Text.Trim(),
+                Duration = txtDuration.Text.Trim(),
                 Description = txtDescription.Text.Trim()
             };
 
@@ -150,7 +169,53 @@ namespace LearningManagementSystem.Admin
         {
             string status = ((LinkButton)sender).CommandArgument;
 
-            BindGrid(status);
+            BindGrid();
+        }
+        private void ShowToast(string msg, bool success)
+        {
+            string script = $@"
+                var t = document.getElementById('liveToast');
+                var m = document.getElementById('toastMsg');
+
+                m.innerText = '{msg}';
+                t.classList.remove('bg-success','bg-danger');
+                t.classList.add('{(success ? "bg-success" : "bg-danger")}');
+
+                new bootstrap.Toast(t).show();
+            ";
+
+            ScriptManager.RegisterStartupScript(this, GetType(), "toast", script, true);
+        }
+
+        private void Clear()
+        {
+            hfSubjectId.Value = "";
+            txtSubjectCode.Text = "";
+            txtSubjectName.Text = "";
+            txtDescription.Text = "";
+            txtDuration.Text = "";
+        }
+
+        string ViewStateStatus
+        {
+            get => ViewState["Status"]?.ToString() ?? "1"; // default Active
+            set => ViewState["Status"] = value;
+        }
+
+        protected void btnToggleView_Click(object sender, EventArgs e)
+        {
+            if (ViewStateStatus == "1")
+            {
+                ViewStateStatus = "0";
+                btnToggleView.Text = "Show Active";
+            }
+            else
+            {
+                ViewStateStatus = "1";
+                btnToggleView.Text = "Show Inactive";
+            }
+
+            BindGrid();
         }
     }
 }

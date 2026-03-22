@@ -17,6 +17,7 @@ namespace LearningManagementSystem.GC
 
         public string ContactNo { get; set; }
 
+        public int UserId { get; set; }
         // NEW FIELDS
         public List<int> StudentIds { get; set; }
         public string RelationshipType { get; set; }

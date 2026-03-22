@@ -26,22 +26,27 @@ namespace LearningManagementSystem.BL
         public DataTable GetCourses(int instituteId, string status = "All")
         {
             SqlCommand cmd = new SqlCommand(@"
-                SELECT C.CourseId,
-                       S.StreamName,
-                       C.CourseName,
-                       C.CourseCode,
-                       C.IsActive
-                FROM Courses C
-                JOIN Streams S ON S.StreamId = C.StreamId
-                WHERE C.InstituteId=@InstId");
+        SELECT 
+            C.CourseId,
+            C.CourseName,
+            C.CourseCode,
+            C.StreamId,
+            S.StreamName,
+            C.IsActive
+        FROM Courses C
+        INNER JOIN Streams S ON C.StreamId = S.StreamId
+        WHERE C.InstituteId = @InstituteId
+    ");
 
-            cmd.Parameters.AddWithValue("@InstId", instituteId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
 
             if (status != "All")
             {
-                cmd.CommandText += " AND C.IsActive=@Status";
+                cmd.CommandText += " AND C.IsActive = @Status";
                 cmd.Parameters.AddWithValue("@Status", status == "1");
             }
+
+            cmd.CommandText += " ORDER BY S.StreamName, C.CourseName";
 
             return dl.GetDataTable(cmd);
         }

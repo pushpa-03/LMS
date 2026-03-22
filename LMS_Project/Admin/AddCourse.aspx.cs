@@ -50,8 +50,56 @@ namespace LearningManagementSystem.Admin
         {
             int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
-            gvCourses.DataSource = bl.GetCourses(instituteId, status);
-            gvCourses.DataBind();
+            DataTable dt = bl.GetCourses(instituteId, status);
+
+            // 🔥 SEARCH FILTER
+            if (!string.IsNullOrEmpty(txtSearch.Value))
+            {
+                string search = txtSearch.Value.ToLower();
+
+                var rows = dt.Select($"CourseName LIKE '%{search}%' OR CourseCode LIKE '%{search}%'");
+                dt = SafeCopy(rows, dt);
+            }
+
+
+            // ================= STATS =================
+            lblTotal.Text = dt.Rows.Count.ToString();
+            lblActive.Text = dt.Select("IsActive = true").Length.ToString();
+            lblInactive.Text = dt.Select("IsActive = false").Length.ToString();
+
+            rptCourseSuggestions.DataSource = dt;
+            rptCourseSuggestions.DataBind();
+
+            // ================= GROUP STREAM =================
+            DataTable streamTable = new DataTable();
+            streamTable.Columns.Add("StreamId");
+            streamTable.Columns.Add("StreamName");
+            streamTable.Columns.Add("CourseCount");
+            streamTable.Columns.Add("Courses", typeof(DataTable)); // 🔥 key
+
+            DataView view = new DataView(dt);
+            DataTable distinctStreams = view.ToTable(true, "StreamId", "StreamName");
+
+            foreach (DataRow row in distinctStreams.Rows)
+            {
+                string streamId = row["StreamId"].ToString();
+
+                DataRow newRow = streamTable.NewRow();
+                newRow["StreamId"] = streamId;
+                newRow["StreamName"] = row["StreamName"];
+
+                DataRow[] rows = dt.Select("StreamId=" + streamId);
+
+                newRow["CourseCount"] = rows.Length;
+
+                if (rows.Length > 0)
+                    newRow["Courses"] = rows.CopyToDataTable();
+
+                streamTable.Rows.Add(newRow);
+            }
+
+            rptStreams.DataSource = streamTable;
+            rptStreams.DataBind();
         }
 
         // ================= SAVE =================
@@ -119,6 +167,22 @@ namespace LearningManagementSystem.Admin
             }
         }
 
+        protected void rptStreams_ItemDataBound(object sender, RepeaterItemEventArgs e)
+        {
+            if (e.Item.ItemType == ListItemType.Item ||
+                e.Item.ItemType == ListItemType.AlternatingItem)
+            {
+                DataRowView drv = (DataRowView)e.Item.DataItem;
+
+                GridView gv = (GridView)e.Item.FindControl("gvInnerCourses");
+
+                if (drv["Courses"] != DBNull.Value)
+                {
+                    gv.DataSource = (DataTable)drv["Courses"];
+                    gv.DataBind();
+                }
+            }
+        }
         // ================= UPDATE =================
         protected void btnUpdate_Click(object sender, EventArgs e)
         {
@@ -151,13 +215,39 @@ namespace LearningManagementSystem.Admin
             LoadCourses(btn.CommandArgument);
         }
 
+        private DataTable SafeCopy(DataRow[] rows, DataTable original)
+        {
+            return rows.Length > 0 ? rows.CopyToDataTable() : original.Clone();
+        }
+        protected void gvCourses_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            GridView gv = (GridView)sender;
+
+            gv.PageIndex = e.NewPageIndex;
+
+            RepeaterItem item = (RepeaterItem)gv.NamingContainer;
+            DataRowView drv = (DataRowView)item.DataItem;
+
+            if (drv["Courses"] != DBNull.Value)
+            {
+                gv.DataSource = (DataTable)drv["Courses"];
+                gv.DataBind();
+            }
+        }
         // ================= MESSAGE =================
         private void ShowMsg(string msg, bool isSuccess)
         {
-            lblMsg.Text = msg;
-            lblMsg.CssClass = isSuccess
-                ? "alert alert-success d-block"
-                : "alert alert-danger d-block";
+            string script = $@"
+                var toastEl = document.getElementById('liveToast');
+                var toastMsg = document.getElementById('toastMsg');
+                toastMsg.innerText = '{msg}';
+                toastEl.classList.remove('bg-success','bg-danger');
+                toastEl.classList.add('{(isSuccess ? "bg-success" : "bg-danger")}');
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            ";
+
+            ScriptManager.RegisterStartupScript(this, GetType(), "toast", script, true);
         }
     }
 }

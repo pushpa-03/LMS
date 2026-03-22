@@ -6,73 +6,106 @@
     <asp:HiddenField ID="hfTeacherUserId" runat="server" />
     <asp:Label ID="lblMsg" runat="server" CssClass="fw-bold mb-2 d-block" />
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="mb-0">Teacher Management</h3>
-        <div class="d-flex gap-2">
-            <div class="d-none d-md-block">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-e-none">
-                        <i class="fa-solid fa-magnifying-glass text-color-1"></i>
-                    </span>
-
-                    <asp:TextBox ID="txtSearch" runat="server"
-                        CssClass="form-control border-s-none ps-0"
-                        placeholder="Search Name/EmpID"
-                        AutoPostBack="true"
-                        OnTextChanged="btnFilter_Click" />
-
-                    <asp:Button ID="btnFilter" runat="server"
-                        Text="Search"
-                        CssClass="btn btn-primary"
-                        OnClick="btnFilter_Click" />
-                </div>
-            </div>
-
-
-            <div class="d-flex gap-2">
-                <div class="dropdown">
-                    <button class="btn btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa-solid fa-filter"></i>Filter by
-                    </button>
-
-                    <ul class="dropdown-menu">
-
-                        <li>
-                            <asp:LinkButton ID="lnkAll" runat="server" Text="All" CssClass="dropdown-item" OnClick="FilterStatus_Click" CommandArgument="All">All</asp:LinkButton></li>
-                        <li>
-                            <asp:LinkButton ID="lnkActive" runat="server" Text="Active" CssClass="dropdown-item" OnClick="FilterStatus_Click" CommandArgument="1">Active Only</asp:LinkButton></li>
-                        <li>
-                            <asp:LinkButton ID="lnkInactive" runat="server" Text="Inactive" CssClass="dropdown-item" OnClick="FilterStatus_Click" CommandArgument="0">Inactive Only</asp:LinkButton></li>
-
-                    </ul>
-                </div>
-
-                <a href="#" data-bs-toggle="modal" data-bs-target="#CreateModal" class="btn btn-success">
-                    <i class="fa-solid fa-plus"></i>Add Teacher
-                </a>
-            </div>
-           
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="liveToast" class="toast align-items-center text-white border-0">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMsg"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                data-bs-dismiss="toast"></button>
         </div>
     </div>
+</div>
+
+   <!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+
+    <!-- LEFT -->
+    <div>
+        <h3 class="fw-bold mb-1">Teacher Management</h3>
+        <small class="text-muted">Manage teachers efficiently</small>
+        <span class="mx-2 text-muted">|</span>
+        <small class="text-muted">
+            Last updated: <%= DateTime.Now.ToString("dd MMM yyyy hh:mm tt") %>
+        </small>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+
+        <!-- 🔍 SEARCH -->
+        <div class="search-box">
+            <i class="fa fa-search"></i>
+            <asp:TextBox ID="txtSearch" runat="server"
+                CssClass="form-control"
+                placeholder="Search teachers..."
+                AutoPostBack="true"
+                OnTextChanged="Search_Click" />
+        </div>
+
+        <!-- 👁 TOGGLE -->
+        <asp:LinkButton ID="btnToggleView" runat="server"
+            CssClass="btn btn-outline-dark rounded-pill px-3"
+            OnClick="ToggleView_Click">
+            👁 View Inactive
+        </asp:LinkButton>
+
+        <!-- ➕ ADD -->
+        <button type="button"
+            class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm"
+            onclick="showModal()">
+            <i class="fa fa-plus"></i> Add Teacher
+        </button>
+
+    </div>
+</div>
+
+<%----------stat------------%>
+<div class="row mb-4">
+
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6>Total</h6>
+                <h3><%= TotalTeachers %></h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stat-card bg-success text-white">
+            <div class="card-body">
+                <h6>Active</h6>
+                <h3 class="stat-active"><%= ActiveTeachers %></h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stat-card bg-warning">
+            <div class="card-body">
+                <h6>Inactive</h6>
+                <h3 class="stat-inactive"><%= InactiveTeachers %></h3>
+            </div>
+        </div>
+    </div>
+
+</div>
+
 
     <div class="card shadow-sm border-0 mt-4">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <asp:GridView ID="gvTeachers" runat="server" CssClass="table align-middle mb-0"
+                <asp:GridView ID="gvTeachers" runat="server" CssClass="table align-middle mb-0 modern-table"
                     AutoGenerateColumns="false" GridLines="None" OnRowCommand="gvTeachers_RowCommand">
+                    <HeaderStyle CssClass="table-header text-white" />
+
                     <Columns>
                         <asp:BoundField DataField="EmployeeId" HeaderText="Emp ID" />
                         <asp:BoundField DataField="FullName" HeaderText="Name" />
                         <asp:BoundField DataField="Email" HeaderText="Email" />
                         <asp:BoundField DataField="Stream" HeaderText="Stream" />
                         <asp:BoundField DataField="Designation" HeaderText="Designation" />
-                        <asp:TemplateField HeaderText="Status">
-                            <ItemTemplate>
-                                <span class='badge <%# (bool)Eval("IsActive") ? "bg-success" : "bg-danger" %>'>
-                                    <%# (bool)Eval("IsActive") ? "Active" : "Inactive" %>
-                                </span>
-                            </ItemTemplate>
-                        </asp:TemplateField>
+                        
                         <asp:TemplateField HeaderText="Actions">
                             <ItemTemplate>
                                 <asp:LinkButton runat="server" CssClass="btn btn-sm btn-info text-white me-1"
@@ -100,7 +133,7 @@
     <div class="modal fade" id="CreateModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content modal-dialog-scrollable">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5>Add Teacher</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -154,7 +187,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <asp:Button ID="btnSave" runat="server" Text="Register" CssClass="btn btn-success" OnClick="btnSave_Click" />
+                    <asp:Button ID="btnSave" runat="server" Text="Register" CssClass="btn btn-primary" OnClick="btnSave_Click" />
                 </div>
             </div>
         </div>
@@ -163,7 +196,7 @@
     <div class="modal fade" id="EditModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5>Edit Teacher</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -193,12 +226,57 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <asp:Button ID="btnUpdate" runat="server" Text="Update" CssClass="btn btn-success" OnClick="btnUpdate_Click" />
+                    <asp:Button ID="btnUpdate" runat="server" Text="Update" CssClass="btn btn-primary" OnClick="btnUpdate_Click" />
                 </div>
             </div>
         </div>
     </div>
 
+<style>
+.table-header {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+}
+.table-header th {
+    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+    color: white;
+    border: none;
+    padding: 14px !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.search-box {
+    position: relative;
+}
+.search-box i {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #6b7280;
+}
+.search-box input {
+    padding-left: 30px;
+}
+
+.stat-card {
+    border-radius: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: 0.3s;
+}
+.stat-card:hover {
+    transform: translateY(-4px);
+}
+
+.stat-active { color: #16a34a; }
+.stat-inactive { color: #dc2626; }
+
+.table-header th {
+    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+    color: white;
+    padding: 14px !important;
+}
+
+    </style>
     <script>
         function showModal() {
             var myModal = new bootstrap.Modal(document.getElementById('CreateModal'));

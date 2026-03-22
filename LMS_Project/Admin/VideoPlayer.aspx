@@ -305,10 +305,7 @@ border-color:#444;
                     class="form-control"
                     placeholder="Ask a doubt about the lecture">
 
-                    <button class="btn btn-success"
-                    onclick="askAI()">
-                    Ask
-                    </button>
+                    <button type="button" class="btn btn-success" onclick="askAI()">Ask</button>
 
                     </div>
 
@@ -790,6 +787,8 @@ v.ontimeupdate=function(){
             var videoName =
                 document.getElementById("<%= hfVideoName.ClientID %>").value;
 
+            document.getElementById("aiQuiz").innerHTML = "⚡ Generating the quizes...";
+
             let res = await fetch(
                 "http://localhost:8000/generate-quiz?video_name=" + encodeURIComponent(videoName),
                 { method: "POST" }
@@ -805,6 +804,7 @@ v.ontimeupdate=function(){
 
             var videoName =
                 document.getElementById("<%= hfVideoName.ClientID %>").value;
+            document.getElementById("aiNotes").innerHTML = "⚡ Generating notes...";
 
             let res = await fetch(
                 "http://localhost:8000/generate-notes?video_name=" + encodeURIComponent(videoName),
@@ -824,9 +824,7 @@ v.ontimeupdate=function(){
             var videoName =
                 document.getElementById("<%= hfVideoName.ClientID %>").value;
 
-            document.getElementById("aiAnswer").innerHTML = "Thinking...";
-
-            let res = await fetch(
+            const response = await fetch(
                 "http://localhost:8000/ask-ai?video_name=" +
                 encodeURIComponent(videoName) +
                 "&question=" +
@@ -834,10 +832,24 @@ v.ontimeupdate=function(){
                 { method: "POST" }
             );
 
-            let data = await res.json();
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
 
-            document.getElementById("aiAnswer").innerHTML =
-                "<pre>" + data.answer + "</pre>";
+            let result = "";
+
+            document.getElementById("aiAnswer").innerHTML = "Thinking....";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                result += chunk;
+
+                // 🔥 LIVE UPDATE
+                document.getElementById("aiAnswer").innerHTML =
+                    "<pre>" + result + "</pre>";
+            }
         }
 
     </script>

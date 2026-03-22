@@ -19,16 +19,21 @@ namespace LearningManagementSystem.Admin
 
             if (!IsPostBack)
             {
+                CurrentFilter = "1"; // Active default
                 LoadStreams();
-                LoadTeachers();
+                LoadTeachers(txtSearch.Text.Trim());
+                LoadStats();
             }
         }
+
 
         private void LoadTeachers(string search = "", string status = "All")
         {
             int instituteId = Convert.ToInt32(Session["InstituteId"]);
             gvTeachers.DataSource = bl.GetTeachers(instituteId, search, status);
             gvTeachers.DataBind();
+
+
         }
 
         protected void btnSave_Click(object sender, EventArgs e)
@@ -51,7 +56,9 @@ namespace LearningManagementSystem.Admin
 
             bl.InsertTeacher(t);
 
-            LoadTeachers();
+            LoadTeachers(txtSearch.Text.Trim());
+            LoadStats();
+            ShowMsg("Parent added successfully", true);
         }
 
         protected void gvTeachers_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -61,12 +68,16 @@ namespace LearningManagementSystem.Admin
             if (e.CommandName == "Toggle")
             {
                 bl.ToggleStatus(userId);
-                LoadTeachers();
+                LoadTeachers(txtSearch.Text.Trim());
+                LoadStats();
+                ShowMsg("Status changed successfully", true);
             }
             else if (e.CommandName == "DeleteRow")
             {
                 bl.DeleteTeacher(userId);
-                LoadTeachers();
+                LoadTeachers(txtSearch.Text.Trim());
+                LoadStats();
+                ShowMsg("parent deleted successfully", true);
             }
             else if (e.CommandName == "EditRow")
             {
@@ -126,12 +137,82 @@ namespace LearningManagementSystem.Admin
             };
 
             bl.UpdateTeacher(t);
-            LoadTeachers();
+            LoadTeachers(txtSearch.Text.Trim());
+            LoadStats();
+            ShowMsg("Updated successfully", true);
         }
         protected void FilterStatus_Click(object sender, EventArgs e)
         {
             string status = ((LinkButton)sender).CommandArgument;
             LoadTeachers(txtSearch.Text.Trim(), status);
+        }
+
+        public int TotalTeachers = 0;
+        public int ActiveTeachers = 0;
+        public int InactiveTeachers = 0;
+
+        string CurrentFilter
+        {
+            get { return ViewState["Filter"]?.ToString() ?? "1"; }
+            set { ViewState["Filter"] = value; }
+        }
+
+        private void LoadTeachers(string search = "")
+        {
+            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+
+            string status = CurrentFilter == "1" ? "1" : "0";
+
+            gvTeachers.DataSource = bl.GetTeachers(instituteId, search, status);
+            gvTeachers.DataBind();
+        }
+
+        protected void ToggleView_Click(object sender, EventArgs e)
+        {
+            CurrentFilter = CurrentFilter == "1" ? "0" : "1";
+
+            btnToggleView.Text = CurrentFilter == "1"
+                ? "👁 View Inactive"
+                : "👁 View Active";
+
+            LoadTeachers(txtSearch.Text.Trim());
+            LoadStats();
+        }
+
+        protected void Search_Click(object sender, EventArgs e)
+        {
+            LoadTeachers(txtSearch.Text.Trim());
+        }
+
+        private void LoadStats()
+        {
+            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+
+            DataTable dt = bl.GetTeachers(instituteId);
+
+            TotalTeachers = dt.Rows.Count;
+            ActiveTeachers = dt.Select("IsActive = 1").Length;
+            InactiveTeachers = dt.Select("IsActive = 0").Length;
+        }
+
+        void ShowMsg(string msg, bool success)
+        {
+            string safeMsg = msg.Replace("'", "\\'");
+
+            string script = $@"
+            var toastEl = document.getElementById('liveToast');
+            var toastMsg = document.getElementById('toastMsg');
+
+            toastMsg.innerText = '{safeMsg}';
+
+            toastEl.classList.remove('bg-success','bg-danger');
+            toastEl.classList.add('{(success ? "bg-success" : "bg-danger")}');
+
+            var toast = new bootstrap.Toast(toastEl, {{ delay: 3000 }});
+            toast.show();
+            ";
+
+            ScriptManager.RegisterStartupScript(this, GetType(), "toast", script, true);
         }
     }
 }

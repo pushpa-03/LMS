@@ -22,7 +22,7 @@ namespace LearningManagementSystem.Admin
 
         private string CurrentFilter
         {
-            get { return ViewState["Filter"] != null ? ViewState["Filter"].ToString() : "All"; }
+            get { return ViewState["Filter"] != null ? ViewState["Filter"].ToString() : "1"; } // default ACTIVE
             set { ViewState["Filter"] = value; }
         }
 
@@ -38,13 +38,41 @@ namespace LearningManagementSystem.Admin
             {
                 LoadStreams();
             }
+            else
+            {
+                // 🔥 Always reload on postback to apply search
+                LoadStreams();
+            }
         }
 
         // ================= LOAD =================
         void LoadStreams()
         {
-            gvStreams.DataSource = bl.GetStreams(CurrentInstituteId, CurrentFilter);
+            DataTable dt = bl.GetStreams(CurrentInstituteId, CurrentFilter);
+
+            // 🔥 SEARCH FILTER
+            if (!string.IsNullOrWhiteSpace(txtSearch.Value))
+            {
+                string search = txtSearch.Value.Replace("'", "''"); // prevent error
+
+                DataRow[] rows = dt.Select($"StreamName LIKE '%{search}%'");
+
+                if (rows.Length > 0)
+                    dt = rows.CopyToDataTable();
+                else
+                    dt = dt.Clone(); // ✅ prevents crash
+            }
+
+            gvStreams.DataSource = dt;
             gvStreams.DataBind();
+
+            lblTotal.Text = dt.Rows.Count.ToString();
+
+            int active = dt.Select("IsActive = true").Length;
+            int inactive = dt.Select("IsActive = false").Length;
+
+            lblActive.Text = active.ToString();
+            lblInactive.Text = inactive.ToString();
         }
 
         // ================= SAVE =================
@@ -140,20 +168,41 @@ namespace LearningManagementSystem.Admin
         protected void Filter_Click(object sender, EventArgs e)
         {
             var btn = (System.Web.UI.WebControls.LinkButton)sender;
-            CurrentFilter = btn.CommandArgument;
-            gvStreams.PageIndex = 0;
+
+            if (btn.CommandArgument == "Toggle")
+            {
+                // switch between active/inactive
+                CurrentFilter = CurrentFilter == "1" ? "0" : "1";
+
+                btnToggleView.Text = CurrentFilter == "1"
+                    ? "👁 View Inactive"
+                    : "👁 View Active";
+            }
+            else
+            {
+                CurrentFilter = btn.CommandArgument;
+            }
+
             LoadStreams();
         }
+
 
         // ================= MESSAGE =================
         void ShowMsg(string msg, bool success)
         {
-            lblMsg.Text = msg;
-            lblMsg.Visible = true;
+            string script = $@"
+        var toastEl = document.getElementById('liveToast');
+        var toastMsg = document.getElementById('toastMsg');
 
-            lblMsg.CssClass = success
-                ? "alert alert-success d-block mb-3"
-                : "alert alert-danger d-block mb-3";
+        toastMsg.innerText = '{msg}';
+        toastEl.classList.remove('bg-success','bg-danger');
+        toastEl.classList.add('{(success ? "bg-success" : "bg-danger")}');
+
+        var toast = new bootstrap.Toast(toastEl);
+        toast.show();
+    ";
+
+            ScriptManager.RegisterStartupScript(this, GetType(), "toast", script, true);
         }
     }
 }

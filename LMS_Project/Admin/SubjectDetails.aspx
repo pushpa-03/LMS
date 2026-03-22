@@ -132,7 +132,7 @@
                                         <ItemTemplate>
                                             <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
                                                 <span><i class="fa-solid fa-file-lines me-2"></i><%# Eval("Title") %> (<%# Eval("FileType") %>)</span>
-                                                <a href='<%# Eval("FilePath") %>' target="_blank" class="btn btn-outline-success btn-sm">View</a>
+                                                <a href='MaterialPlayer.aspx?MaterialId=<%# Eval("MaterialId") %>' class="btn btn-outline-success btn-sm">View</a>
                                             </div>
                                         </ItemTemplate>
                                     </asp:Repeater>

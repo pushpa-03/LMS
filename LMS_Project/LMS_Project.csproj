@@ -50,7 +50,11 @@
       <HintPath>..\packages\ExcelDataReader.DataSet.3.8.0\lib\net462\ExcelDataReader.DataSet.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
     </Reference>
@@ -88,6 +92,8 @@
     <Content Include="Admin\AssignStudentSubject.aspx" />
     <Content Include="Admin\AssignSubjectFaculty.aspx" />
     <Content Include="Admin\Dashboard.aspx" />
+    <Content Include="Admin\MaterialPlayer.aspx" />
+    <Content Include="Admin\ParentList.aspx" />
     <Content Include="Admin\ParentManagement.aspx" />
     <Content Include="Admin\SubjectDetails.aspx" />
     <Content Include="Admin\Subjects.aspx" />
@@ -127,6 +133,7 @@
     <Content Include="assets\images\p2.jfif" />
     <Content Include="assets\images\p3.jfif" />
     <Content Include="assets\images\profile.png" />
+    <Content Include="assets\images\profile_icon.png" />
     <Content Include="assets\images\small-logo.png" />
     <Content Include="assets\images\technology.jpg" />
     <Content Include="assets\js\bootstrap.bundle.min.js" />
@@ -160,7 +167,15 @@
     <Content Include="SuperAdmin\AddInstitute.aspx" />
     <Content Include="SuperAdmin\AddSociety.aspx" />
     <Content Include="SuperAdmin\Dashboard.aspx" />
+    <Content Include="Teacher\MyStudents.aspx" />
+    <Content Include="Teacher\TeacherAssignment.aspx" />
+    <Content Include="Teacher\TeacherCalendar.aspx" />
+    <Content Include="Teacher\TeacherCourses.aspx" />
+    <Content Include="Teacher\TeacherDashboard.aspx" />
+    <Content Include="Teacher\TeacherProfile.aspx" />
+    <Content Include="Teacher\ViewSubmissions.aspx" />
     <Content Include="Uploads\InstituteLogos\4cdae9c2-5673-4538-8241-78abd22e46e9.jpg" />
+    <Content Include="Uploads\InstituteLogos\4d5bcc38-b8c6-45fa-ad51-42833d28df9a.jpg" />
     <Content Include="Uploads\Videos\C# Basic Fundamentals.mp4" />
     <Content Include="Web.config" />
   </ItemGroup>
@@ -249,6 +264,20 @@
     <Compile Include="Admin\Dashboard.aspx.designer.cs">
       <DependentUpon>Dashboard.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Admin\MaterialPlayer.aspx.cs">
+      <DependentUpon>MaterialPlayer.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\MaterialPlayer.aspx.designer.cs">
+      <DependentUpon>MaterialPlayer.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\ParentList.aspx.cs">
+      <DependentUpon>ParentList.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\ParentList.aspx.designer.cs">
+      <DependentUpon>ParentList.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Admin\ParentManagement.aspx.cs">
       <DependentUpon>ParentManagement.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -287,8 +316,12 @@
     <Compile Include="App_Code\Masters\BL\AddSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AddTeacherBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignLevelSubjectBL.cs" />
+    <Compile Include="App_Code\Masters\BL\AssignmentBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignStudentSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignSubjectFacultyBL.cs" />
+    <Compile Include="App_Code\Masters\BL\CalendarBL.cs" />
+    <Content Include="App_Code\Masters\BL\HelpBL.cs" />
+    <Compile Include="App_Code\Masters\BL\MaterialBL.cs" />
     <Compile Include="App_Code\Masters\BL\ParentManagementBL.cs" />
     <Compile Include="App_Code\Masters\BL\RegisterUserBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentAssignmentBL.cs" />
@@ -299,6 +332,8 @@
     <Compile Include="App_Code\Masters\BL\StudentSubjectsBL.cs" />
     <Compile Include="App_Code\Masters\BL\SubjectDetailsBL.cs" />
     <Compile Include="App_Code\Masters\BL\SubjectsBL.cs" />
+    <Compile Include="App_Code\Masters\BL\TeacherProfileBL.cs" />
+    <Compile Include="App_Code\Masters\BL\TeacherReportBL.cs" />
     <Compile Include="App_Code\Masters\BL\VideoPlayerBL.cs" />
     <Compile Include="App_Code\Masters\GC\AcademicSessionGC.cs" />
     <Compile Include="App_Code\Masters\GC\AcademicSetupGC.cs" />
@@ -310,10 +345,14 @@
     <Compile Include="App_Code\Masters\GC\AddSubjectGC.cs" />
     <Compile Include="App_Code\Masters\GC\AddTeacherGC.cs" />
     <Compile Include="App_Code\Masters\GC\AssignLevelSubjectGC.cs" />
+    <Compile Include="App_Code\Masters\GC\AssignmentGC.cs" />
     <Compile Include="App_Code\Masters\GC\AssignStudentSubjectGC.cs" />
     <Compile Include="App_Code\Masters\GC\AssignSubjectFacultyGC.cs" />
+    <Compile Include="App_Code\Masters\GC\CalendarGC.cs" />
+    <Compile Include="App_Code\Masters\GC\HelpGC.cs" />
     <Compile Include="App_Code\Masters\GC\LoginGC.cs" />
     <Compile Include="App_Code\Masters\BL\LoginBL.cs" />
+    <Compile Include="App_Code\Masters\GC\MaterialGC.cs" />
     <Compile Include="App_Code\Masters\GC\ParentManagementGC.cs" />
     <Compile Include="App_Code\Masters\GC\RegisterUserGC.cs" />
     <Compile Include="App_Code\Masters\GC\StudentAssignmentGC.cs" />
@@ -321,6 +360,8 @@
     <Compile Include="App_Code\Masters\GC\StudentSubjectsGC.cs" />
     <Compile Include="App_Code\Masters\GC\SubjectDetailsGC.cs" />
     <Compile Include="App_Code\Masters\GC\SubjectsGC.cs" />
+    <Compile Include="App_Code\Masters\GC\TeacherProfileGC.cs" />
+    <Compile Include="App_Code\Masters\GC\TeacherReportGC.cs" />
     <Compile Include="App_Code\Masters\GC\VideoPlayerGC.cs" />
     <Compile Include="Parent\ParentDashboard.aspx.cs">
       <DependentUpon>ParentDashboard.aspx</DependentUpon>
@@ -434,6 +475,41 @@
     <Compile Include="SuperAdmin\SuperAdminMaster.Master.designer.cs">
       <DependentUpon>SuperAdminMaster.Master</DependentUpon>
     </Compile>
+    <Compile Include="Teacher\MyStudents.aspx.cs">
+      <DependentUpon>MyStudents.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\MyStudents.aspx.designer.cs">
+      <DependentUpon>MyStudents.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\TeacherAssignment.aspx.cs">
+      <DependentUpon>TeacherAssignment.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\TeacherAssignment.aspx.designer.cs">
+      <DependentUpon>TeacherAssignment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\TeacherCalendar.aspx.cs">
+      <DependentUpon>TeacherCalendar.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\TeacherCalendar.aspx.designer.cs">
+      <DependentUpon>TeacherCalendar.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\TeacherCourses.aspx.cs">
+      <DependentUpon>TeacherCourses.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\TeacherCourses.aspx.designer.cs">
+      <DependentUpon>TeacherCourses.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\TeacherDashboard.aspx.cs">
+      <DependentUpon>TeacherDashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\TeacherDashboard.aspx.designer.cs">
+      <DependentUpon>TeacherDashboard.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Teacher\TeacherMaster.Master.cs">
       <DependentUpon>TeacherMaster.Master</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -450,6 +526,20 @@
       <DependentUpon>Default.aspx</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Teacher\TeacherProfile.aspx.cs">
+      <DependentUpon>TeacherProfile.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\TeacherProfile.aspx.designer.cs">
+      <DependentUpon>TeacherProfile.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\ViewSubmissions.aspx.cs">
+      <DependentUpon>ViewSubmissions.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\ViewSubmissions.aspx.designer.cs">
+      <DependentUpon>ViewSubmissions.aspx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Admin\AdminMaster.Master" />
@@ -463,11 +553,17 @@
     <Content Include="assets\icons\fontawesome\webfonts\fa-v4compatibility.woff2" />
     <Content Include="assets\images\login-bg.webp" />
     <Content Include="AIService\ai_server.py" />
+    <Content Include="assets\images\profile-icon.webp" />
     <None Include="packages.config" />
     <Content Include="Student\StudentMaster.Master" />
     <Content Include="SuperAdmin\SuperAdminMaster.Master" />
     <Content Include="Teacher\TeacherMaster.Master" />
     <Content Include="Parent\ParentMaster.Master" />
+    <Content Include="Uploads\Materials\1_Introduction %28MC%29.pptx" />
+    <Content Include="Uploads\Materials\StudentBulkData.xlsx" />
+    <Content Include="Uploads\Materials\Chapter4%28CNS%29. SK.pdf" />
+    <Content Include="Uploads\Materials\system model.pptx" />
+    <Content Include="Uploads\Materials\SDP Sample Worklet Template.docx" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

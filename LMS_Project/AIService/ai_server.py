@@ -4,12 +4,21 @@ import whisper
 import requests
 import os
 import faiss
+import pickle
 from sentence_transformers import SentenceTransformer
+from fastapi.responses import StreamingResponse
+import json
+import docx
+import PyPDF2
 
 BASE_VIDEO_PATH = "../Uploads/Videos"
-TRANSCRIPT_PATH = "../AIData/transcripts"
+DATA_PATH = "../AIData"
+
+TRANSCRIPT_PATH = os.path.join(DATA_PATH, "transcripts")
+INDEX_PATH = os.path.join(DATA_PATH, "index")
 
 os.makedirs(TRANSCRIPT_PATH, exist_ok=True)
+os.makedirs(INDEX_PATH, exist_ok=True)
 
 app = FastAPI()
 
@@ -22,159 +31,224 @@ app.add_middleware(
 )
 
 print("Loading Whisper...")
-whisper_model = whisper.load_model("base")
+whisper_model = whisper.load_model("tiny")  # 🔥 faster
 
-print("Loading embedding model...")
+print("Loading embeddings...")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
-vector_store = {}
-text_store = {}
+# ------------------ HELPERS ------------------
+
+def get_video_path(video_name):
+    if not video_name.endswith(".mp4"):
+        video_name += ".mp4"
+    return os.path.join(BASE_VIDEO_PATH, video_name)
+
+def get_txt_path(video_name):
+    return os.path.join(TRANSCRIPT_PATH, video_name + ".txt")
+
+def get_index_path(video_name):
+    return os.path.join(INDEX_PATH, video_name + ".index")
+
+def get_chunks_path(video_name):
+    return os.path.join(INDEX_PATH, video_name + ".pkl")
+
+# ------------------ TRANSCRIBE ONCE ------------------
 
 def transcribe_video(video_name):
-
-    txt_file = os.path.join(
-        TRANSCRIPT_PATH,
-        video_name.replace(".mp4", ".txt")
-    )
+    txt_file = get_txt_path(video_name)
 
     if os.path.exists(txt_file):
-        with open(txt_file, "r", encoding="utf8") as f:
-            return f.read()
+        return open(txt_file, "r", encoding="utf8").read()
 
-    video_path = os.path.join(BASE_VIDEO_PATH, video_name)
-
+    video_path = get_video_path(video_name)
     result = whisper_model.transcribe(video_path)
-
-    transcript = result["text"]
+    text = result["text"]
 
     with open(txt_file, "w", encoding="utf8") as f:
-        f.write(transcript)
+        f.write(text)
 
-    return transcript
+    return text
 
-def chunk_text(text):
+# ------------------ CHUNK ------------------
 
-    size = 500
-    chunks = []
+def chunk_text(text, size=300):
+    return [text[i:i+size] for i in range(0, len(text), size)]
 
-    for i in range(0, len(text), size):
-        chunks.append(text[i:i+size])
+# ------------------ BUILD INDEX ONCE ------------------
 
-    return chunks
+def build_index(video_name):
+    index_file = get_index_path(video_name)
+    chunk_file = get_chunks_path(video_name)
 
-def build_index(video_name, text):
+    if os.path.exists(index_file):
+        index = faiss.read_index(index_file)
+        chunks = pickle.load(open(chunk_file, "rb"))
+        return index, chunks
 
+    text = transcribe_video(video_name)
     chunks = chunk_text(text)
 
     embeddings = embedder.encode(chunks)
-
     dim = len(embeddings[0])
 
     index = faiss.IndexFlatL2(dim)
-
     index.add(embeddings)
 
-    vector_store[video_name] = index
-    text_store[video_name] = chunks
+    faiss.write_index(index, index_file)
+    pickle.dump(chunks, open(chunk_file, "wb"))
+
+    return index, chunks
+
+# ------------------ SEARCH ------------------
 
 def search_context(video_name, question):
-
-    index = vector_store.get(video_name)
-
-    if index is None:
-        transcript = transcribe_video(video_name)
-        build_index(video_name, transcript)
-        index = vector_store[video_name]
+    index, chunks = build_index(video_name)
 
     q_emb = embedder.encode([question])
-
     D, I = index.search(q_emb, 3)
 
-    chunks = text_store[video_name]
-
-    context = ""
-
-    for i in I[0]:
-        context += chunks[i] + "\n"
-
+    context = "\n".join([chunks[i] for i in I[0]])
     return context
 
-def ask_llm(prompt):
+# ------------------ FAST LLM ------------------
 
+def stream_llm(prompt):
+    def generate():
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "phi3",
+                "prompt": prompt,
+                "stream": True
+            },
+            stream=True
+        )
+
+        for line in response.iter_lines():
+            if line:
+                data = json.loads(line.decode("utf-8"))
+                token = data.get("response", "")
+                yield token
+
+    return generate()
+
+# ------------------Material-------------------
+BASE_MATERIAL_PATH = "../Uploads/Materials"
+
+def get_material_path(file_path):
+    return os.path.join("..", file_path.strip("/"))
+
+
+def extract_text(file_path):
+    text = ""
+
+    if file_path.endswith(".pdf"):
+        reader = PyPDF2.PdfReader(file_path)
+        for page in reader.pages:
+            text += page.extract_text() or ""
+
+    elif file_path.endswith(".docx"):
+        doc = docx.Document(file_path)
+        for p in doc.paragraphs:
+            text += p.text
+
+    else:
+        text = "This is a study material file."
+
+    return text[:2000]  # 🔥 speed
+
+def get_full_response(prompt):
     response = requests.post(
         "http://localhost:11434/api/generate",
         json={
-            "model": "llama3",
+            "model": "phi3",
             "prompt": prompt,
             "stream": False
         }
     )
-
     return response.json()["response"]
 
+# ------------------ APIs ------------------
+
+#-----------For video--------
 @app.post("/generate-summary")
 async def generate_summary(video_name: str):
+    text = transcribe_video(video_name)
+    short_text = text[:2000]  # 🔥 limit size
 
-    transcript = transcribe_video(video_name)
+    prompt = f"Summarize:\n{short_text}"
 
-    prompt = f"""
-Summarize this lecture clearly.
-
-{transcript}
-"""
-
-    summary = ask_llm(prompt)
-
-    return {"summary": summary}
+    return {"summary": stream_llm(prompt)}
 
 @app.post("/generate-quiz")
 async def generate_quiz(video_name: str):
+    text = transcribe_video(video_name)
+    short_text = text[:2000]
 
-    transcript = transcribe_video(video_name)
+    prompt = f"Create 5 MCQ:\n{short_text}"
 
-    prompt = f"""
-Create 5 MCQ questions from this lecture.
-
-{transcript}
-"""
-
-    quiz = ask_llm(prompt)
-
-    return {"quiz": quiz}
+    return {"quiz": stream_llm(prompt)}
 
 @app.post("/generate-notes")
 async def generate_notes(video_name: str):
+    text = transcribe_video(video_name)
+    short_text = text[:2000]
 
-    transcript = transcribe_video(video_name)
+    prompt = f"Make notes:\n{short_text}"
 
-    prompt = f"""
-Convert this lecture into structured study notes.
-
-{transcript}
-"""
-
-    notes = ask_llm(prompt)
-
-    return {"notes": notes}
+    return {"notes": stream_llm(prompt)}
 
 @app.post("/ask-ai")
-async def ask_ai(video_name: str, question: str):
-
-    context = search_context(video_name, question)
+def ask_ai(video_name: str, question: str):
+    context = search_context(video_name, question)[:800]
 
     prompt = f"""
-Lecture context:
+    Context: {context}
+    Question: {question}
+    Answer shortly:
+    """
 
-{context}
+    return StreamingResponse(
+        stream_llm(prompt),
+        media_type="text/plain"
+    )
 
-Student question:
-{question}
+#--------For material------------
 
-Answer clearly.
-"""
+@app.post("/material-quiz")
+def material_quiz(data: dict):
+    try:
+        # Use .get() to avoid KeyErrors
+        file_path = data.get("file_path")
+        path = get_material_path(file_path)
+        
+        text = extract_text(path)
+        prompt = f"Generate 5 MCQ questions with answers based on this text:\n\n{text}"
+        
+        # Use stream=False for the full response at once
+        response_text = get_full_response(prompt)
+        return {"result": response_text}
+    except Exception as e:
+        return {"error": str(e)}
 
-    answer = ask_llm(prompt)
+@app.post("/material-notes")
+def material_notes(data: dict):
+    try:
+        path = get_material_path(data.get("file_path"))
+        text = extract_text(path)
+        prompt = f"Generate short notes in bullet points:\n\n{text}"
+        return get_full_response(prompt)
+    except Exception as e:
+        return f"Error: {str(e)}"
 
-    return {"answer": answer}
-
+@app.post("/material-ask")
+def material_ask(data: dict):
+    try:
+        path = get_material_path(data.get("file_path"))
+        question = data.get("question")
+        text = extract_text(path)
+        prompt = f"Answer in simple points:\n\nContext: {text[:1500]}\nQuestion: {question}"
+        return get_full_response(prompt)
+    except Exception as e:
+        return f"Error: {str(e)}"
 

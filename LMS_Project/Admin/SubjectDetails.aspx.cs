@@ -171,7 +171,7 @@ namespace LearningManagementSystem.Admin
                 string fullPath = Path.Combine(physicalPath, fileName);
                 fuContent.SaveAs(fullPath);
 
-                string dbPath = folderRelPath.Replace("~", "..") + fileName;
+                string dbPath = folderRelPath.Replace("~", "") + fileName;
 
                 if (ddlContentType.SelectedValue == "Video")
                 {

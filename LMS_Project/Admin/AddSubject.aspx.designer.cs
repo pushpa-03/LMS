@@ -24,15 +24,6 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.HiddenField hfSubjectId;
 
         /// <summary>
-        /// lblMsg control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblMsg;
-
-        /// <summary>
         /// txtSearch control.
         /// </summary>
         /// <remarks>
@@ -42,40 +33,40 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.TextBox txtSearch;
 
         /// <summary>
-        /// btnFilter control.
+        /// btnToggleView control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnFilter;
+        protected global::System.Web.UI.WebControls.LinkButton btnToggleView;
 
         /// <summary>
-        /// lnkAll control.
+        /// lblTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton lnkAll;
+        protected global::System.Web.UI.WebControls.Label lblTotal;
 
         /// <summary>
-        /// lnkActive control.
+        /// lblActive control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton lnkActive;
+        protected global::System.Web.UI.WebControls.Label lblActive;
 
         /// <summary>
-        /// lnkInactive control.
+        /// lblInactive control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton lnkInactive;
+        protected global::System.Web.UI.WebControls.Label lblInactive;
 
         /// <summary>
         /// gvSubjects control.
@@ -114,6 +105,15 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.TextBox txtDuration;
 
         /// <summary>
+        /// chkActive control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkActive;
+
+        /// <summary>
         /// txtDescription control.
         /// </summary>
         /// <remarks>
@@ -130,41 +130,5 @@ namespace LearningManagementSystem.Admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnSave;
-
-        /// <summary>
-        /// txtSubjectCodeEdit control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSubjectCodeEdit;
-
-        /// <summary>
-        /// txtSubjectNameEdit control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSubjectNameEdit;
-
-        /// <summary>
-        /// txtDurationEdit control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtDurationEdit;
-
-        /// <summary>
-        /// btnUpdate control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnUpdate;
     }
 }

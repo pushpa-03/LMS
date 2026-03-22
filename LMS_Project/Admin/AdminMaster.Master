@@ -1,5 +1,4 @@
-﻿
-<%@ Master Language="C#" AutoEventWireup="true"
+﻿<%@ Master Language="C#" AutoEventWireup="true"
     CodeBehind="AdminMaster.master.cs"
     Inherits="LearningManagementSystem.Admin.AdminMaster" %>
 
@@ -8,7 +7,7 @@
 <head runat="server">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ERP Admin Panel</title>
+<title>LMS Admin Panel</title>
 
 <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server"></asp:ContentPlaceHolder>
 
@@ -17,244 +16,201 @@
 
 <style>
 
-/* ================= ERP THEME ================= */
-/*body{
-    margin:0;
-    background:#f8f9fa;*/
-/*    font-family:'Segoe UI',sans-serif;*/
-/*}*/
-
-body{
-    margin:0;
-    background:#f8f9fa;
-
-    /* SAME AS CODE1 (Bootstrap default) */
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto,
-                 "Helvetica Neue", Arial, "Noto Sans",
-                 "Liberation Sans", sans-serif;
-
-    font-size:16px;
+/* ================= BASE ================= */
+body {
+    margin: 0;
+    background: #eef3f8;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
 }
-#main-wrapper{
-    display:flex;
-    min-height:100vh;
+
+/* ================= LAYOUT ================= */
+#main-wrapper {
+    display: flex;
+    min-height: 100vh;
 }
 
 /* ================= SIDEBAR ================= */
-.sidebar{
-    width:240px;
-    background:#f4f8f6;
-    border-right:3px solid #66bb6a;
-    color:#333;
-    position:fixed;
-    height:100vh;
-    overflow-y:auto;
-    transition:.3s;
-/*    border-right:3px solid #4caf50;*/
+.sidebar {
+    width: 250px;
+    background: #ffffff;
+    border-right: 1px solid #e3e8ef;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    transition: .3s;
 }
 
-#main-wrapper.sidebar-collapsed .sidebar{
-    width:40px;
+#main-wrapper.sidebar-collapsed .sidebar {
+    width: 60px;
 }
 
-.sidebar-header{
-    padding:15px 15px;
-    background:#ffffff;
+/* ---- Logo ---- */
+.sidebar-header {
+    padding: 15px;
+    border-bottom: 1px solid #eef2f7;
+    text-align: center;    
+/*    background-color:lightpink;*/
 }
 
-.logo-wrapper{
-    width:100%;
-    height:80px;
-    background:#ffffff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
-    padding:5px;
+.logo-wrapper {
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.sidebar-logo{
-    width:100%;
-    height:100%;
-    object-fit:cover;     /* 🔥 Important */
-    object-position:center;
+.sidebar-logo {
+    max-height: 60px;
+    object-fit: contain;
+    border:blue 1px solid;
 }
 
-.sidebar-header h6{
-    margin-top:10px;
-    font-weight:600;
-    font-size:14px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+.sidebar-header h6 {
+    font-weight: 700;
+    font-size: 13px;
+    color: #0d6efd;
+    margin-top: 8px;
 }
 
-#main-wrapper.sidebar-collapsed .sidebar-header h6{
-    display:none;
+/* ================= MENU ================= */
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
 }
 
-.sidebar-menu{
-    list-style:none;
-    padding:0;
-    margin:0;
+.sidebar-section {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9aa4b2;
+    padding: 14px 20px 5px;
+    text-transform: uppercase;
 }
 
-.sidebar-menu li a{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:10px 18px;
-    color:#333;
-    text-decoration:none;
-    font-size:14px;
-    transition:.2s;
+/* ---- Links ---- */
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    transition: .2s;
 }
 
-.sidebar-icon{
-    width:18px;
-    text-align:center;
-    font-size:15px;
+.sidebar-menu li a i {
+    width: 18px;
+    color: #0d6efd;
 }
 
-.sidebar-menu li a:hover{
-    background:#e8f5e9;
-    color:#2e7d32;
+.sidebar-menu li a:hover {
+    background: #e7f1ff;
+    color: #0d6efd;
 }
 
-.sidebar-link.active{
-    background:#2e7d32;
-    color:#fff !important;
+/* ---- Active ---- */
+.sidebar-link.active {
+    background: #0d6efd;
+    color: #fff !important;
+    border-radius: 6px;
 }
 
-.sidebar-submenu{
-    display:none;
-    padding-left:35px;
-    border-left:2px solid #e0e0e0;
-}
-.sidebar-submenu li a{
-    padding:7px 18px;
-    font-size:13px;
-    position:relative;
-}
-.sidebar-link.active{
-    position:relative;
+.sidebar-link.active i {
+    color: #fff;
 }
 
-.sidebar-link.active::before{
-    content:"";
-    position:absolute;
-    left:0;
-    top:0;
-    height:100%;
-    width:4px;
-    background:#81c784;
+/* ---- Submenu ---- */
+.sidebar-submenu {
+    display: none;
+    padding-left: 30px;
 }
 
-.submenu.open .sidebar-submenu{
-    display:block;
+.submenu.open .sidebar-submenu {
+    display: block;
 }
 
-.right-icon{
-    margin-left:auto;
-    transition:.3s;
-}
-
-.submenu.open .right-icon{
-    transform:rotate(90deg);
-}
-
-/*#main-wrapper.sidebar-collapsed .sidebar-menu p{
-    display:none;
-}*/
-
-/* ================= CONTENT ================= */
-.content-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #f8f9fa;
-            transition: all .3s ease;
-            margin-left: 260px; /* Space for the fixed sidebar */
-            min-width: 0;            
-            margin-top:65px;  /* important */
-        }
-
-#main-wrapper.sidebar-collapsed .content-wrapper{
-    margin-left:20px;
+.right-icon {
+    margin-left: auto;
+    font-size: 12px;
 }
 
 /* ================= HEADER ================= */
-.header{
-    height:65px;
-    background:linear-gradient(135deg,#2e7d32,#43a047);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 25px;
-    position:fixed;
-    top:0;
-    left:240px;
-    right:0;
-    z-index:1000;
+.header {
+    height: 65px;
+    background: linear-gradient(135deg, #0d6efd, #2563eb);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    position: fixed;
+    left: 250px;
+    right: 0;
+    top: 0;
+    z-index: 1000;
 }
 
-#main-wrapper.sidebar-collapsed .header{
-    left:40px;
+#main-wrapper.sidebar-collapsed .header {
+    left: 60px;
 }
 
-.header-title{
-    font-size:20px;
-    font-weight:700;
-    color:#fff;
-    letter-spacing:1px;
+.header-title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 18px;
 }
 
-.header h4{
-    margin:0;
-    font-weight:700;
-    color:#ffffff;
-}
-/* Toggle icon */
-.collapse-sidebar i{
-    color:#fff;
-}
-.content-body{
-    padding:25px;
-}
-
-/* profile image */
-.profile-img{
-    width:35px;
-    height:35px;
-    border-radius:50%;
-    object-fit:cover;
-    border:2px solid #4caf50;
+/* ---- Student badge in header ---- */
+.admin-badge {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-left: 10px;
+    letter-spacing: .5px;
 }
 
-.text-primary{
-    color:#4caf50 !important;
+/* ================= PROFILE ================= */
+.profile-img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid #fff;
 }
 
-/* notification dot */
-.notify-dot{
-    position:absolute;
-    top:3px;
-    right:3px;
-    height:8px;
-    width:8px;
-    background:red;
-    border-radius:50%;
+/* ================= CONTENT ================= */
+.content-wrapper {
+    margin-left: 250px;
+    margin-top: 65px;
+    width: 100%;
+    transition: .3s;
 }
 
+#main-wrapper.sidebar-collapsed .content-wrapper {
+    margin-left: 60px;
+}
+
+.content-body {
+    padding: 25px;
+}
+
+/* ================= RESPONSIVE ================= */
 @media(max-width:992px){
-    .sidebar{
-        left:-260px;
+    .sidebar {
+        left: -260px;
     }
-    #main-wrapper.sidebar-collapsed .sidebar{
-        left:0;
+
+    #main-wrapper.sidebar-collapsed .sidebar {
+        left: 0;
     }
-    .content-wrapper{
-        margin-left:0 !important;
+
+    .header {
+        left: 0 !important;
+    }
+
+    .content-wrapper {
+        margin-left: 0 !important;
     }
 }
 
@@ -271,87 +227,77 @@ body{
 <!-- ================= SIDEBAR ================= -->
 <div class="sidebar">
 
-    <div class="sidebar-header text-start ps-3">
-    <!-- LOGO FROM DB -->
-    <div class="logo-wrapper">
-         <asp:Image ID="imgInstituteLogo" runat="server" CssClass="sidebar-logo" />
+    <div class="sidebar-header">
+        <div class="logo-wrapper">
+            <asp:Image ID="imgInstituteLogo" runat="server" CssClass="sidebar-logo" />
+        </div>
+        <h6><asp:Label ID="lblSidebarInstituteName" runat="server" /></h6>
     </div>
-
-</div>
 
     <ul class="sidebar-menu">
 
+        <div class="sidebar-section">Main</div>
         <li>
             <a href="Dashboard.aspx" class="sidebar-link">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
+                <i class="fas fa-home"></i> Dashboard
             </a>
         </li>
 
-        <!-- MASTERS -->
- <li class="submenu">
-     <a href="#" class="sidebar-link submenu-parent">
-         <i class="fas fa-layer-group"></i>
-         <span>Masters</span>
-         <i class="fas fa-chevron-right right-icon"></i>
-     </a>
-     <ul class="sidebar-submenu">
-         <li><a href="AddStream.aspx" class="sidebar-link"><span>Stream</span></a></li>
-         <li><a href="AddCourse.aspx" class="sidebar-link"><span>Course</span></a></li>
-         <li><a href="AcademicSetup.aspx" class="sidebar-link"><span>Academic Setup</span></a></li>
-         <li><a href="AcademicSession.aspx" class="sidebar-link"><span>Academic Year</span></a></li>
-         <li><a href="AddSubject.aspx" class="sidebar-link"><span>Subjects</span></a></li>   
-         <%--<li><a href="AssignSubjects.aspx" class="sidebar-link"><span>Assign Subjects</span></a></li>--%>
-<%--         <li><a href="AdminSubjectStructure.aspx" class="sidebar-link"><span>SubjectStructure</span></a></li>--%>
-         <li><a href="AddStudent.aspx" class="sidebar-link"><span>Students</span></a></li>
-         <li><a href="AddTeacher.aspx" class="sidebar-link"><span>Teachers</span></a></li>
-         <li><a href="ParentManagement.aspx" class="sidebar-link"><span>Parents</span></a></li> 
-     </ul>
- </li>
+        <div class="sidebar-section">Management</div>
 
- <!-- ASSIGN COURSE -->
- <li class="submenu">
-     <a href="#" class="sidebar-link submenu-parent">
-         <i class="fas fa-book-open"></i>
-         <span>Assign Course</span>
-         <i class="fas fa-chevron-right right-icon"></i>
-     </a>
-     <ul class="sidebar-submenu">
-         <li><a href="AssignLevelSubject.aspx" class="sidebar-link"><span>To Class</span></a></li>
-         <li><a href="AssignStudentSubject.aspx" class="sidebar-link"><span>To Students</span></a></li>
-         <li><a href="AssignSubjectFaculty.aspx" class="sidebar-link"><span>To Teachers</span></a></li>
-     </ul>
- </li>
+        <li class="submenu">
+            <a href="#" class="sidebar-link submenu-parent">
+                <i class="fas fa-layer-group"></i> Masters
+                <i class="fas fa-chevron-right right-icon"></i>
+            </a>
+            <ul class="sidebar-submenu">
+                <li><a href="AddStream.aspx" class="sidebar-link">Stream</a></li>
+                <li><a href="AddCourse.aspx" class="sidebar-link">Course</a></li>
+                <li><a href="AcademicSetup.aspx" class="sidebar-link">Academic Setup</a></li>
+                <li><a href="AcademicSession.aspx" class="sidebar-link">Academic Year</a></li>
+                <li><a href="AddSubject.aspx" class="sidebar-link">Subjects</a></li>
+                <li><a href="AddStudent.aspx" class="sidebar-link">Students</a></li>
+                <li><a href="AddTeacher.aspx" class="sidebar-link">Teachers</a></li>
+                <li><a href="ParentManagement.aspx" class="sidebar-link">Parents</a></li>
+            </ul>
+        </li>
 
- <!-- LISTS -->
- <li class="submenu">
-     <a href="#" class="sidebar-link submenu-parent">
-         <i class="fas fa-list"></i>
-         <span>Lists</span>
-         <i class="fas fa-chevron-right right-icon"></i>
-     </a>
-     <ul class="sidebar-submenu">
-         <li><a href="AddStream.aspx" class="sidebar-link"><span>Streams List</span></a></li>
-         <li><a href="AddCourse.aspx" class="sidebar-link"><span>Courses List</span></a></li>
-         <li><a href="Subjects.aspx" class="sidebar-link"><span>Subjects List</span></a></li>
-         <li><a href="Student.aspx" class="sidebar-link"><span>Students List</span></a></li>
-         <li><a href="Teachers.aspx" class="sidebar-link"><span>Teachers List</span></a></li>
-     </ul>
- </li>
+        <li class="submenu">
+            <a href="#" class="sidebar-link submenu-parent">
+                <i class="fas fa-book-open"></i> Assign Course
+                <i class="fas fa-chevron-right right-icon"></i>
+            </a>
+            <ul class="sidebar-submenu">
+                <li><a href="AssignLevelSubject.aspx" class="sidebar-link">To Class</a></li>
+                <li><a href="AssignStudentSubject.aspx" class="sidebar-link">To Students</a></li>
+                <li><a href="AssignSubjectFaculty.aspx" class="sidebar-link">To Teachers</a></li>
+            </ul>
+        </li>
 
- <!-- PAGES -->
- <li class="submenu">
-     <a href="#" class="sidebar-link submenu-parent">
-         <i class="fas fa-file"></i>
-         <span>Pages</span>
-         <i class="fas fa-chevron-right right-icon"></i>
-     </a>
-     <ul class="sidebar-submenu">
-         <li><a href="../Default.aspx" class="sidebar-link"><span>Login</span></a></li>
-         <li><a href="../RegisterUser.aspx" class="sidebar-link"><span>Register</span></a></li>
-         <li><a href="../ForgotPassword.aspx" class="sidebar-link"><span>Forgot Password</span></a></li>
-     </ul>
- </li>
+        <div class="sidebar-section">Reports</div>
+
+        <li class="submenu">
+            <a href="#" class="sidebar-link submenu-parent">
+                <i class="fas fa-list"></i> Lists
+                <i class="fas fa-chevron-right right-icon"></i>
+            </a>
+            <ul class="sidebar-submenu">
+                <li><a href="AddStream.aspx" class="sidebar-link">Streams</a></li>
+                <li><a href="AddCourse.aspx" class="sidebar-link">Courses</a></li>
+                <li><a href="Subjects.aspx" class="sidebar-link">Subjects</a></li>
+                <li><a href="Student.aspx" class="sidebar-link">Students</a></li>
+                <li><a href="Teachers.aspx" class="sidebar-link">Teachers</a></li>
+                <li><a href="ParentList.aspx" class="sidebar-link">Parents</a></li>
+            </ul>
+        </li>
+
+        <div class="sidebar-section">System</div>
+
+        <li>
+            <a href="../Default.aspx" class="sidebar-link">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </li>
 
     </ul>
 
@@ -364,51 +310,40 @@ body{
 
     <div class="d-flex align-items-center">
         <div class="collapse-sidebar me-3" style="cursor:pointer;">
-            <i class="fas fa-bars fa-lg text-black"></i>
+            <i class="fas fa-bars text-white"></i>
         </div>
 
-        <!-- Institute Name in Header -->
-       <div class="header-title">
+        <div class="header-title">
             <i class="fas fa-graduation-cap me-2"></i>
             <asp:Label ID="lblHeaderInstituteName" runat="server" />
         </div>
+        <span class="admin-badge">Admin Portal</span>
     </div>
 
     <ul class="nav align-items-center">
 
+        <!-- Notifications -->
         <li class="nav-item dropdown me-3">
             <a href="#" data-bs-toggle="dropdown">
-                <i class="far fa-message fa-lg text-white"></i>
-            </a>
-            <div class="dropdown-menu dropdown-menu-end p-3">
-                No new messages
-            </div>
-        </li>
-
-        <li class="nav-item dropdown me-3 position-relative">
-            <a href="#" data-bs-toggle="dropdown">
                 <i class="far fa-bell fa-lg text-white"></i>
-                <span class="notify-dot"></span>
             </a>
             <div class="dropdown-menu dropdown-menu-end p-3">
-                No new notifications
+                No notifications
             </div>
         </li>
 
+        <!-- Profile -->
         <li class="nav-item dropdown">
-            <a href="#" class="d-flex align-items-center" data-bs-toggle="dropdown">
-
-                <!-- PROFILE PHOTO -->
+            <a href="#" data-bs-toggle="dropdown" class="d-flex align-items-center">
                 <asp:Image ID="imgProfilePhoto" runat="server" CssClass="profile-img me-2" />
-
-               
+                <i class="fas fa-chevron-down text-white"></i>
             </a>
 
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="#">Profile</a></li>
                 <li><a class="dropdown-item" href="#">Settings</a></li>
-                <li><hr class="dropdown-divider" /></li>
-                <li><a class="dropdown-item" href="../Default.aspx">Logout</a></li>
+                <li><hr /></li>
+                <li><a class="dropdown-item text-danger" href="../Default.aspx">Logout</a></li>
             </ul>
         </li>
 
@@ -423,26 +358,37 @@ body{
 </div>
 </div>
 
+<script src="../assets/js/bootstrap.bundle.min.js"></script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
 
         const wrapper = document.getElementById("main-wrapper");
+
         document.querySelector(".collapse-sidebar").addEventListener("click", function () {
             wrapper.classList.toggle("sidebar-collapsed");
         });
 
-        document.querySelectorAll(".submenu-parent").forEach(menu => {
+        document.querySelectorAll(".submenu-parent").forEach(function (menu) {
             menu.addEventListener("click", function (e) {
                 e.preventDefault();
-                let parent = this.closest(".submenu");
-                parent.classList.toggle("open");
+                this.closest(".submenu").classList.toggle("open");
             });
+        });
+
+        // Active link highlight
+        const current = window.location.pathname.split("/").pop().toLowerCase();
+        document.querySelectorAll(".sidebar-link").forEach(link => {
+            const href = link.getAttribute("href");
+            if (href && href.toLowerCase() === current) {
+                link.classList.add("active");
+                const parent = link.closest(".submenu");
+                if (parent) parent.classList.add("open");
+            }
         });
 
     });
 </script>
-
-<script src="../assets/js/bootstrap.bundle.min.js"></script>
 
 </form>
 </body>

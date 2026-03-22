@@ -40,7 +40,7 @@ public class TeacherBL
             cmd.Parameters.AddWithValue("@Search", "%" + search + "%");
 
         if (status != "All")
-            cmd.Parameters.AddWithValue("@Status", Convert.ToBoolean(status));
+            cmd.Parameters.AddWithValue("@Status", status == "1");
 
         return dl.GetDataTable(cmd);
     }

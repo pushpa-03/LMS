@@ -30,14 +30,23 @@ namespace LearningManagementSystem.Admin
 
         private void BindAll()
         {
-            gvLevels.DataSource = bl.GetData("Level", InstituteId);
+            DataTable dtLevel = bl.GetData("Level", InstituteId);
+            DataTable dtSem = bl.GetData("Semester", InstituteId);
+            DataTable dtSec = bl.GetData("Section", InstituteId);
+
+            gvLevels.DataSource = dtLevel;
             gvLevels.DataBind();
 
-            gvSemesters.DataSource = bl.GetData("Semester", InstituteId);
+            gvSemesters.DataSource = dtSem;
             gvSemesters.DataBind();
 
-            gvSections.DataSource = bl.GetData("Section", InstituteId);
+            gvSections.DataSource = dtSec;
             gvSections.DataBind();
+
+            // 🔥 STATS
+            lblLevels.Text = dtLevel.Rows.Count.ToString();
+            lblSemesters.Text = dtSem.Rows.Count.ToString();
+            lblSections.Text = dtSec.Rows.Count.ToString();
         }
 
         protected void PrepareCreate_Click(object sender, EventArgs e)
@@ -72,6 +81,9 @@ namespace LearningManagementSystem.Admin
             {
                 bl.Delete(type, id, InstituteId);
                 BindAll();
+
+                lblMsg.Text = $"{type} deleted successfully!";
+                lblMsg.CssClass = "alert alert-danger";
             }
         }
 
@@ -87,11 +99,19 @@ namespace LearningManagementSystem.Admin
             };
 
             if (obj.Id == 0)
-                bl.Insert(obj);
+                {
+                    bl.Insert(obj);
+                    lblMsg.Text = "Saved successfully!";
+                    lblMsg.CssClass = "alert alert-success";
+                }
             else
                 bl.Update(obj);
 
             BindAll();
+
+            txtName.Text = "";
+            hfEntryId.Value = "";
+
         }
     }
 }
