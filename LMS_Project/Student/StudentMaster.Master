@@ -448,6 +448,13 @@ body {
             </a>
         </li>
 
+        <li>
+            <a href="StudentCalendar.aspx" class="sidebar-link">
+                <i class="fas fa-calendar-alt sidebar-icon"></i>
+                <span>Calendar</span>
+            </a>
+        </li>
+
         <!-- COMMUNICATION -->
         <li class="sidebar-section-label">Communication</li>
 

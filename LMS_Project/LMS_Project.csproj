@@ -88,6 +88,8 @@
     <Content Include="Admin\AddStudent.aspx" />
     <Content Include="Admin\AddSubject.aspx" />
     <Content Include="Admin\AddTeacher.aspx" />
+    <Content Include="Admin\AdminCalendar.aspx" />
+    <Content Include="Admin\AdminHelp.aspx" />
     <Content Include="Admin\AssignLevelSubject.aspx" />
     <Content Include="Admin\AssignStudentSubject.aspx" />
     <Content Include="Admin\AssignSubjectFaculty.aspx" />
@@ -163,6 +165,7 @@
     <Content Include="Student\QuizAttempt.aspx" />
     <Content Include="Student\Quizzes.aspx" />
     <Content Include="Student\Results.aspx" />
+    <Content Include="Student\StudentCalendar.aspx" />
     <Content Include="Student\StudyMaterial.aspx" />
     <Content Include="SuperAdmin\AddInstitute.aspx" />
     <Content Include="SuperAdmin\AddSociety.aspx" />
@@ -228,6 +231,20 @@
     </Compile>
     <Compile Include="Admin\AddTeacher.aspx.designer.cs">
       <DependentUpon>AddTeacher.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\AdminCalendar.aspx.cs">
+      <DependentUpon>AdminCalendar.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\AdminCalendar.aspx.designer.cs">
+      <DependentUpon>AdminCalendar.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\AdminHelp.aspx.cs">
+      <DependentUpon>AdminHelp.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\AdminHelp.aspx.designer.cs">
+      <DependentUpon>AdminHelp.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\AdminMaster.Master.cs">
       <DependentUpon>AdminMaster.Master</DependentUpon>
@@ -320,7 +337,7 @@
     <Compile Include="App_Code\Masters\BL\AssignStudentSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignSubjectFacultyBL.cs" />
     <Compile Include="App_Code\Masters\BL\CalendarBL.cs" />
-    <Content Include="App_Code\Masters\BL\HelpBL.cs" />
+    <Compile Include="App_Code\Masters\BL\HelpBL.cs" />
     <Compile Include="App_Code\Masters\BL\MaterialBL.cs" />
     <Compile Include="App_Code\Masters\BL\ParentManagementBL.cs" />
     <Compile Include="App_Code\Masters\BL\RegisterUserBL.cs" />
@@ -432,6 +449,13 @@
     </Compile>
     <Compile Include="Student\Results.aspx.designer.cs">
       <DependentUpon>Results.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Student\StudentCalendar.aspx.cs">
+      <DependentUpon>StudentCalendar.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Student\StudentCalendar.aspx.designer.cs">
+      <DependentUpon>StudentCalendar.aspx</DependentUpon>
     </Compile>
     <Compile Include="Student\StudentMaster.Master.cs">
       <DependentUpon>StudentMaster.Master</DependentUpon>
