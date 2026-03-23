@@ -24,130 +24,76 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblVideoTitle;
 
         /// <summary>
-        /// lblSubject control.
+        /// lblViews control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblSubject;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblViews;
 
         /// <summary>
-        /// lblInstructorTop control.
+        /// lblStudents control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblInstructorTop;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblStudents;
 
         /// <summary>
-        /// videoPlayerControl control.
+        /// lblCompletion control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlVideo videoPlayerControl;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblCompletion;
 
         /// <summary>
-        /// videoSource control.
+        /// lblComments control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlSource videoSource;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblComments;
 
         /// <summary>
-        /// liEngagement control.
+        /// videoPlayer control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl liEngagement;
+        protected global::System.Web.UI.HtmlControls.HtmlVideo videoPlayer;
 
         /// <summary>
-        /// lblDescription control.
+        /// btnPrev control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblDescription;
+        protected global::System.Web.UI.WebControls.Button btnPrev;
 
         /// <summary>
-        /// lblInstructorName control.
+        /// btnNext control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblInstructorName;
+        protected global::System.Web.UI.WebControls.Button btnNext;
 
         /// <summary>
-        /// txtNote control.
+        /// rptComments control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtNote;
-
-        /// <summary>
-        /// btnSaveNote control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSaveNote;
-
-        /// <summary>
-        /// rptNotes control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptNotes;
-
-        /// <summary>
-        /// txtDoubt control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtDoubt;
-
-        /// <summary>
-        /// btnDoubt control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnDoubt;
-
-        /// <summary>
-        /// txtComment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtComment;
-
-        /// <summary>
-        /// btnComment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnComment;
+        protected global::System.Web.UI.WebControls.Repeater rptComments;
 
         /// <summary>
         /// engagementBody control.
@@ -159,6 +105,15 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl engagementBody;
 
         /// <summary>
+        /// rptPlaylist control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptPlaylist;
+
+        /// <summary>
         /// rptTopics control.
         /// </summary>
         /// <remarks>
@@ -168,15 +123,6 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.Repeater rptTopics;
 
         /// <summary>
-        /// hfTime control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hfTime;
-
-        /// <summary>
         /// hfVideoId control.
         /// </summary>
         /// <remarks>
@@ -184,14 +130,5 @@ namespace LearningManagementSystem.Admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.HiddenField hfVideoId;
-
-        /// <summary>
-        /// hfVideoName control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hfVideoName;
     }
 }

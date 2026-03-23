@@ -200,4 +200,19 @@ public class SubjectDetailsBL
 
         dl.ExecuteCMD(cmd);
     }
+
+    // ================= ASSIGNMENTS =================
+    public DataTable GetAssignmentsBySubject(int subjectId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+        SELECT *
+        FROM Assignments
+        WHERE SubjectId = @SubjectId AND IsActive = 1
+        ORDER BY CreatedOn DESC
+    ");
+
+        cmd.Parameters.AddWithValue("@SubjectId", subjectId);
+
+        return dl.GetDataTable(cmd);
+    }
 }

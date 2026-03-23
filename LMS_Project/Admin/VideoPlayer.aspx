@@ -1,858 +1,394 @@
-﻿<%@ Page Title="Video Player" Language="C#" MasterPageFile="~/Admin/AdminMaster.master"
+﻿<%@ Page Title="Admin Video Player" Language="C#" MasterPageFile="~/Admin/AdminMaster.master"
     AutoEventWireup="true"
     CodeBehind="VideoPlayer.aspx.cs"
     Inherits="LearningManagementSystem.Admin.VideoPlayer" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
 
-    <style>
-        .video-container {
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-        }
+<style>
 
-        video::cue {
-            background: rgba(0,0,0,0.7);
-            color: #fff;
-            font-size: 16px;
-            padding: 3px 6px;
-        }
-
-        .sidebar-scroll {
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .instructor-card {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-        }
-
-        .instructor-img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .timestamp-link {
-            cursor: pointer;
-            color: #007bff;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .yt-skip{
-            position:absolute;
-            top:50%;
-            transform:translateY(-50%);
-            width:90px;
-            height:90px;
-            border-radius:50%;
-            background:rgba(0,0,0,0.6);
-            color:white;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            font-size:18px;
-            cursor:pointer;
-            opacity:0;
-            transition:opacity 0.3s;
-        }
-
-        .yt-left{ left:20px; }
-        .yt-right{ right:20px; }
-
-        .video-container.show-controls .yt-skip{
-            opacity:1;
-        }
-
-        .video-menu{
-            position:absolute;
-            top:15px;
-            right:15px;
-            background:#222;
-            border-radius:6px;
-            display:none;
-        }
-
-        .video-menu button{
-            background:none;
-            border:none;
-            color:white;
-            padding:10px 15px;
-            cursor:pointer;
-        }
-
-        .video-top-icons{
-            position:absolute;
-            top:10px;
-            right:15px;
-            display:flex;
-            gap:15px;
-            }
-
-            .video-icon{
-            color:white;
-            font-size:20px;
-            cursor:pointer;
-            background:rgba(0,0,0,0.6);
-            padding:8px;
-            border-radius:50%;
-            }
-
-            .video-icon:hover{
-            background:rgba(0,0,0,0.8);
-            }
-
-            .video-menu{
-            position:absolute;
-            top:45px;
-            right:10px;
-            background:#222;
-            border-radius:6px;
-            display:none;
-            }
-
-            .video-menu button{
-            background:none;
-            border:none;
-            color:white;
-            padding:10px 15px;
-            width:150px;
-            text-align:left;
-            }
-
-            .settings-panel{
-            position:absolute;
-            top:80px;
-            right:10px;
-            background:#222;
-            color:white;
-            padding:15px;
-            border-radius:6px;
-            display:none;
-            font-size:14px;
-            }
-
-            .settings-panel label{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:6px;
-            }
-
-            .settings-panel hr{
-border-color:#444;
+/* ===== PAGE ===== */
+body{
+    background:#f4f7fb;
+    color:#263238;
 }
-    </style>
 
+/* ===== CARD ===== */
+.card-glass{
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
 
-    <div class="container-fluid mt-3">
+/* ===== VIDEO ===== */
+.video-container{
+    position:relative;
+    border-radius:12px;
+    overflow:hidden;
+    background:#000;
+}
 
-        <div class="row mb-3">
-            <div class="col-12">
+/* SKIP BUTTONS */
+.yt-skip{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.6);
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    opacity:0;
+    transition:.3s;
+}
+.yt-left{ left:20px;}
+.yt-right{ right:20px;}
 
-                <div class="d-flex align-items-center mb-4">
+.video-container.show-controls .yt-skip{
+    opacity:1;
+}
 
-                    <a href="SubjectDetails.aspx" class="btn btn-outline-secondary me-3">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </a>
+/* TOP ICONS */
+.video-top-icons{
+    position:absolute;
+    top:10px;
+    right:10px;
+    display:flex;
+    gap:10px;
+}
+.video-icon{
+    background:rgba(0,0,0,0.6);
+    color:#fff;
+    padding:8px;
+    border-radius:50%;
+    cursor:pointer;
+}
 
-                    <h2 class="fw-bold" id="lblVideoTitle" runat="server"></h2>
+/* SETTINGS */
+.settings-panel{
+    position:absolute;
+    top:60px;
+    right:10px;
+    background:#fff;
+    padding:12px;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,.2);
+    display:none;
+}
 
+/* ── STAT CARDS (Dashboard Style) ── */
+.stat-card {
+    border: none;
+    border-radius: 14px;
+    padding: 22px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.07);
+    transition: transform .2s, box-shadow .2s;
+    height: 100%;
+    background:#fff;
+}
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(0,0,0,.12);
+}
+
+/* ICON BOX */
+.icon-box {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+/* TEXT */
+.stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: #78909c;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: 800;
+    color: #263238;
+}
+
+.stat-sub {
+    font-size: 11px;
+    color: #90a4ae;
+}
+
+/* COLORS (MATCH DASHBOARD) */
+.card-blue   { background: #e3f2fd; }
+.card-orange { background: #fff3e0; }
+.card-purple { background: #f3e5f5; }
+.card-green  { background: #e8f5e9; }
+
+.icon-blue   { background: #1976d2; color: #fff; }
+.icon-orange { background: #f57c00; color: #fff; }
+.icon-purple { background: #7b1fa2; color: #fff; }
+.icon-green  { background: #2e7d32; color: #fff; }
+
+/* PLAYLIST */
+.play-item{
+    padding:10px;
+    cursor:pointer;
+    border-bottom:1px solid #eee;
+}
+.play-item:hover{
+    background:#e3f2fd;
+}
+.active-video{
+    background:#1565c0;
+    color:#fff;
+}
+
+/* BUTTON */
+.btn-light{
+    background:#e3f2fd;
+    color:#1565c0;
+    border:none;
+    border-radius:20px;
+}
+
+</style>
+
+<div class="container-fluid mt-3">
+
+    <div class="mb-4 p-1 text-primary fw-bolder"> <h2 id="lblVideoTitle" runat="server"></h2> </div>
+
+    <!-- STATS -->
+    <div class="row g-3 mb-4">
+
+    <!-- Views -->
+    <div class="col-6 col-md-3">
+        <div class="stat-card card-blue">
+            <div class="icon-box icon-blue">
+                <i class="fas fa-eye"></i>
+            </div>
+            <div>
+                <div class="stat-label">Views</div>
+                <div class="stat-value">
+                    <span id="lblViews" runat="server"></span>
                 </div>
-
-                <p class="text-muted">
-                    Subject:
-                    <span id="lblSubject" runat="server">General</span>
-                    | Instructor:
-                    <span id="lblInstructorTop" runat="server"></span>
-                </p>
-
+                <div class="stat-sub">Total video views</div>
             </div>
         </div>
+    </div>
 
-
-        <div class="row">
-
-            <div class="col-lg-8">
-
-               <div class="video-container shadow">
-
-                <video
-                id="videoPlayerControl"
-                runat="server"
-                width="100%"
-                height="480"
-                controls
-                preload="metadata"
-                controlslist="nodownload noremoteplayback"
-                disablepictureinpicture>
-
-                <source id="videoSource" runat="server" type="video/mp4" />
-
-                <track kind="subtitles" label="English" srclang="en" src="../Captions/english.vtt" default>
-
-                </video>
-
-
-                <!-- Skip overlays -->
-
-                <div id="skipLeft" class="yt-skip yt-left">
-                <i class="fa-solid fa-rotate-left"></i> 10
+    <!-- Students -->
+    <div class="col-6 col-md-3">
+        <div class="stat-card card-orange">
+            <div class="icon-box icon-orange">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <div class="stat-label">Students</div>
+                <div class="stat-value">
+                    <span id="lblStudents" runat="server"></span>
                 </div>
+                <div class="stat-sub">Watching this video</div>
+            </div>
+        </div>
+    </div>
 
-                <div id="skipRight" class="yt-skip yt-right">
-                10 <i class="fa-solid fa-rotate-right"></i>
+    <!-- Completion -->
+    <div class="col-6 col-md-3">
+        <div class="stat-card card-purple">
+            <div class="icon-box icon-purple">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div>
+                <div class="stat-label">Completion</div>
+                <div class="stat-value">
+                    <span id="lblCompletion" runat="server"></span>
                 </div>
+                <div class="stat-sub">Avg watch progress</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments -->
+    <div class="col-6 col-md-3">
+        <div class="stat-card card-green">
+            <div class="icon-box icon-green">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div>
+                <div class="stat-label">Comments</div>
+                <div class="stat-value">
+                    <span id="lblComments" runat="server"></span>
+                </div>
+                <div class="stat-sub">User interactions</div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
 
-                <!-- Screenshot icon -->
+    <div class="row">
+
+        <!-- VIDEO -->
+        <div class="col-lg-8">
+
+            <div class="video-container card-glass">
+                <video id="videoPlayer" runat="server" controls width="100%" height="450"></video>
+                
+                <div id="skipLeft" class="yt-skip yt-left">⏪ 10</div>
+                <div id="skipRight" class="yt-skip yt-right">10 ⏩</div>
 
                 <div class="video-top-icons">
-
-                <i
-                class="fa-solid fa-camera video-icon"
-                title="Screenshot"
-                onclick="takeScreenshot()">
-                </i>
-
-                <i
-                class="fa-solid fa-gear video-icon"
-                title="Settings"
-                onclick="toggleSettings()">
-                </i>
-
+                <i class="fa fa-camera video-icon" onclick="takeScreenshot()"></i>
+                <i class="fa fa-gear video-icon" onclick="toggleSettings()"></i>
                 </div>
-
-
-
-
-                <!-- Settings panel -->
 
                 <div id="settingsPanel" class="settings-panel">
-
-                <div class="mb-2 fw-bold">Playback Settings</div>
-
-                <label class="d-block">
-                Loop Video
-                <input type="radio" name="loopVideo" value="on">
-                </label>
-
-                <label class="d-block">
-                Loop Video Off
-                <input type="radio" name="loopVideo" value="off" checked>
-                </label>
-
-                <hr>
-
-                <label class="d-block">
-                Auto Next Video
-                <input type="radio" name="autoNext" value="on">
-                </label>
-
-                <label class="d-block">
-                Auto Next Off
-                <input type="radio" name="autoNext" value="off" checked>
-                </label>
-
-                </div>
-        </div>
-
-
-                <canvas id="canvas" style="display: none;"></canvas>
-                <div class="card shadow mt-3 p-3">
-
-                <div class="d-flex justify-content-between align-items-center">
-
-                <h5 class="fw-bold mb-0">
-                <i class="fa-solid fa-robot text-primary"></i>
-                AI Video Summary
-                </h5>
-
-               <button 
-                type="button"
-                class="btn btn-sm btn-outline-primary"
-                onclick="generateSummary()">
-                Generate
-                </button> 
-
-                </div>
-
-                <div id="aiSummary" class="mt-3 text-muted">
-
-                Click "Generate" to create AI summary.
-
-                </div>
-
-                </div>
-
-                <div class="card shadow mt-3 p-3">
-
-                    <h5 class="fw-bold">
-                    <i class="fa-solid fa-robot text-success"></i>
-                    Ask AI about this lecture
-                    </h5>
-
-                    <div class="input-group mt-2">
-
-                    <input id="aiQuestion"
-                    class="form-control"
-                    placeholder="Ask a doubt about the lecture">
-
-                    <button type="button" class="btn btn-success" onclick="askAI()">Ask</button>
-
-                    </div>
-
-                    <div id="aiAnswer" class="mt-3"></div>
-
-                 </div>
-
-                <div class="card shadow mt-3 p-3">
-
-                    <h5 class="fw-bold">
-                    <i class="fa-solid fa-robot text-success"></i>
-                    Get Quiz from AI
-                    </h5>    
-
-                    <button 
-                    type="button"
-                    class="btn btn-sm btn-outline-success"
-                    onclick="generateQuiz()">
-                    Generate Quiz
-                    </button>
-
-                    <div id="aiQuiz" class="mt-3"></div>
-
-                 </div>
-
-                <div class="card shadow mt-3 p-3">
-
-                    <h5 class="fw-bold">
-                    <i class="fa-solid fa-robot text-success"></i>
-                    Get Notes from AI
-                    </h5>    
-
-                    <button 
-                    type="button"
-                    class="btn btn-sm btn-outline-warning"
-                    onclick="generateNotes()">
-                    Generate Notes
-                    </button>
-
-                    <div id="aiNotes" class="mt-3"></div>
-
-                 </div>
-
-                
-
-                <div class="card shadow mt-3 p-3">
-
-                    <ul class="nav nav-tabs" id="myTab">
-
-                        <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#desc">Description</a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#notes">Smart Notes</a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#doubts">Doubts</a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#comments">Comments</a>
-                        </li>
-
-                        <li id="liEngagement" runat="server" class="nav-item">
-                            <a class="nav-link text-danger" data-bs-toggle="tab" href="#engagement">Admin: Progress</a>
-                        </li>
-
-                    </ul>
-
-
-                    <div class="tab-content p-3">
-
-                        <div id="desc" class="tab-pane fade show active">
-
-                            <p id="lblDescription" runat="server"></p>
-
-                            <div class="instructor-card">
-
-                                <img src="../Uploads/avatar.png" class="instructor-img" />
-
-                                <h6 id="lblInstructorName" runat="server"></h6>
-
-                            </div>
-
-                        </div>
-
-
-                        <div id="notes" class="tab-pane fade">
-
-                            <div class="input-group mb-2">
-
-                                <asp:TextBox
-                                    ID="txtNote"
-                                    runat="server"
-                                    CssClass="form-control"
-                                    placeholder="Note at current time..."></asp:TextBox>
-
-                                <asp:Button
-                                    ID="btnSaveNote"
-                                    runat="server"
-                                    Text="Save"
-                                    CssClass="btn btn-primary"
-                                    OnClick="btnSaveNote_Click" />
-
-                            </div>
-
-
-                            <asp:Repeater ID="rptNotes" runat="server">
-
-                                <ItemTemplate>
-
-                                    <div class="mb-2">
-
-                                        <a
-                                            class="timestamp-link"
-                                            onclick="jumpTo(<%# Eval("TimeStampSeconds") %>)">⏱ <%# Eval("TimeStampSeconds") %>s
-
-                                        </a>
-
-                                        :
-
-                                        <%# Eval("NoteText") %>
-                                    </div>
-
-                                </ItemTemplate>
-
-                            </asp:Repeater>
-
-                        </div>
-
-
-                        <div id="doubts" class="tab-pane fade">
-
-                            <div class="input-group mb-2">
-
-                                <asp:TextBox
-                                    ID="txtDoubt"
-                                    runat="server"
-                                    CssClass="form-control"
-                                    placeholder="Pin a doubt..."></asp:TextBox>
-
-                                <asp:Button
-                                    ID="btnDoubt"
-                                    runat="server"
-                                    Text="Pin"
-                                    CssClass="btn btn-warning"
-                                    OnClick="btnDoubt_Click" />
-
-                            </div>
-
-                        </div>
-
-
-                        <div id="comments" class="tab-pane fade">
-
-                            <asp:TextBox
-                                ID="txtComment"
-                                runat="server"
-                                CssClass="form-control"
-                                TextMode="MultiLine"
-                                Rows="2"></asp:TextBox>
-
-                            <asp:Button
-                                ID="btnComment"
-                                runat="server"
-                                Text="Post Comment"
-                                CssClass="btn btn-success mt-2"
-                                OnClick="btnComment_Click" />
-
-                        </div>
-
-
-                        <div id="engagement" class="tab-pane fade">
-
-                            <table class="table">
-
-                                <thead>
-
-                                    <tr>
-                                        <th>Student</th>
-                                        <th>Progress</th>
-                                        <th>Status</th>
-                                    </tr>
-
-                                </thead>
-
-                                <tbody id="engagementBody" runat="server"></tbody>
-
-                            </table>
-
-                        </div>
-
-                    </div>
-
+                <label>Loop <input type="checkbox" id="loopToggle"></label><br>
+                <label>Auto Next <input type="checkbox" id="autoNextToggle"></label>
                 </div>
 
             </div>
 
+            <!---Nav----->
+            <div class="d-flex justify-content-between mt-3">
+                <asp:Button ID="btnPrev" runat="server" Text="⬅ Previous" CssClass="btn btn-light" OnClick="btnPrev_Click"/>
+                <asp:Button ID="btnNext" runat="server" Text="Next ➡" CssClass="btn btn-light" OnClick="btnNext_Click"/>
+            </div>
 
-            <div class="col-lg-4">
+            <!-- COMMENTS -->
+            <div class="card-glass mt-4 p-3">
+                <h5>Comments</h5>
 
-                <div class="card shadow sidebar-scroll">
+                <asp:Repeater ID="rptComments" runat="server">
+                    <ItemTemplate>
+                        <div class="mb-2">
+                            <b><%# Eval("Username") %></b> : <%# Eval("Comment") %>
+                            <asp:Button runat="server"
+                                CommandArgument='<%# Eval("CommentId") %>'
+                                OnCommand="DeleteComment"
+                                CssClass="btn btn-sm btn-danger float-end"
+                                Text="Delete"/>
+                        </div>
+                    </ItemTemplate>
+                </asp:Repeater>
+            </div>
 
-                    <div class="card-header fw-bold">
-                        Video Topics
-                    </div>
+            <!-- ENGAGEMENT -->
+            <div class="card-glass mt-4 p-3">
+                <h5>Student Progress</h5>
+                <table class="table text-white">
+                    <thead>
+                        <tr><th>Student</th><th>Progress</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="engagementBody" runat="server"></tbody>
+                </table>
+            </div>
 
-                    <div class="list-group list-group-flush">
+        </div>
 
-                        <asp:Repeater ID="rptTopics" runat="server">
+        <!-- SIDEBAR -->
+        <div class="col-lg-4">
 
-                            <ItemTemplate>
+            <div class="card-glass sidebar-scroll">
+                <div class="p-3 fw-bold">Playlist</div>
 
-                                <div
-                                    class="list-group-item d-flex justify-content-between"
-                                    onclick="jumpToText('<%# Eval("StartTime") %>')"
-                                    style="cursor: pointer">
+                <asp:Repeater ID="rptPlaylist" runat="server">
+                    <ItemTemplate>
+                        <div class="p-2"
+                             onclick="location.href='VideoPlayer.aspx?VideoId=<%# Eval("VideoId") %>'">
+                            <%# Eval("Title") %>
+                        </div>
+                    </ItemTemplate>
+                </asp:Repeater>
+            </div>
 
-                                    <%# Eval("TopicTitle") %>
+            <div class="card-glass mt-3 p-3">
+                <h6>Topics</h6>
 
-                                    <span class="badge bg-secondary">
-
-                                        <%# Eval("StartTime") %>
-
-                                    </span>
-
-                                </div>
-
-                            </ItemTemplate>
-
-                        </asp:Repeater>
-
-                    </div>
-
-                </div>
-
+                <asp:Repeater ID="rptTopics" runat="server">
+                    <ItemTemplate>
+                        <div>⏱ <%# Eval("StartTime") %> - <%# Eval("TopicTitle") %></div>
+                    </ItemTemplate>
+                </asp:Repeater>
             </div>
 
         </div>
 
     </div>
 
+</div>
 
-    <asp:HiddenField ID="hfTime" runat="server" />
     <asp:HiddenField ID="hfVideoId" runat="server" />
-    <asp:HiddenField ID="hfVideoName" runat="server" />
 
+<script>
 
-    <script>
-        var v = document.getElementById("<%= videoPlayerControl.ClientID %>");
-        var container = document.querySelector(".video-container");
-
-        var videoId = document.getElementById("<%= hfVideoId.ClientID %>").value;
-
-        /* caption */
-        /* Force caption ON at start */
-
-        window.addEventListener("load", function () {
-
-            if (v.textTracks.length > 0) {
-
-                v.textTracks[0].mode = "showing";
-
-            }
-
-        });
+    var v = document.getElementById("<%= videoPlayer.ClientID %>");
+    var videoId = document.getElementById("<%= hfVideoId.ClientID %>").value;
 
 /* Resume */
-
 window.onload=function(){
-
-var savedTime=localStorage.getItem("video-"+videoId);
-
-if(savedTime){
-v.currentTime=savedTime;
+let t=localStorage.getItem("video-"+videoId);
+if(t) v.currentTime=t;
 }
 
-}
-
-/* Save progress */
-
+/* Save */
 v.ontimeupdate=function(){
+localStorage.setItem("video-"+videoId,v.currentTime);
+}
 
-            document.getElementById("<%= hfTime.ClientID %>").value =
-                Math.floor(v.currentTime);
+/* Skip */
+skipLeft.onclick=()=>v.currentTime-=10;
+skipRight.onclick=()=>v.currentTime+=10;
 
-            localStorage.setItem("video-" + videoId, v.currentTime);
+/* Controls */
+v.onclick=()=>{
+document.querySelector(".video-container").classList.add("show-controls");
+setTimeout(()=>document.querySelector(".video-container").classList.remove("show-controls"),1500);
+}
 
+/* Screenshot */
+function takeScreenshot(){
+let c=document.createElement("canvas");
+c.width=v.videoWidth;
+c.height=v.videoHeight;
+c.getContext("2d").drawImage(v,0,0);
+let a=document.createElement("a");
+a.href=c.toDataURL();
+a.download="shot.png";
+a.click();
+}
+
+/* Settings */
+function toggleSettings(){
+let p=document.getElementById("settingsPanel");
+p.style.display=p.style.display=="block"?"none":"block";
+}
+
+/* LOOP */
+document.getElementById("loopToggle").onchange=function(){
+v.loop=this.checked;
+}
+
+/* AUTO NEXT */
+v.onended=function(){
+if(document.getElementById("autoNextToggle").checked){
+window.location.href="VideoPlayer.aspx?VideoId=<%= NextVideoId %>";
         }
+    }
 
-        /* Smooth Skip */
-
-        document.getElementById("skipLeft").onclick = function () {
-
-            v.currentTime = Math.max(0, v.currentTime - 10);
-
-        }
-
-        document.getElementById("skipRight").onclick = function () {
-
-            v.currentTime = Math.min(v.duration, v.currentTime + 10);
-
-        }
-
-        /* Show controls like YouTube */
-
-        v.addEventListener("click", function () {
-
-            container.classList.add("show-controls");
-
-            setTimeout(function () {
-
-                container.classList.remove("show-controls");
-
-            }, 1500)
-
-        })
-
-        /* Screenshot */
-
-        function takeScreenshot() {
-
-            var canvas = document.getElementById("canvas");
-
-            canvas.width = v.videoWidth;
-            canvas.height = v.videoHeight;
-
-            var ctx = canvas.getContext("2d");
-
-            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-
-            var image = canvas.toDataURL("image/png");
-
-            var a = document.createElement("a");
-
-            a.href = image;
-            a.download = "video-screenshot.png";
-
-            a.click();
-
-        }
-
-        /* Menu */
-
-        function toggleSettings() {
-
-            var p = document.getElementById("settingsPanel");
-
-            p.style.display = p.style.display == "block" ? "none" : "block";
-
-        }
-
-        /* LOOP VIDEO */
-
-        document.querySelectorAll('input[name="loopVideo"]').forEach(r => {
-
-            r.addEventListener("change", function () {
-
-                if (this.value == "on") {
-
-                    v.loop = true;
-
-                    /* turn auto-next OFF */
-
-                    document.querySelector('input[name="autoNext"][value="off"]').checked = true;
-
-                }
-
-                else {
-
-                    v.loop = false;
-
-                }
-
-            })
-
-        })
-
-        /* AUTO NEXT */
-
-        document.querySelectorAll('input[name="autoNext"]').forEach(r => {
-
-            r.addEventListener("change", function () {
-
-                if (this.value == "on") {
-
-                    /* turn loop OFF */
-
-                    document.querySelector('input[name="loopVideo"][value="off"]').checked = true;
-
-                    v.loop = false;
-
-                }
-
-            })
-
-        })
-
-        /* CAPTION CONTROL */
-
-        document.querySelectorAll('input[name="caption"]').forEach(r => {
-
-            r.addEventListener("change", function () {
-
-                var tracks = v.textTracks;
-
-                for (let i = 0; i < tracks.length; i++) {
-
-                    tracks[i].mode = this.value == "on" ? "showing" : "hidden";
-
-                }
-
-            })
-
-        })
-
-        document.getElementById("settingsPanel").addEventListener("click", function (e) {
-            e.stopPropagation();
-        });
-
-        /* VIDEO END LOGIC */
-
-        v.addEventListener("ended", function () {
-
-            var autoNext = document.querySelector('input[name="autoNext"]:checked').value;
-
-            var loop = document.querySelector('input[name="loopVideo"]:checked').value;
-
-            if (autoNext == "on") {
-
-                window.location.href = "NextVideo.aspx";
-
-            }
-
-            /* if both off do nothing */
-
-        })
-
-        /* Close settings when clicking video */
-
-        v.addEventListener("click", function () {
-
-            var panel = document.getElementById("settingsPanel");
-
-            if (panel.style.display == "block") {
-                panel.style.display = "none";
-            }
-
-        });
-
-        async function generateSummary() {
-
-            var box = document.getElementById("aiSummary");
-
-            var videoName =
-                document.getElementById("<%= hfVideoName.ClientID %>").value;
-
-            box.innerHTML = "Generating AI summary...";
-
-            let res = await fetch(
-                "http://localhost:8000/generate-summary?video_name=" + encodeURIComponent(videoName),
-                { method: "POST" }
-            );
-
-            let data = await res.json();
-
-            if (data.error) {
-                box.innerHTML = data.error;
-                return;
-            }
-
-            box.innerHTML = "<pre>" + data.summary + "</pre>";
-        }
-
-        async function generateQuiz() {
-
-            var videoName =
-                document.getElementById("<%= hfVideoName.ClientID %>").value;
-
-            document.getElementById("aiQuiz").innerHTML = "⚡ Generating the quizes...";
-
-            let res = await fetch(
-                "http://localhost:8000/generate-quiz?video_name=" + encodeURIComponent(videoName),
-                { method: "POST" }
-            );
-
-            let data = await res.json();
-
-            document.getElementById("aiQuiz").innerHTML =
-                "<h6>AI Quiz</h6><pre>" + data.quiz + "</pre>";
-        }
-
-        async function generateNotes() {
-
-            var videoName =
-                document.getElementById("<%= hfVideoName.ClientID %>").value;
-            document.getElementById("aiNotes").innerHTML = "⚡ Generating notes...";
-
-            let res = await fetch(
-                "http://localhost:8000/generate-notes?video_name=" + encodeURIComponent(videoName),
-                { method: "POST" }
-            );
-
-            let data = await res.json();
-
-            document.getElementById("aiNotes").innerHTML =
-                "<h6>AI Notes</h6><pre>" + data.notes + "</pre>";
-        }
-
-        async function askAI() {
-
-            var q = document.getElementById("aiQuestion").value;
-
-            var videoName =
-                document.getElementById("<%= hfVideoName.ClientID %>").value;
-
-            const response = await fetch(
-                "http://localhost:8000/ask-ai?video_name=" +
-                encodeURIComponent(videoName) +
-                "&question=" +
-                encodeURIComponent(q),
-                { method: "POST" }
-            );
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-
-            let result = "";
-
-            document.getElementById("aiAnswer").innerHTML = "Thinking....";
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value);
-                result += chunk;
-
-                // 🔥 LIVE UPDATE
-                document.getElementById("aiAnswer").innerHTML =
-                    "<pre>" + result + "</pre>";
-            }
-        }
-
-    </script>
+</script>
 
 </asp:Content>
-

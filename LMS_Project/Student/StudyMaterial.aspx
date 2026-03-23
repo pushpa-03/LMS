@@ -221,6 +221,44 @@
 .video-placeholder i { font-size: 56px; color: #cfd8dc; margin-bottom: 12px; }
 .video-placeholder p { font-size: 13px; margin: 0; }
 
+.ai-panel {
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(12px);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.ai-tabs button {
+    margin-right: 10px;
+    background: linear-gradient(135deg,#1565c0,#42a5f5);
+    border:none;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:8px;
+}
+
+.ai-chat {
+    margin-top:10px;
+    display:flex;
+    gap:10px;
+}
+
+.ai-response {
+    margin-top:10px;
+    max-height:200px;
+    overflow:auto;
+    font-size:13px;
+}
+
+.comments-box {
+    margin-top:20px;
+}
+
+.playlist-box {
+    margin-top:20px;
+}
+
 .video-info { padding: 18px 20px; }
 .video-info h5 {
     font-size: 16px; font-weight: 800;
@@ -526,6 +564,43 @@
                         <div id="topicsList"></div>
                     </div>
                 </div>
+
+                <%--------AI features-------%>
+                <div class="ai-panel">
+
+                    <div class="ai-tabs">
+                        <button onclick="aiAction('summary')">Summary</button>
+                        <button onclick="aiAction('notes')">Notes</button>
+                        <button onclick="aiAction('quiz')">Quiz</button>
+                    </div>
+
+                    <div class="ai-chat">
+                        <input type="text" id="aiQuestion" placeholder="Ask doubt..." />
+                        <button onclick="askAI()">Ask</button>
+                    </div>
+
+                    <div id="aiResponse" class="ai-response"></div>
+
+                </div>
+
+                <div class="video-actions">
+                    <span id="viewCount"></span>
+                    <span id="ratingStars"></span>
+                </div>
+
+                <div class="comments-box">
+                    <h6>Comments</h6>
+                    <div id="commentsList"></div>
+
+                    <input type="text" id="commentTxt" placeholder="Write comment..." />
+                    <button onclick="postComment()">Post</button>
+                </div>
+
+                <div class="playlist-box">
+                    <h6>Playlist</h6>
+                    <div id="playlist"></div>
+                </div>
+
             </div>
 
             <%-- Material viewer --%>
@@ -576,6 +651,8 @@
 function toggleChapter(btn, contentId) {
     var content = document.getElementById(contentId);
     var isOpen  = content.classList.contains('open');
+    var currentVideoId = 0;
+    var currentVideoName = "";
 
     // Close all
     document.querySelectorAll('.chapter-content-list').forEach(function(el) {
@@ -603,6 +680,9 @@ function loadVideo(videoId, title, desc, instructor, path, el) {
     clearSelected();
     el.classList.add('selected');
 
+    currentVideoId = videoId;
+    currentVideoName = title;
+
     // Hide others, show video
     document.getElementById('divSelectPrompt').style.display  = 'none';
     document.getElementById('divMaterialViewer').style.display = 'none';
@@ -612,6 +692,7 @@ function loadVideo(videoId, title, desc, instructor, path, el) {
     var player = document.getElementById('videoPlayer');
     document.getElementById('videoSource').src = path;
     player.load();
+    player.play(); // ✅ ADD THIS
 
     // Set info
     document.getElementById('videoTitle').innerText      = title;
@@ -621,6 +702,39 @@ function loadVideo(videoId, title, desc, instructor, path, el) {
     // Load topics via hidden field postback
     document.getElementById('<%= hfVideoId.ClientID %>').value = videoId;
     __doPostBack('<%= hfVideoId.ClientID %>', '');
+
+    loadStats();
+    loadComments();
+    loadPlaylist();
+
+    increaseView();
+    }
+
+    //-- video controls features
+    const player = document.getElementById("videoPlayer");
+
+    function skip(sec) {
+        player.currentTime += sec;
+    }
+
+    function toggleLoop() {
+        player.loop = !player.loop;
+    }
+
+    function changeSpeed(rate) {
+        player.playbackRate = rate;
+    }
+
+    function screenshot() {
+        let canvas = document.createElement("canvas");
+        canvas.width = player.videoWidth;
+        canvas.height = player.videoHeight;
+        canvas.getContext("2d").drawImage(player, 0, 0);
+
+        let link = document.createElement("a");
+        link.download = "screenshot.png";
+        link.href = canvas.toDataURL();
+        link.click();
     }
 
     // ── Load material into right panel ────────────────────────
@@ -648,6 +762,112 @@ function loadVideo(videoId, title, desc, instructor, path, el) {
         } else {
             iconArea.innerHTML = '<i class="fas fa-file-alt" style="color:#6a1b9a;"></i>';
         }
+    }
+    //----- Summary / Notes / Quiz
+    function aiAction(type) {
+        let url = "";
+
+        if (type === "summary") url = "http://localhost:8000/generate-summary";
+        if (type === "notes") url = "http://localhost:8000/generate-notes";
+        if (type === "quiz") url = "http://localhost:8000/generate-quiz";
+
+        fetch(url, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentVideoName)
+        })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("aiResponse").innerText = "Loading...";
+            });
+    }
+
+    //---Ask AI doubts
+    function askAI() {
+
+        let q = document.getElementById("aiQuestion").value;
+
+        fetch("http://localhost:8000/ask-ai?video_name=" + currentVideoName + "&question=" + q)
+            .then(res => {
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+
+                let result = "";
+
+                function read() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) return;
+
+                        result += decoder.decode(value);
+                        document.getElementById("aiResponse").innerText = result;
+
+                        read();
+                    });
+                }
+                read();
+            });
+    }
+
+    //---comments
+    function postComment() {
+
+        fetch("StudyMaterial.aspx/PostComment", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoId: currentVideoId, comment: document.getElementById("commentTxt").value })
+        }).then(() => loadComments());
+    }
+
+    function loadComments() {
+        fetch("StudyMaterial.aspx/GetComments", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoId: currentVideoId })
+        })
+            .then(res => res.json())
+            .then(data => {
+                let html = "";
+                data.d.forEach(c => {
+                    html += `<div>${c.Username}: ${c.Comment}</div>`;
+                });
+                document.getElementById("commentsList").innerHTML = html;
+            });
+    }
+
+    //---view counts
+    function increaseView() {
+        fetch("StudyMaterial.aspx/AddView", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoId: currentVideoId })
+        });
+    }
+
+    function loadStats() {
+        fetch("StudyMaterial.aspx/GetStats", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoId: currentVideoId })
+        })
+            .then(res => res.json())
+            .then(d => {
+                document.getElementById("viewCount").innerText = d.d.Views + " views";
+            });
+    }
+
+    //---playlist
+    function loadPlaylist() {
+        fetch("StudyMaterial.aspx/GetPlaylist")
+            .then(res => res.json())
+            .then(data => {
+                let html = "";
+                data.d.forEach(v => {
+                    html += `<div onclick="loadVideo('${v.VideoId}','${v.Title}','','','${v.VideoPath}',this)">
+                        ▶ ${v.Title}
+                    </div>`;
+                });
+                document.getElementById("playlist").innerHTML = html;
+            });
     }
 
     // ── After topics UpdatePanel refreshes, populate topics list ──

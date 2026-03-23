@@ -113,4 +113,95 @@ public class VideoPlayerBL
 
         dl.ExecuteCMD(cmd);
     }
+
+    public DataTable GetVideoStats(int videoId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+    SELECT 
+        (SELECT COUNT(*) FROM VideoViews WHERE VideoId=@V) Views,
+        (SELECT COUNT(DISTINCT UserId) FROM VideoViews WHERE VideoId=@V) Students,
+        (SELECT ISNULL(AVG(WatchedPercent),0) FROM VideoWatchProgress WHERE VideoId=@V) Completion,
+        (SELECT COUNT(*) FROM VideoComments WHERE VideoId=@V) Comments
+    ");
+
+        cmd.Parameters.AddWithValue("@V", videoId);
+        return dl.GetDataTable(cmd);
+    }
+
+    public DataTable GetComments(int videoId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+    SELECT C.CommentId,U.Username,C.Comment
+    FROM VideoComments C
+    JOIN Users U ON U.UserId=C.UserId
+    WHERE C.VideoId=@V
+    ORDER BY C.CommentedOn DESC");
+
+        cmd.Parameters.AddWithValue("@V", videoId);
+        return dl.GetDataTable(cmd);
+    }
+
+    public void DeleteComment(int id)
+    {
+        SqlCommand cmd = new SqlCommand("DELETE FROM VideoComments WHERE CommentId=@Id");
+        cmd.Parameters.AddWithValue("@Id", id);
+        dl.ExecuteCMD(cmd);
+    }
+
+    public DataTable GetPlaylist(int videoId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+    SELECT VideoId,Title
+    FROM Videos
+    WHERE IsActive=1");
+
+        return dl.GetDataTable(cmd);
+    }
+
+    public void ToggleVideo(int videoId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+    UPDATE Videos
+    SET IsActive = CASE WHEN IsActive=1 THEN 0 ELSE 1 END
+    WHERE VideoId=@V");
+
+        cmd.Parameters.AddWithValue("@V", videoId);
+        dl.ExecuteCMD(cmd);
+    }
+
+    public int GetNextVideo(int videoId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+        SELECT TOP 1 VideoId 
+        FROM Videos 
+        WHERE VideoId > @V AND IsActive=1
+        ORDER BY VideoId");
+
+        cmd.Parameters.AddWithValue("@V", videoId);
+
+        DataTable dt = dl.GetDataTable(cmd);
+
+        if (dt.Rows.Count > 0)
+            return Convert.ToInt32(dt.Rows[0]["VideoId"]);
+
+        return videoId; // fallback
+    }
+
+    public int GetPrevVideo(int videoId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+        SELECT TOP 1 VideoId 
+        FROM Videos 
+        WHERE VideoId < @V AND IsActive=1
+        ORDER BY VideoId DESC");
+
+        cmd.Parameters.AddWithValue("@V", videoId);
+
+        DataTable dt = dl.GetDataTable(cmd);
+
+        if (dt.Rows.Count > 0)
+            return Convert.ToInt32(dt.Rows[0]["VideoId"]);
+
+        return videoId; // fallback
+    }
 }

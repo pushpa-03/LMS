@@ -19,7 +19,7 @@
                 <button type="button" class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#UploadModal">
                     <i class="fa-solid fa-upload"></i>Upload Content
                 </button>
-                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#ChapterModal">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#ChapterModal">
                     <i class="fa-solid fa-plus"></i>Add Chapters
                 </button>
             </div>
@@ -138,9 +138,29 @@
                                     </asp:Repeater>
                                 </div>
 
-                                <div class="tab-pane fade" id="post<%# Eval("ChapterId") %>">
+                                <%--<div class="tab-pane fade" id="post<%# Eval("ChapterId") %>">
                                     <h6 class="text-warning border-bottom pb-2"><i class="fa-solid fa-tasks me-2"></i>Assignments</h6>
                                     <p class="small text-muted">Assessment for this chapter will appear here.</p>
+                                </div>--%>
+
+                                <!-- ✅ ASSIGNMENTS -->
+                                <div class="tab-pane fade"
+                                    id="post<%# Eval("ChapterId") %>">
+
+                                    <h6 class="text-warning border-bottom pb-2"><i class="fa-solid fa-tasks me-2"></i>Assignments</h6>
+                                    <p class="small text-muted">Assessment for this chapter will appear here.</p>
+                               
+                                    <asp:Repeater ID="rptAssignments" runat="server">
+                                        <ItemTemplate>
+                                            <div class="assignment-card">
+                                                <b><%# Eval("Title") %></b><br />
+                                                <small><%# Eval("Description") %></small><br />
+                                                <small>Due: <%# Eval("DueDate") %></small><br />
+                                                <small>Marks: <%# Eval("MaxMarks") %></small>
+                                            </div>
+                                        </ItemTemplate>
+                                    </asp:Repeater>
+
                                 </div>
                             </div>
                         </div>
@@ -153,7 +173,7 @@
     <div class="modal fade" id="UploadModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">Upload Content</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -209,7 +229,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <asp:Button ID="btnUploadSave" runat="server" Text="Save Content" CssClass="btn btn-success" OnClick="btnUploadSave_Click" />
+                    <asp:Button ID="btnUploadSave" runat="server" Text="Save Content" CssClass="btn btn-primary" OnClick="btnUploadSave_Click" />
                 </div>
             </div>
         </div>
@@ -219,7 +239,7 @@
     <div class="modal fade" id="ChapterModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">Chapter Details</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -234,7 +254,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <asp:Button ID="btnSaveChapter" runat="server" Text="Save" CssClass="btn btn-success" OnClick="btnSaveChapter_Click" />
+                    <asp:Button ID="btnSaveChapter" runat="server" Text="Save" CssClass="btn btn-primary" OnClick="btnSaveChapter_Click" />
                 </div>
             </div>
         </div>

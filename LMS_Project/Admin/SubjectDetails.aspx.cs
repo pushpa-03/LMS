@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.IO;
+using System.Runtime.InteropServices.ComTypes;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -90,6 +91,13 @@ namespace LearningManagementSystem.Admin
 
                 rptMaterials.DataSource = bl.GetMaterialsByChapter(Convert.ToInt32(chapterId));
                 rptMaterials.DataBind();
+
+                Repeater rptAssignments = (Repeater)e.Item.FindControl("rptAssignments");
+
+                rptAssignments.DataSource = bl.GetAssignmentsBySubject(
+                    Convert.ToInt32(hfSubjectId.Value)
+                );
+                rptAssignments.DataBind();
             }
         }
 

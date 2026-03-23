@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Data;
+using System.Web;
+using System.Web.Services;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -162,6 +164,42 @@ namespace LMS_Project.Student
 
             DataTable dt = dl.GetDataTable(cmd);
             return Convert.ToInt32(dt.Rows[0][0]) > 0;
+        }
+
+        [WebMethod]
+        public static void PostComment(int videoId, string comment)
+        {
+            VideoPlayerBL bl = new VideoPlayerBL();
+            int userId = Convert.ToInt32(HttpContext.Current.Session["UserId"]);
+            bl.SaveComment(videoId, userId, comment);
+        }
+
+        [WebMethod]
+        public static object GetComments(int videoId)
+        {
+            VideoPlayerBL bl = new VideoPlayerBL();
+            return bl.GetComments(videoId);
+        }
+
+        [WebMethod]
+        public static void AddView(int videoId)
+        {
+            VideoPlayerBL bl = new VideoPlayerBL();
+            bl.IncreaseViewCount(videoId);
+        }
+
+        [WebMethod]
+        public static object GetStats(int videoId)
+        {
+            VideoPlayerBL bl = new VideoPlayerBL();
+            return bl.GetVideoStats(videoId);
+        }
+
+        [WebMethod]
+        public static object GetPlaylist()
+        {
+            VideoPlayerBL bl = new VideoPlayerBL();
+            return bl.GetPlaylist(0);
         }
     }
 }
