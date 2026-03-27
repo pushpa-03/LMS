@@ -6,113 +6,133 @@
 
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
 
-    <asp:Label ID="lblMsg" runat="server" CssClass="fw-bold mb-2 d-block" />
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="mb-0">Assign Teacher To Subject</h3>
-        <a href="#" data-bs-toggle="modal" data-bs-target="#AssignModal"
-            class="btn btn-success">
-            <i class="fa-solid fa-plus"></i> Assign
-        </a>
-    </div>
+<asp:Label ID="lblMsg" runat="server" CssClass="fw-bold mb-2 d-block" />
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Assign Teacher To Subject</h3>
 
-                <asp:GridView ID="gvAssign" runat="server"
-                    CssClass="table align-middle mb-0"
-                    AutoGenerateColumns="false"
-                    OnRowCommand="gvAssign_RowCommand">
+    <a href="#" data-bs-toggle="modal" data-bs-target="#AssignModal"
+       class="btn btn-success">
+       + Assign
+    </a>
+</div>
 
-                    <Columns>
+<!-- GRID -->
+<asp:GridView ID="gvAssign" runat="server"
+    CssClass="table"
+    AutoGenerateColumns="false"
+    OnRowCommand="gvAssign_RowCommand">
 
-                        <asp:BoundField DataField="TeacherName" HeaderText="Teacher" />
-                        <asp:BoundField DataField="SubjectName" HeaderText="Subject" />
-                        <asp:BoundField DataField="SessionName" HeaderText="Session" />
+    <Columns>
+        <asp:BoundField DataField="TeacherName" HeaderText="Teacher" />
+        <asp:BoundField DataField="SubjectName" HeaderText="Subject" />
+        <asp:BoundField DataField="SectionName" HeaderText="Section" />
+        <asp:BoundField DataField="SessionName" HeaderText="Session" />
 
-                        <asp:TemplateField HeaderText="Status">
-                            <ItemTemplate>
-                                <span class='badge <%# (bool)Eval("IsActive") ? "bg-success" : "bg-danger" %>'>
-                                    <%# (bool)Eval("IsActive") ? "Active" : "Inactive" %>
-                                </span>
-                            </ItemTemplate>
-                        </asp:TemplateField>
+        <asp:TemplateField HeaderText="Status">
+            <ItemTemplate>
+                <span class='<%# (bool)Eval("IsActive") ? "text-success" : "text-danger" %>'>
+                    <%# (bool)Eval("IsActive") ? "Active" : "Inactive" %>
+                </span>
+            </ItemTemplate>
+        </asp:TemplateField>
 
-                        <asp:TemplateField HeaderText="Actions">
-                            <ItemTemplate>
+        <asp:TemplateField HeaderText="Actions">
+            <ItemTemplate>
+                <asp:LinkButton runat="server"
+                    CommandName="Toggle"
+                    CommandArgument='<%# Eval("SubjectFacultyId") %>'>
+                    Toggle
+                </asp:LinkButton>
 
-                                <asp:LinkButton runat="server"
-                                    CssClass="btn btn-sm btn-warning me-2"
-                                    CommandName="Toggle"
-                                    CommandArgument='<%# Eval("SubjectFacultyId") %>'
-                                    OnClientClick="return confirm('Toggle status?');">
-                                    <i class="fa-solid fa-toggle-on"></i>
-                                </asp:LinkButton>
+                <asp:LinkButton runat="server"
+                    CommandName="DeleteRow"
+                    CommandArgument='<%# Eval("SubjectFacultyId") %>'>
+                    Delete
+                </asp:LinkButton>
+            </ItemTemplate>
+        </asp:TemplateField>
+    </Columns>
 
-                                <asp:LinkButton runat="server"
-                                    CssClass="btn btn-sm btn-danger"
-                                    CommandName="DeleteRow"
-                                    CommandArgument='<%# Eval("SubjectFacultyId") %>'
-                                    OnClientClick="return confirm('Delete assignment?');">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </asp:LinkButton>
+</asp:GridView>
 
-                            </ItemTemplate>
-                        </asp:TemplateField>
+<!-- MODAL -->
+<div class="modal fade" id="AssignModal">
+<div class="modal-dialog">
+<div class="modal-content">
 
-                    </Columns>
+<div class="modal-header">
+    <h5>Assign Subject</h5>
+</div>
 
-                </asp:GridView>
+<div class="modal-body">
 
-            </div>
-        </div>
-    </div>
+    <!-- Teacher Search -->
+    <label>Teacher</label>
+    <select id="ddlTeacherSearch" style="width:100%"></select>
+    <asp:HiddenField ID="hfTeacherId" runat="server" />
 
+    <br /><br />
 
-    <!-- MODAL -->
-    <div class="modal fade" id="AssignModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
+    <!-- Section -->
+    <label>Section</label>
+    <asp:DropDownList ID="ddlSection" runat="server" CssClass="form-control" />
 
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">Assign Subject</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+    <br />
 
-                <div class="modal-body">
-                    <div class="row g-3">
+    <!-- Subject -->
+    <label>Subject</label>
+    <asp:DropDownList ID="ddlSubject" runat="server" CssClass="form-control" />
 
-                        <div class="col-md-12">
-                            <label>Teacher*</label>
-                            <asp:DropDownList ID="ddlTeacher"
-                                runat="server"
-                                CssClass="form-select" />
-                        </div>
+</div>
 
-                        <div class="col-md-12">
-                            <label>Subject*</label>
-                            <asp:DropDownList ID="ddlSubject"
-                                runat="server"
-                                CssClass="form-select" />
-                        </div>
+<div class="modal-footer">
+    <asp:Button ID="btnSave" runat="server"
+        Text="Assign"
+        CssClass="btn btn-success"
+        OnClick="btnSave_Click" />
+</div>
 
-                    </div>
-                </div>
+</div>
+</div>
+</div>
 
-                <div class="modal-footer">
-                    <button class="btn btn-secondary"
-                        data-bs-dismiss="modal">Cancel</button>
+<!-- SCRIPTS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-                    <asp:Button ID="btnSave"
-                        runat="server"
-                        Text="Assign"
-                        CssClass="btn btn-success"
-                        OnClick="btnSave_Click" />
-                </div>
+<script>
+$(document).ready(function () {
 
-            </div>
-        </div>
-    </div>
+    $('#ddlTeacherSearch').select2({
+        dropdownParent: $('#AssignModal'),
+        placeholder: "Search Teacher",
+        minimumInputLength: 1,
+        ajax: {
+            url: 'AssignSubjectFaculty.aspx/SearchTeachers',
+            type: 'POST',
+            dataType: 'json',
+            contentType: 'application/json; charset=utf-8',
+            data: function (params) {
+                return JSON.stringify({ prefix: params.term });
+            },
+            processResults: function (data) {
+                return {
+                    results: $.map(data.d, function (item) {
+                        return { id: item.UserId, text: item.FullName };
+                    })
+                };
+            }
+        }
+    });
+
+    $('#ddlTeacherSearch').on('select2:select', function (e) {
+        $('#<%=hfTeacherId.ClientID%>').val(e.params.data.id);
+    });
+
+});
+</script>
 
 </asp:Content>

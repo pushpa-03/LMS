@@ -208,5 +208,80 @@ namespace LearningManagementSystem.BL
                 return false;
             }
         }
+        // ─── GET ALL REQUESTS BY A SPECIFIC USER (for student/teacher view) ──────────
+        public List<HelpRequestGC> GetRequestsByUser(int userId, int societyId, int instituteId)
+        {
+            var list = new List<HelpRequestGC>();
+
+            SqlCommand cmd = new SqlCommand(@"
+        SELECT
+            hr.HelpId, hr.UserId, hr.Question, hr.AskedOn,
+            u.Username, r.RoleName,
+            rep.Reply     AS ReplyText,
+            rep.RepliedOn
+        FROM HelpRequests hr
+        INNER JOIN Users u ON u.UserId = hr.UserId
+        INNER JOIN Roles r ON r.RoleId = u.RoleId
+        LEFT JOIN (
+            SELECT HelpId, Reply, RepliedOn,
+                   ROW_NUMBER() OVER (PARTITION BY HelpId ORDER BY RepliedOn DESC) AS rn
+            FROM HelpReplies
+            WHERE SocietyId = @SocietyId AND InstituteId = @InstituteId
+        ) rep ON rep.HelpId = hr.HelpId AND rep.rn = 1
+        WHERE hr.UserId     = @UserId
+          AND hr.SocietyId  = @SocietyId
+          AND hr.InstituteId = @InstituteId
+        ORDER BY hr.AskedOn DESC");
+
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@SocietyId", societyId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+
+            DataTable dt = _dl.GetDataTable(cmd);
+
+            foreach (DataRow dr in dt.Rows)
+            {
+                list.Add(new HelpRequestGC
+                {
+                    HelpId = Convert.ToInt32(dr["HelpId"]),
+                    UserId = Convert.ToInt32(dr["UserId"]),
+                    Username = dr["Username"].ToString(),
+                    RoleName = dr["RoleName"].ToString(),
+                    Question = dr["Question"].ToString(),
+                    AskedOn = Convert.ToDateTime(dr["AskedOn"]),
+                    HasReply = dr["ReplyText"] != DBNull.Value,
+                    ReplyText = dr["ReplyText"] == DBNull.Value ? null : dr["ReplyText"].ToString(),
+                    RepliedOn = dr["RepliedOn"] == DBNull.Value
+                                    ? (DateTime?)null
+                                    : Convert.ToDateTime(dr["RepliedOn"])
+                });
+            }
+
+            return list;
+        }
+
+        // ─── SUBMIT A QUESTION (from student/teacher) ────────────────────────────────
+        public bool SubmitQuestion(HelpRequestGC gc)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        INSERT INTO HelpRequests (SocietyId, InstituteId, UserId, Question, AskedOn)
+        VALUES (@SocietyId, @InstituteId, @UserId, @Question, GETDATE())");
+
+            cmd.Parameters.AddWithValue("@SocietyId", gc.SocietyId);
+            cmd.Parameters.AddWithValue("@InstituteId", gc.InstituteId);
+            cmd.Parameters.AddWithValue("@UserId", gc.UserId);
+            cmd.Parameters.AddWithValue("@Question", gc.Question);
+
+            try
+            {
+                _dl.ExecuteCMD(cmd);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
+
 }

@@ -42,6 +42,33 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.ScriptManager ScriptManager1;
 
         /// <summary>
+        /// imgInstituteLogo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Image imgInstituteLogo;
+
+        /// <summary>
+        /// hInstituteName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl hInstituteName;
+
+        /// <summary>
+        /// lblHeaderInstituteName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblHeaderInstituteName;
+
+        /// <summary>
         /// lblInitial control.
         /// </summary>
         /// <remarks>
@@ -58,6 +85,15 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label lblTeacherName;
+
+        /// <summary>
+        /// lblDropdownName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblDropdownName;
 
         /// <summary>
         /// ContentPlaceHolder2 control.

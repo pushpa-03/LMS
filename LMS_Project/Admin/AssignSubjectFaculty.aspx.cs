@@ -1,6 +1,10 @@
-﻿using System;
+﻿
+using System;
 using System.Data;
+using System.Web.Services;
+using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Configuration;
 
 namespace LearningManagementSystem.Admin
 {
@@ -15,13 +19,18 @@ namespace LearningManagementSystem.Admin
                 Response.Redirect("~/Default.aspx");
                 return;
             }
-           
+
             if (!IsPostBack)
             {
-                LoadTeachers();
+                LoadSections();
                 LoadSubjects();
                 LoadGrid();
             }
+        }
+
+        private int InstituteId
+        {
+            get { return Convert.ToInt32(Session["InstituteId"]); }
         }
 
         private int CurrentSessionId
@@ -31,81 +40,65 @@ namespace LearningManagementSystem.Admin
                 if (Session["CurrentSessionId"] != null)
                     return Convert.ToInt32(Session["CurrentSessionId"]);
 
-                int sessionId = bl.GetCurrentSession(
-                    Convert.ToInt32(Session["InstituteId"]));
-
-                if (sessionId == 0)
-                {
-                    lblMsg.Text = "No Current Academic Session Found. Please set one.";
-                    lblMsg.CssClass = "alert alert-danger d-block";
-                }
-
-                return sessionId;
+                return bl.GetCurrentSession(InstituteId);
             }
         }
-        private void LoadTeachers()
+
+        private void LoadSections()
         {
-            ddlTeacher.DataSource = bl.GetTeachers(
-                Convert.ToInt32(Session["InstituteId"]));
-            ddlTeacher.DataTextField = "FullName";
-            ddlTeacher.DataValueField = "UserId";
-            ddlTeacher.DataBind();
-            ddlTeacher.Items.Insert(0, "-- Select Teacher --");
+            DataTable dt = bl.GetSections(InstituteId);
+
+            ddlSection.DataSource = dt;
+            ddlSection.DataTextField = "SectionName";
+            ddlSection.DataValueField = "SectionId";
+            ddlSection.DataBind();
+
+            ddlSection.Items.Insert(0, new System.Web.UI.WebControls.ListItem("-- Select Section --", "0"));
         }
 
         private void LoadSubjects()
         {
-            ddlSubject.DataSource = bl.GetSubjects(
-                Convert.ToInt32(Session["InstituteId"]));
+            DataTable dt = bl.GetSubjects(InstituteId);
 
+            ddlSubject.DataSource = dt;
             ddlSubject.DataTextField = "SubjectName";
             ddlSubject.DataValueField = "SubjectId";
             ddlSubject.DataBind();
-            ddlSubject.Items.Insert(0, "-- Select Subject --");
+
+            ddlSubject.Items.Insert(0, new System.Web.UI.WebControls.ListItem("-- Select Subject --", "0"));
         }
 
         private void LoadGrid()
         {
-            gvAssign.DataSource = bl.GetAll(
-            Convert.ToInt32(Session["InstituteId"]),
-            CurrentSessionId);
-
+            gvAssign.DataSource = bl.GetAll(InstituteId, CurrentSessionId);
             gvAssign.DataBind();
         }
 
         protected void btnSave_Click(object sender, EventArgs e)
         {
-            if (ddlTeacher.SelectedIndex == 0 ||
-                ddlSubject.SelectedIndex == 0)
+            if (string.IsNullOrEmpty(hfTeacherId.Value) ||
+                ddlSubject.SelectedValue == "0" ||
+                ddlSection.SelectedValue == "0")
             {
                 ShowMsg("All fields required", false);
                 return;
             }
 
-
             SubjectFacultyGC obj = new SubjectFacultyGC
             {
                 SocietyId = Convert.ToInt32(Session["SocietyId"]),
-                InstituteId = Convert.ToInt32(Session["InstituteId"]),
-                SessionId = CurrentSessionId,   // ✅ automatic
+                InstituteId = InstituteId,
+                SessionId = CurrentSessionId,
+                TeacherId = Convert.ToInt32(hfTeacherId.Value),
                 SubjectId = Convert.ToInt32(ddlSubject.SelectedValue),
-                TeacherId = Convert.ToInt32(ddlTeacher.SelectedValue),
+                SectionId = Convert.ToInt32(ddlSection.SelectedValue),
                 AssignedBy = Convert.ToInt32(Session["UserId"])
             };
 
-            try
-            {
-                bl.Insert(obj);
-                ShowMsg("Assigned successfully!", true);
-                LoadGrid();
-            }
-            catch (SqlException ex)
-            {
-                if (ex.Number == 2627 || ex.Number == 2601)
-                    ShowMsg("This teacher is already assigned to this subject for this session.", false);
-                else
-                    ShowMsg("Database error: " + ex.Message, false);
-            }
+            bl.Insert(obj);
+
+            ShowMsg("Assigned successfully!", true);
+            LoadGrid();
         }
 
         protected void gvAssign_RowCommand(object sender,
@@ -115,7 +108,6 @@ namespace LearningManagementSystem.Admin
 
             if (e.CommandName == "DeleteRow")
                 bl.Delete(id);
-
             else if (e.CommandName == "Toggle")
                 bl.Toggle(id);
 
@@ -125,9 +117,42 @@ namespace LearningManagementSystem.Admin
         private void ShowMsg(string msg, bool success)
         {
             lblMsg.Text = msg;
-            lblMsg.CssClass = success ?
-                "alert alert-success d-block" :
-                "alert alert-danger d-block";
+            lblMsg.CssClass = success ? "text-success" : "text-danger";
+        }
+
+        [WebMethod]
+        public static List<object> SearchTeachers(string prefix)
+        {
+            List<object> list = new List<object>();
+
+            string cs = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+
+            using (SqlConnection con = new SqlConnection(cs))
+            {
+                string q = @"SELECT TOP 10 U.UserId, P.FullName
+                             FROM Users U
+                             JOIN UserProfile P ON U.UserId=P.UserId
+                             JOIN Roles R ON U.RoleId=R.RoleId
+                             WHERE R.RoleName='Teacher'
+                             AND P.FullName LIKE @name";
+
+                SqlCommand cmd = new SqlCommand(q, con);
+                cmd.Parameters.AddWithValue("@name", "%" + prefix + "%");
+
+                con.Open();
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    list.Add(new
+                    {
+                        UserId = dr["UserId"],
+                        FullName = dr["FullName"].ToString()
+                    });
+                }
+            }
+
+            return list;
         }
     }
 }

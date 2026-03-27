@@ -270,16 +270,20 @@
 </div>
 
 <script>
+    function filterMessages() {
+        var q = document.getElementById("searchBox").value.toLowerCase().trim();
+        document.querySelectorAll(".msg-item").forEach(function (li) {
+            if (q === "") { li.style.display = ""; return; }
+            var name = li.querySelector(".msg-name") ? li.querySelector(".msg-name").textContent.toLowerCase() : "";
+            var role = li.querySelector(".msg-role") ? li.querySelector(".msg-role").textContent.toLowerCase() : "";
+            var preview = li.querySelector(".msg-preview") ? li.querySelector(".msg-preview").textContent.toLowerCase() : "";
+            li.style.display = (name.includes(q) || role.includes(q) || preview.includes(q)) ? "" : "none";
+        });
+    }
+
     function scrollChatToBottom() {
         var cb = document.getElementById("chatBody");
         if (cb) cb.scrollTop = cb.scrollHeight;
-    }
-
-    function filterMessages() {
-        var q = document.getElementById("searchBox").value.toLowerCase();
-        document.querySelectorAll(".msg-item").forEach(function (li) {
-            li.style.display = li.innerText.toLowerCase().includes(q) ? "" : "none";
-        });
     }
 
     window.addEventListener("DOMContentLoaded", function () {

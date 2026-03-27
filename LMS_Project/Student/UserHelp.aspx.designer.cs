@@ -7,48 +7,39 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace LMS_Project.Teacher
+namespace LearningManagementSystem.Student
 {
 
 
-    public partial class TeacherCourses
+    public partial class UserHelp
     {
 
         /// <summary>
-        /// pnlSummary control.
+        /// lblAlert control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlSummary;
+        protected global::System.Web.UI.WebControls.Label lblAlert;
 
         /// <summary>
-        /// lblSubjectCount control.
+        /// txtQuestion control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblSubjectCount;
+        protected global::System.Web.UI.WebControls.TextBox txtQuestion;
 
         /// <summary>
-        /// pnlCourses control.
+        /// btnSubmit control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlCourses;
-
-        /// <summary>
-        /// rptCourses control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptCourses;
+        protected global::System.Web.UI.WebControls.Button btnSubmit;
 
         /// <summary>
         /// pnlEmpty control.
@@ -58,5 +49,14 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Panel pnlEmpty;
+
+        /// <summary>
+        /// rptThreads control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptThreads;
     }
 }

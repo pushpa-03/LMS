@@ -468,7 +468,7 @@ body {
         </li>
 
         <li>
-            <a href="HelpSupport.aspx" class="sidebar-link">
+            <a href="UserHelp.aspx" class="sidebar-link">
                 <i class="fas fa-life-ring sidebar-icon"></i>
                 <span>Help &amp; Support</span>
             </a>

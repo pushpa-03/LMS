@@ -1,9 +1,8 @@
-﻿using LearningManagementSystem.BL;
-using LearningManagementSystem.GC;
-using LMS_Project.Student;
-using System;
+﻿using System;
 using System.Data;
 using System.IO;
+using LearningManagementSystem.BL;
+using LearningManagementSystem.GC;
 
 namespace LearningManagementSystem.Teacher
 {
@@ -23,6 +22,8 @@ namespace LearningManagementSystem.Teacher
 
             if (!IsPostBack)
             {
+                // Set button text here to support icon HTML
+                btnSave.Text = "Create Assignment";
                 LoadSubjects();
                 LoadAssignments();
             }
@@ -52,8 +53,19 @@ namespace LearningManagementSystem.Teacher
 
             DataTable dt = bl.GetTeacherAssignments(userId, instituteId, societyId);
 
-            rptAssignments.DataSource = dt;
-            rptAssignments.DataBind();
+            if (dt.Rows.Count > 0)
+            {
+                rptAssignments.DataSource = dt;
+                rptAssignments.DataBind();
+                lblAssignmentCount.Text = dt.Rows.Count.ToString();
+                pnlAssignments.Visible = true;
+                pnlEmpty.Visible = false;
+            }
+            else
+            {
+                pnlAssignments.Visible = false;
+                pnlEmpty.Visible = true;
+            }
         }
 
         protected void btnSave_Click(object sender, EventArgs e)
@@ -100,7 +112,8 @@ namespace LearningManagementSystem.Teacher
 
             bl.AddAssignment(obj);
 
-            Response.Write("<script>alert('Assignment Created Successfully');</script>");
+            pnlSuccess.Visible = true;
+            btnSave.Text = "Create Assignment";
 
             // Clear form
             txtTitle.Text = "";
@@ -110,6 +123,21 @@ namespace LearningManagementSystem.Teacher
             ddlSubject.SelectedIndex = 0;
 
             LoadAssignments();
+        }
+        protected string GetDueBadge(object dueDateObj)
+        {
+            if (dueDateObj == DBNull.Value || dueDateObj == null)
+                return "";
+
+            DateTime due = Convert.ToDateTime(dueDateObj);
+            int days = (due.Date - DateTime.Today).Days;
+
+            if (days < 0)
+                return "<span class='pill pill-red'><i class='fas fa-exclamation-triangle'></i> Overdue</span>";
+            if (days <= 3)
+                return "<span class='pill pill-orange'><i class='fas fa-clock'></i> Due in " + days + " day(s)</span>";
+
+            return "<span class='pill pill-green'><i class='fas fa-check'></i> Upcoming</span>";
         }
     }
 }

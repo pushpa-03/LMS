@@ -19,7 +19,6 @@ namespace LMS_Project.Teacher
         private void LoadProfile()
         {
             int userId = Convert.ToInt32(Session["UserId"]);
-
             TeacherProfileGC obj = objBL.GetTeacherProfile(userId);
 
             txtFullName.Text = obj.FullName;
@@ -32,6 +31,14 @@ namespace LMS_Project.Teacher
             txtQualification.Text = obj.Qualification;
             txtExperience.Text = obj.ExperienceYears?.ToString();
             txtDesignation.Text = obj.Designation;
+
+            // ── NEW: populate avatar block ──
+            lblDisplayName.Text = obj.FullName;
+            lblDisplayEmail.Text = obj.Email;
+            lblDisplayDesignation.Text = obj.Designation;
+            lblInitialBig.Text = obj.FullName?.Length > 0
+                                         ? obj.FullName.Substring(0, 1).ToUpper()
+                                         : "T";
         }
 
         protected void btnEdit_Click(object sender, EventArgs e)
@@ -63,7 +70,7 @@ namespace LMS_Project.Teacher
             obj.Designation = txtDesignation.Text;
 
             objBL.UpdateTeacherProfile(obj);
-
+            pnlSuccess.Visible = true;
             SetEditMode(false);
             LoadProfile();
         }

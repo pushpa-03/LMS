@@ -15,12 +15,39 @@ namespace LMS_Project.Teacher
     {
 
         /// <summary>
-        /// gvStudents control.
+        /// lblStudentCount control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvStudents;
+        protected global::System.Web.UI.WebControls.Label lblStudentCount;
+
+        /// <summary>
+        /// pnlStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlStudents;
+
+        /// <summary>
+        /// rptStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptStudents;
+
+        /// <summary>
+        /// pnlEmpty control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlEmpty;
     }
 }

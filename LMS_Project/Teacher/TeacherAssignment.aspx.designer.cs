@@ -15,6 +15,15 @@ namespace LearningManagementSystem.Teacher
     {
 
         /// <summary>
+        /// pnlSuccess control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlSuccess;
+
+        /// <summary>
         /// ddlSubject control.
         /// </summary>
         /// <remarks>
@@ -42,15 +51,6 @@ namespace LearningManagementSystem.Teacher
         protected global::System.Web.UI.WebControls.TextBox txtDescription;
 
         /// <summary>
-        /// fuAssignment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.FileUpload fuAssignment;
-
-        /// <summary>
         /// txtDueDate control.
         /// </summary>
         /// <remarks>
@@ -69,6 +69,15 @@ namespace LearningManagementSystem.Teacher
         protected global::System.Web.UI.WebControls.TextBox txtMarks;
 
         /// <summary>
+        /// fuAssignment control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.FileUpload fuAssignment;
+
+        /// <summary>
         /// btnSave control.
         /// </summary>
         /// <remarks>
@@ -78,6 +87,24 @@ namespace LearningManagementSystem.Teacher
         protected global::System.Web.UI.WebControls.Button btnSave;
 
         /// <summary>
+        /// lblAssignmentCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblAssignmentCount;
+
+        /// <summary>
+        /// pnlAssignments control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlAssignments;
+
+        /// <summary>
         /// rptAssignments control.
         /// </summary>
         /// <remarks>
@@ -85,5 +112,14 @@ namespace LearningManagementSystem.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater rptAssignments;
+
+        /// <summary>
+        /// pnlEmpty control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlEmpty;
     }
 }

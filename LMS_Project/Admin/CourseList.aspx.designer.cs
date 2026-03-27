@@ -7,56 +7,56 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace LMS_Project.Teacher
+namespace LearningManagementSystem.Admin
 {
 
 
-    public partial class TeacherCourses
+    public partial class CourseList
     {
 
         /// <summary>
-        /// pnlSummary control.
+        /// lblTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlSummary;
+        protected global::System.Web.UI.WebControls.Label lblTotal;
 
         /// <summary>
-        /// lblSubjectCount control.
+        /// lblActive control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblSubjectCount;
+        protected global::System.Web.UI.WebControls.Label lblActive;
 
         /// <summary>
-        /// pnlCourses control.
+        /// lblInactive control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlCourses;
+        protected global::System.Web.UI.WebControls.Label lblInactive;
 
         /// <summary>
-        /// rptCourses control.
+        /// txtSearch control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptCourses;
+        protected global::System.Web.UI.HtmlControls.HtmlInputText txtSearch;
 
         /// <summary>
-        /// pnlEmpty control.
+        /// rptStreams control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlEmpty;
+        protected global::System.Web.UI.WebControls.Repeater rptStreams;
     }
 }

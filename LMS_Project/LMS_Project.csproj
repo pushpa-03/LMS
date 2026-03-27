@@ -93,10 +93,12 @@
     <Content Include="Admin\AssignLevelSubject.aspx" />
     <Content Include="Admin\AssignStudentSubject.aspx" />
     <Content Include="Admin\AssignSubjectFaculty.aspx" />
+    <Content Include="Admin\CourseList.aspx" />
     <Content Include="Admin\Dashboard.aspx" />
     <Content Include="Admin\MaterialPlayer.aspx" />
     <Content Include="Admin\ParentList.aspx" />
     <Content Include="Admin\ParentManagement.aspx" />
+    <Content Include="Admin\StreamList.aspx" />
     <Content Include="Admin\SubjectDetails.aspx" />
     <Content Include="Admin\Subjects.aspx" />
     <Content Include="Admin\VideoPlayer.aspx" />
@@ -167,6 +169,7 @@
     <Content Include="Student\Results.aspx" />
     <Content Include="Student\StudentCalendar.aspx" />
     <Content Include="Student\StudyMaterial.aspx" />
+    <Content Include="Student\UserHelp.aspx" />
     <Content Include="SuperAdmin\AddInstitute.aspx" />
     <Content Include="SuperAdmin\AddSociety.aspx" />
     <Content Include="SuperAdmin\Dashboard.aspx" />
@@ -175,6 +178,7 @@
     <Content Include="Teacher\TeacherCalendar.aspx" />
     <Content Include="Teacher\TeacherCourses.aspx" />
     <Content Include="Teacher\TeacherDashboard.aspx" />
+    <Content Include="Teacher\TeacherHelp.aspx" />
     <Content Include="Teacher\TeacherProfile.aspx" />
     <Content Include="Teacher\ViewSubmissions.aspx" />
     <Content Include="Uploads\InstituteLogos\4cdae9c2-5673-4538-8241-78abd22e46e9.jpg" />
@@ -274,6 +278,13 @@
     <Compile Include="Admin\AssignSubjectFaculty.aspx.designer.cs">
       <DependentUpon>AssignSubjectFaculty.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Admin\CourseList.aspx.cs">
+      <DependentUpon>CourseList.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\CourseList.aspx.designer.cs">
+      <DependentUpon>CourseList.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Admin\Dashboard.aspx.cs">
       <DependentUpon>Dashboard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -301,6 +312,13 @@
     </Compile>
     <Compile Include="Admin\ParentManagement.aspx.designer.cs">
       <DependentUpon>ParentManagement.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\StreamList.aspx.cs">
+      <DependentUpon>StreamList.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\StreamList.aspx.designer.cs">
+      <DependentUpon>StreamList.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\SubjectDetails.aspx.cs">
       <DependentUpon>SubjectDetails.aspx</DependentUpon>
@@ -471,6 +489,13 @@
     <Compile Include="Student\StudyMaterial.aspx.designer.cs">
       <DependentUpon>StudyMaterial.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Student\UserHelp.aspx.cs">
+      <DependentUpon>UserHelp.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Student\UserHelp.aspx.designer.cs">
+      <DependentUpon>UserHelp.aspx</DependentUpon>
+    </Compile>
     <Compile Include="SuperAdmin\AddInstitute.aspx.cs">
       <DependentUpon>AddInstitute.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -533,6 +558,13 @@
     </Compile>
     <Compile Include="Teacher\TeacherDashboard.aspx.designer.cs">
       <DependentUpon>TeacherDashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\TeacherHelp.aspx.cs">
+      <DependentUpon>TeacherHelp.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\TeacherHelp.aspx.designer.cs">
+      <DependentUpon>TeacherHelp.aspx</DependentUpon>
     </Compile>
     <Compile Include="Teacher\TeacherMaster.Master.cs">
       <DependentUpon>TeacherMaster.Master</DependentUpon>

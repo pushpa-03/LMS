@@ -33,6 +33,42 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.Repeater rptStats;
 
         /// <summary>
+        /// ddlStream control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlStream;
+
+        /// <summary>
+        /// ddlCourse control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlCourse;
+
+        /// <summary>
+        /// ddlLevel control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlLevel;
+
+        /// <summary>
+        /// ddlSemester control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlSemester;
+
+        /// <summary>
         /// lblMsg control.
         /// </summary>
         /// <remarks>

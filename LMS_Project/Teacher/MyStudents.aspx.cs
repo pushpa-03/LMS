@@ -28,42 +28,53 @@ namespace LMS_Project.Teacher
             int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
             SqlCommand cmd = new SqlCommand(@"
-                SELECT 
-                    u.UserId,
-                    up.FullName AS StudentName,
-                    u.Email,
-                    s.SubjectName,
-                    sess.SessionName
-                FROM SubjectFaculty sf
+        SELECT 
+            u.UserId,
+            up.FullName  AS StudentName,
+            u.Email,
+            s.SubjectName,
+            sess.SessionName
+        FROM SubjectFaculty sf
 
-                INNER JOIN Subjects s 
-                    ON sf.SubjectId = s.SubjectId
+        INNER JOIN Subjects s 
+            ON sf.SubjectId = s.SubjectId
 
-                INNER JOIN AssignStudentSubject ass
-                    ON ass.SubjectId = sf.SubjectId
-                    AND ass.SessionId = sf.SessionId
+        INNER JOIN AssignStudentSubject ass
+            ON ass.SubjectId  = sf.SubjectId
+            AND ass.SessionId = sf.SessionId
 
-                INNER JOIN Users u
-                    ON ass.UserId = u.UserId
+        INNER JOIN Users u
+            ON ass.UserId = u.UserId
 
-                INNER JOIN UserProfile up
-                    ON u.UserId = up.UserId
+        INNER JOIN UserProfile up
+            ON u.UserId = up.UserId
 
-                INNER JOIN AcademicSessions sess
-                    ON sf.SessionId = sess.SessionId
+        INNER JOIN AcademicSessions sess
+            ON sf.SessionId = sess.SessionId
 
-                WHERE sf.TeacherId = @TeacherId
-                AND sf.InstituteId = @InstituteId
-                AND u.RoleId = 4
-            ");
+        WHERE sf.TeacherId    = @TeacherId
+        AND   sf.InstituteId  = @InstituteId
+        AND   u.RoleId        = 4
+    ");
 
             cmd.Parameters.AddWithValue("@TeacherId", teacherId);
             cmd.Parameters.AddWithValue("@InstituteId", instituteId);
 
             DataTable dt = dl.GetDataTable(cmd);
 
-            gvStudents.DataSource = dt;
-            gvStudents.DataBind();
+            if (dt.Rows.Count > 0)
+            {
+                rptStudents.DataSource = dt;
+                rptStudents.DataBind();
+                lblStudentCount.Text = dt.Rows.Count.ToString();
+                pnlStudents.Visible = true;
+                pnlEmpty.Visible = false;
+            }
+            else
+            {
+                pnlStudents.Visible = false;
+                pnlEmpty.Visible = true;
+            }
         }
     }
 }

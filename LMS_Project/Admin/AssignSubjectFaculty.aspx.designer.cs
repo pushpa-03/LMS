@@ -33,13 +33,22 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.GridView gvAssign;
 
         /// <summary>
-        /// ddlTeacher control.
+        /// hfTeacherId control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlTeacher;
+        protected global::System.Web.UI.WebControls.HiddenField hfTeacherId;
+
+        /// <summary>
+        /// ddlSection control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlSection;
 
         /// <summary>
         /// ddlSubject control.

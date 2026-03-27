@@ -18,7 +18,17 @@ public class SubjectFacultyBL
         cmd.Parameters.AddWithValue("@I", instituteId);
         return dl.GetDataTable(cmd);
     }
+    public DataTable GetSections(int instituteId)
+    {
+        SqlCommand cmd = new SqlCommand(
+        @"SELECT SectionId, SectionName
+      FROM Sections
+      WHERE InstituteId=@I AND IsActive=1");
 
+        cmd.Parameters.AddWithValue("@I", instituteId);
+
+        return dl.GetDataTable(cmd);
+    }
     public DataTable GetSubjects(int instituteId)
     {
         SqlCommand cmd = new SqlCommand(
@@ -37,17 +47,19 @@ public class SubjectFacultyBL
     {
         SqlCommand cmd = new SqlCommand(
         @"SELECT SF.SubjectFacultyId,
-             SF.IsActive,
-             P.FullName AS TeacherName,
-             S.SubjectName,
-             ASY.SessionName
-      FROM SubjectFaculty SF
-      JOIN Users U ON SF.TeacherId=U.UserId
-      JOIN UserProfile P ON U.UserId=P.UserId
-      JOIN Subjects S ON SF.SubjectId=S.SubjectId
-      JOIN AcademicSessions ASY ON SF.SessionId=ASY.SessionId
-      WHERE SF.InstituteId=@I
-      AND SF.SessionId=@S");
+       SF.IsActive,
+       P.FullName AS TeacherName,
+       S.SubjectName,
+       SEC.SectionName,
+       ASY.SessionName
+FROM SubjectFaculty SF
+JOIN Users U ON SF.TeacherId=U.UserId
+JOIN UserProfile P ON U.UserId=P.UserId
+JOIN Subjects S ON SF.SubjectId=S.SubjectId
+JOIN Sections SEC ON SF.SectionId = SEC.SectionId
+JOIN AcademicSessions ASY ON SF.SessionId=ASY.SessionId
+WHERE SF.InstituteId=@I
+AND SF.SessionId=@S");
 
         cmd.Parameters.AddWithValue("@I", instituteId);
         cmd.Parameters.AddWithValue("@S", sessionId);
@@ -59,16 +71,17 @@ public class SubjectFacultyBL
     {
         SqlCommand cmd = new SqlCommand(
         @"INSERT INTO SubjectFaculty
-          (SocietyId,InstituteId,SubjectId,
-           SessionId,TeacherId,AssignedBy)
-          VALUES
-          (@S,@I,@Sub,@Ses,@T,@A)");
+      (SocietyId,InstituteId,SubjectId,
+       SessionId,TeacherId,SectionId,AssignedBy)
+      VALUES
+      (@S,@I,@Sub,@Ses,@T,@Sec,@A)");
 
         cmd.Parameters.AddWithValue("@S", obj.SocietyId);
         cmd.Parameters.AddWithValue("@I", obj.InstituteId);
         cmd.Parameters.AddWithValue("@Sub", obj.SubjectId);
         cmd.Parameters.AddWithValue("@Ses", obj.SessionId);
         cmd.Parameters.AddWithValue("@T", obj.TeacherId);
+        cmd.Parameters.AddWithValue("@Sec", obj.SectionId);
         cmd.Parameters.AddWithValue("@A", obj.AssignedBy);
 
         dl.ExecuteCMD(cmd);

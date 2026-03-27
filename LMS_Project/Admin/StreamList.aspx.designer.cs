@@ -7,56 +7,74 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace LMS_Project.Teacher
+namespace LearningManagementSystem.Admin
 {
 
 
-    public partial class TeacherCourses
+    public partial class StreamList
     {
 
         /// <summary>
-        /// pnlSummary control.
+        /// btnToggleView control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlSummary;
+        protected global::System.Web.UI.WebControls.LinkButton btnToggleView;
 
         /// <summary>
-        /// lblSubjectCount control.
+        /// lblTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblSubjectCount;
+        protected global::System.Web.UI.WebControls.Label lblTotal;
 
         /// <summary>
-        /// pnlCourses control.
+        /// lblActive control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlCourses;
+        protected global::System.Web.UI.WebControls.Label lblActive;
 
         /// <summary>
-        /// rptCourses control.
+        /// lblInactive control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptCourses;
+        protected global::System.Web.UI.WebControls.Label lblInactive;
 
         /// <summary>
-        /// pnlEmpty control.
+        /// lblPercent control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlEmpty;
+        protected global::System.Web.UI.WebControls.Label lblPercent;
+
+        /// <summary>
+        /// txtSearch control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlInputText txtSearch;
+
+        /// <summary>
+        /// rptStreams control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptStreams;
     }
 }
