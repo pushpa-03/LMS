@@ -103,6 +103,8 @@ AND SF.SessionId=@S");
 
         return 0;
     }
+
+
     public void Delete(int id)
     {
         SqlCommand cmd = new SqlCommand(
@@ -122,4 +124,24 @@ AND SF.SessionId=@S");
         cmd.Parameters.AddWithValue("@Id", id);
         dl.ExecuteCMD(cmd);
     }
+
+
+    public DataTable GetAllByTeacher(int instId, int teacherId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+            SELECT S.SubjectName, SEC.SectionName, ASY.SessionName, SF.IsActive,
+            CASE WHEN ASY.IsCurrent = 1 THEN 'Present' ELSE 'Past' END as Status
+            FROM SubjectFaculty SF
+            JOIN Subjects S ON SF.SubjectId = S.SubjectId
+            JOIN Sections SEC ON SF.SectionId = SEC.SectionId
+            JOIN AcademicSessions ASY ON SF.SessionId = ASY.SessionId
+            WHERE SF.InstituteId = @instId AND SF.TeacherId = @teacherId
+            ORDER BY ASY.IsCurrent DESC, ASY.SessionId DESC");
+
+        cmd.Parameters.AddWithValue("@instId", instId);
+        cmd.Parameters.AddWithValue("@teacherId", teacherId);
+        return dl.GetDataTable(cmd);
+    }
+
+    
 }

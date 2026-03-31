@@ -178,19 +178,20 @@ public class TeacherBL
     public DataTable GetTeacherById(int userId)
     {
         SqlCommand cmd = new SqlCommand(@"
-        SELECT U.UserId,
-               U.Email,
-               P.FullName,
-               P.ContactNo,
-               T.Designation,
-               T.StreamId
+        SELECT U.UserId, U.Email, U.IsActive,
+               P.FullName, P.FatherName, P.MotherName, P.Gender, P.DOB, 
+               P.ContactNo, P.EmergencyContactName, P.EmergencyContactNo,
+               P.Address, P.City, P.Country, P.Pincode, P.JoinedDate,
+               P.Skills, P.Hobbies, P.Description, P.ProfileImage,
+               T.EmployeeId, T.ExperienceYears, T.Qualification, T.Designation,
+               S.StreamName
         FROM Users U
         INNER JOIN UserProfile P ON U.UserId = P.UserId
         INNER JOIN TeacherDetails T ON U.UserId = T.UserId
-        WHERE U.UserId=@U");
+        LEFT JOIN Streams S ON T.StreamId = S.StreamId
+        WHERE U.UserId = @U");
 
         cmd.Parameters.AddWithValue("@U", userId);
-
         return dl.GetDataTable(cmd);
     }
     public void ToggleStatus(int userId)
@@ -201,4 +202,52 @@ public class TeacherBL
         cmd.Parameters.AddWithValue("@U", userId);
         dl.ExecuteCMD(cmd);
     }
+
+    public DataTable GetFilteredTeachers(int instId, string search, int streamId, string status)
+    {
+        string query = @"
+            SELECT S.StreamName AS Stream, U.UserId, U.IsActive, P.FullName, 
+                   U.Email, T.EmployeeId, T.Designation
+            FROM Users U
+            JOIN UserProfile P ON U.UserId = P.UserId
+            JOIN TeacherDetails T ON U.UserId = T.UserId
+            JOIN Streams S ON T.StreamId = S.StreamId
+            WHERE U.InstituteId = @instId 
+            AND U.RoleId = (SELECT RoleId FROM Roles WHERE RoleName='Teacher')";
+
+        if (!string.IsNullOrEmpty(search))
+            query += " AND (P.FullName LIKE @search OR T.EmployeeId LIKE @search)";
+
+        if (streamId > 0)
+            query += " AND T.StreamId = @streamId";
+
+        if (status != "All")
+            query += " AND U.IsActive = @status";
+
+        SqlCommand cmd = new SqlCommand(query);
+        cmd.Parameters.AddWithValue("@instId", instId);
+        cmd.Parameters.AddWithValue("@search", "%" + search + "%");
+        cmd.Parameters.AddWithValue("@streamId", streamId);
+        cmd.Parameters.AddWithValue("@status", status == "1");
+
+        return dl.GetDataTable(cmd);
+    }
+
+    //public DataTable GetTeacherById(int userId)
+    //{
+    //    SqlCommand cmd = new SqlCommand(@"
+    //        SELECT P.FullName, T.EmployeeId, T.Designation, U.Email, S.StreamName
+    //        FROM Users U
+    //        JOIN UserProfile P ON U.UserId = P.UserId
+    //        JOIN TeacherDetails T ON U.UserId = T.UserId
+    //        JOIN Streams S ON T.StreamId = S.StreamId
+    //        WHERE U.UserId = @userId");
+    //    cmd.Parameters.AddWithValue("@userId", userId);
+    //    return dl.GetDataTable(cmd);
+    //}
+
+    //public DataTable GetStreams(int instId)
+    //{
+    //    return dl.GetDataTable(new SqlCommand($"SELECT StreamId, StreamName FROM Streams WHERE InstituteId={instId}"));
+    //}
 }

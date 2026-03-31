@@ -11,133 +11,151 @@ namespace LearningManagementSystem.Admin
 {
 
 
-    public partial class VideoPlayer
+    public partial class TeacherDetails
     {
 
         /// <summary>
-        /// videoPlayer control.
+        /// imgProfile control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlVideo videoPlayer;
+        protected global::System.Web.UI.WebControls.Image imgProfile;
 
         /// <summary>
-        /// lblVideoTitle control.
+        /// divInitial control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblVideoTitle;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl divInitial;
 
         /// <summary>
-        /// liveViews control.
+        /// litInitial control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl liveViews;
+        protected global::System.Web.UI.WebControls.Literal litInitial;
 
         /// <summary>
-        /// lblUploadDate control.
+        /// litFullName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblUploadDate;
+        protected global::System.Web.UI.WebControls.Literal litFullName;
 
         /// <summary>
-        /// dynamicRating control.
+        /// litEmpId control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl dynamicRating;
+        protected global::System.Web.UI.WebControls.Literal litEmpId;
 
         /// <summary>
-        /// lblDesc control.
+        /// litDesignation control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblDesc;
+        protected global::System.Web.UI.WebControls.Literal litDesignation;
 
         /// <summary>
-        /// rptTopics control.
+        /// litRating control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptTopics;
+        protected global::System.Web.UI.WebControls.Literal litRating;
 
         /// <summary>
-        /// lblCommentsCount control.
+        /// litProgressText control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblCommentsCount;
+        protected global::System.Web.UI.WebControls.Literal litProgressText;
 
         /// <summary>
-        /// progressText control.
+        /// litContact control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl progressText;
+        protected global::System.Web.UI.WebControls.Literal litContact;
 
         /// <summary>
-        /// progressBar control.
+        /// litEmail control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl progressBar;
+        protected global::System.Web.UI.WebControls.Literal litEmail;
 
         /// <summary>
-        /// rptPlaylist control.
+        /// phFullDetails control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptPlaylist;
+        protected global::System.Web.UI.WebControls.PlaceHolder phFullDetails;
 
         /// <summary>
-        /// btnPrev control.
+        /// litDOB control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnPrev;
+        protected global::System.Web.UI.WebControls.Literal litDOB;
 
         /// <summary>
-        /// btnNext control.
+        /// litExp control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnNext;
+        protected global::System.Web.UI.WebControls.Literal litExp;
 
         /// <summary>
-        /// engagementLive control.
+        /// litAddress control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl engagementLive;
+        protected global::System.Web.UI.WebControls.Literal litAddress;
+
+        /// <summary>
+        /// litSubCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litSubCount;
+
+        /// <summary>
+        /// rptSubjects control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptSubjects;
     }
 }

@@ -24,4 +24,6 @@ public class TeacherGC
     public string Designation { get; set; }
 
     public int StreamId { get; set; }
+
+    
 }

@@ -285,8 +285,8 @@ body {
                 <li><a href="StreamList.aspx" class="sidebar-link">Streams</a></li>
                 <li><a href="CourseList.aspx" class="sidebar-link">Courses</a></li>
                 <li><a href="Subjects.aspx" class="sidebar-link">Subjects</a></li>
-                <li><a href="Student.aspx" class="sidebar-link">Students</a></li>
-                <li><a href="Teachers.aspx" class="sidebar-link">Teachers</a></li>
+                <li><a href="StudentsList.aspx" class="sidebar-link">Students</a></li>
+                <li><a href="TeacherList.aspx" class="sidebar-link">Teachers</a></li>
                 <li><a href="ParentList.aspx" class="sidebar-link">Parents</a></li>
             </ul>
         </li>

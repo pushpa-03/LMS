@@ -82,7 +82,7 @@
     </div>
 
     <br />
-    <h4 class="mb-3">Course Content</h4>
+    <%--<h4 class="mb-3">Course Content</h4>
 
     <div class="accordion shadow-sm" id="accordionChapters">
         <asp:Repeater ID="rptChapters" runat="server" OnItemCommand="rptChapters_ItemCommand" OnItemDataBound="rptChapters_ItemDataBound">
@@ -138,10 +138,6 @@
                                     </asp:Repeater>
                                 </div>
 
-                                <%--<div class="tab-pane fade" id="post<%# Eval("ChapterId") %>">
-                                    <h6 class="text-warning border-bottom pb-2"><i class="fa-solid fa-tasks me-2"></i>Assignments</h6>
-                                    <p class="small text-muted">Assessment for this chapter will appear here.</p>
-                                </div>--%>
 
                                 <!-- ✅ ASSIGNMENTS -->
                                 <div class="tab-pane fade"
@@ -168,6 +164,109 @@
                 </div>
             </ItemTemplate>
         </asp:Repeater>
+    </div>--%>
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white py-3">
+                    <h6 class="mb-0"><i class="fa-solid fa-list-ol me-2"></i>Quick Access</h6>
+                </div>
+                <div class="list-group list-group-flush" id="quickAccessList" style="max-height: 400px; overflow-y: auto;">
+                    </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <h4 class="mb-3">Course Content</h4>
+            <div class="accordion shadow-sm mb-5" id="accordionChapters">
+                <asp:Repeater ID="rptChapters" runat="server" OnItemCommand="rptChapters_ItemCommand" OnItemDataBound="rptChapters_ItemDataBound">
+                    <ItemTemplate>
+                        <div class="accordion-item border-0 mb-2 shadow-sm chapter-item" data-title='<%# Eval("ChapterName") %>'>
+                            <h2 class="accordion-header d-flex align-items-center bg-danger text-white rounded">
+                                <button class="accordion-button collapsed bg-danger text-white border-0 shadow-none" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#collapse<%# Eval("ChapterId") %>">
+                                    <i class="fa-solid fa-book-open me-2"></i>
+                                    Chapter <%# Container.ItemIndex + 1 %>: <%# Eval("ChapterName") %>
+                                </button>
+                                <div class="pe-3 d-flex gap-1">
+                                    <asp:LinkButton ID="btnEdit" runat="server" CssClass="text-white btn btn-sm" CommandName="EditChapter" CommandArgument='<%# Eval("ChapterId") %>'>
+                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    </asp:LinkButton>
+                                    <asp:LinkButton ID="btnDelete" runat="server" CssClass="text-white btn btn-sm" CommandName="DeleteChapter" CommandArgument='<%# Eval("ChapterId") %>' OnClientClick="return confirm('Delete chapter?');">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </asp:LinkButton>
+                                </div>
+                            </h2>
+
+                            <div id="collapse<%# Eval("ChapterId") %>" class="accordion-collapse collapse" data-bs-parent="#accordionChapters">
+                                <div class="accordion-body bg-light">
+                                    <ul class="nav nav-tabs border-bottom-0">
+                                        <li class="nav-item"><a class="nav-link active fw-bold text-dark" data-bs-toggle="tab" href="#pre<%# Eval("ChapterId") %>">Pre Session</a></li>
+                                        <li class="nav-item"><a class="nav-link fw-bold text-dark" data-bs-toggle="tab" href="#in<%# Eval("ChapterId") %>">In Session</a></li>
+                                        </ul>
+
+                                    <div class="tab-content border bg-white p-3 rounded-bottom shadow-sm">
+                                        <div class="tab-pane fade show active" id="pre<%# Eval("ChapterId") %>">
+                                            <h6 class="text-primary border-bottom pb-2"><i class="fa-solid fa-video me-2"></i>Video Lectures</h6>
+                                            <asp:HiddenField ID="hfRowChapterId" runat="server" Value='<%# Eval("ChapterId") %>' />
+                                            <asp:Repeater ID="rptVideos" runat="server">
+                                                <ItemTemplate>
+                                                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom hover-bg">
+                                                        <span><i class="fa-regular fa-circle-play me-2 text-danger"></i><%# Eval("Title") %></span>
+                                                        <a href='VideoPlayer.aspx?VideoId=<%# Eval("VideoId") %>' class="btn btn-outline-danger btn-sm">Watch Now</a>
+                                                    </div>
+                                                </ItemTemplate>
+                                            </asp:Repeater>
+                                        </div>
+
+                                        <div class="tab-pane fade" id="in<%# Eval("ChapterId") %>">
+                                            <h6 class="text-success border-bottom pb-2"><i class="fa-solid fa-file-pdf me-2"></i>Learning Materials</h6>
+                                            <asp:Repeater ID="rptMaterials" runat="server">
+                                                <ItemTemplate>
+                                                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                                                        <span><i class="fa-solid fa-file-lines me-2"></i><%# Eval("Title") %> (<%# Eval("FileType") %>)</span>
+                                                        <a href='MaterialPlayer.aspx?MaterialId=<%# Eval("MaterialId") %>' class="btn btn-outline-success btn-sm">View</a>
+                                                    </div>
+                                                </ItemTemplate>
+                                            </asp:Repeater>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </ItemTemplate>
+                </asp:Repeater>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="fa-solid fa-tasks me-2"></i>Subject Assignments</h5>
+                    
+                </div>
+                <div class="card-body bg-white">
+                    <div class="row g-3">
+                        <asp:Repeater ID="rptAssignments" runat="server">
+                            <ItemTemplate>
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded shadow-sm hover-bg">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="text-primary mb-1"><%# Eval("Title") %></h6>
+                                            <span class="badge bg-secondary"><%# Eval("MaxMarks") %> Marks</span>
+                                        </div>
+                                        <p class="small text-muted mb-2 text-truncate-2"><%# Eval("Description") %></p>
+                                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                            <small class="text-danger fw-bold"><i class="fa-regular fa-calendar-days me-1"></i>Due: <%# Eval("DueDate") %></small>
+                                            <%--<a href="#" class="btn btn-link btn-sm p-0">View Submissions</a>--%>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ItemTemplate>
+                        </asp:Repeater>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal fade" id="UploadModal" tabindex="-1">
@@ -271,6 +370,10 @@
             border-bottom-width: 3px;
             color: #dc3545 !important;
         }
+        .hover-bg:hover { background-color: #f8f9fa; cursor: pointer; }
+        .nav-tabs .nav-link.active { border-color: transparent transparent #dc3545; border-bottom-width: 3px; color: #dc3545 !important; }
+        .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .list-group-item-action:hover { background-color: #f8f9fa; color: #dc3545; }
     </style>
 
 
@@ -284,6 +387,34 @@
             <div class="col-8"><input type="text" name="topicTitle" class="form-control form-control-sm" placeholder="Topic Name"></div>`;
             container.appendChild(row);
         }
+
+        // SCRIPT FOR QUICK ACCESS (Automated)
+        document.addEventListener("DOMContentLoaded", function () {
+            const chapterItems = document.querySelectorAll('.chapter-item');
+            const quickAccessList = document.getElementById('quickAccessList');
+
+            chapterItems.forEach((item, index) => {
+                const title = item.getAttribute('data-title');
+                const targetId = item.querySelector('.accordion-collapse').id;
+
+                const link = document.createElement('a');
+                link.className = 'list-group-item list-group-item-action small py-2';
+                link.href = "#" + targetId;
+                link.innerHTML = `<strong>${index + 1}.</strong> ${title}`;
+
+                link.onclick = function (e) {
+                    e.preventDefault();
+                    const collapseEl = document.getElementById(targetId);
+                    const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+                    bsCollapse.show();
+                    collapseEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                };
+
+                quickAccessList.appendChild(link);
+            });
+        });
+
+        
 
         function toggleVideoFields() {
             var ddl = document.getElementById('<%= ddlContentType.ClientID %>');

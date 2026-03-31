@@ -150,10 +150,12 @@ public class VideoPlayerBL
 
     public DataTable GetPlaylist(int videoId)
     {
+        // Added 'Duration' to the SELECT statement
         SqlCommand cmd = new SqlCommand(@"
-    SELECT VideoId,Title
-    FROM Videos
-    WHERE IsActive=1");
+        SELECT VideoId, Title, Duration 
+        FROM Videos 
+        WHERE IsActive = 1 
+        ORDER BY VideoId ASC");
 
         return dl.GetDataTable(cmd);
     }
@@ -169,6 +171,23 @@ public class VideoPlayerBL
         dl.ExecuteCMD(cmd);
     }
 
+    public double GetAverageRating(int videoId)
+    {
+        // 1. Create the Command
+        SqlCommand cmd = new SqlCommand("SELECT ISNULL(AVG(CAST(Rating AS FLOAT)), 4.5) AS AvgRating FROM VideoRatings WHERE VideoId = @vid");
+        cmd.Parameters.AddWithValue("@vid", videoId);
+
+        // 2. Use GetDataTable from your DataLayer
+        DataTable dt = dl.GetDataTable(cmd);
+
+        // 3. Extract the value safely
+        if (dt != null && dt.Rows.Count > 0)
+        {
+            return Convert.ToDouble(dt.Rows[0]["AvgRating"]);
+        }
+
+        return 4.5; // Default fallback if something goes wrong
+    }
     public int GetNextVideo(int videoId)
     {
         SqlCommand cmd = new SqlCommand(@"

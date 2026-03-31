@@ -29,6 +29,7 @@ namespace LearningManagementSystem.Admin
                     hfSubjectId.Value = Request.QueryString["SubjectId"];
                     LoadSubject();
                     BindChapters();
+                    BindSubjectAssignments();
                 }
                 else
                 {
@@ -92,12 +93,31 @@ namespace LearningManagementSystem.Admin
                 rptMaterials.DataSource = bl.GetMaterialsByChapter(Convert.ToInt32(chapterId));
                 rptMaterials.DataBind();
 
-                Repeater rptAssignments = (Repeater)e.Item.FindControl("rptAssignments");
 
-                rptAssignments.DataSource = bl.GetAssignmentsBySubject(
-                    Convert.ToInt32(hfSubjectId.Value)
-                );
+                //Repeater rptAssignments = (Repeater)e.Item.FindControl("rptAssignments");
+
+                //rptAssignments.DataSource = bl.GetAssignmentsBySubject(
+                //    Convert.ToInt32(hfSubjectId.Value)
+                //);
+                //rptAssignments.DataBind();
+            }
+        }
+
+        private void BindSubjectAssignments()
+        {
+            try
+            {
+                // Use the Subject ID from your HiddenField
+                int subjectId = Convert.ToInt32(hfSubjectId.Value);
+
+                // Bind directly to the Repeater that is now outside the chapters
+                rptAssignments.DataSource = bl.GetAssignmentsBySubject(subjectId);
                 rptAssignments.DataBind();
+            }
+            catch (Exception ex)
+            {
+                lblMsg.Text = "Error loading assignments: " + ex.Message;
+                lblMsg.Visible = true;
             }
         }
 

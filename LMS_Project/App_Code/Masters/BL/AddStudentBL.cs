@@ -127,27 +127,35 @@ public class StudentBL
     public DataTable GetStudents(int instituteId, string search = "", string status = "All")
     {
         string query = @"
-SELECT U.UserId,
-       U.Email,
-       U.IsActive,
-       P.FullName,
-       P.ContactNo,
-       SAD.RollNumber,
-       ASes.SessionName AS YearName,
-       S.StreamName,
-       C.CourseName,
-       Sty.LevelName,
-       Sem.SemesterName
-FROM Users U
-INNER JOIN UserProfile P ON U.UserId = P.UserId
-INNER JOIN StudentAcademicDetails SAD ON U.UserId = SAD.UserId
-INNER JOIN AcademicSessions ASes ON SAD.SessionId = ASes.SessionId
-LEFT JOIN Streams S ON SAD.StreamId = S.StreamId
-LEFT JOIN Courses C ON SAD.CourseId = C.CourseId
-LEFT JOIN StudyLevels Sty ON SAD.LevelId = Sty.LevelId
-LEFT JOIN Semesters Sem ON SAD.SemesterId = Sem.SemesterId
-WHERE U.RoleId = (SELECT RoleId FROM Roles WHERE RoleName='Student')
-AND U.InstituteId=@I";
+        SELECT U.UserId,
+               U.Email,
+               U.IsActive,
+               P.FullName,
+               P.ContactNo,
+               SAD.RollNumber,
+               ASes.SessionName AS YearName,
+               S.StreamName,
+               SAD.StreamId,
+               C.CourseName,
+               SAD.CourseId,
+               Sty.LevelName,
+               SAD.LevelId,
+               Sem.SemesterName,
+               SAD.SemesterId,
+               Sec.SectionName,
+               SAD.SectionId,     
+               SAD.RollNumber
+                FROM Users U
+        INNER JOIN UserProfile P ON U.UserId = P.UserId
+        INNER JOIN StudentAcademicDetails SAD ON U.UserId = SAD.UserId
+        INNER JOIN AcademicSessions ASes ON SAD.SessionId = ASes.SessionId
+        LEFT JOIN Streams S ON SAD.StreamId = S.StreamId
+        LEFT JOIN Courses C ON SAD.CourseId = C.CourseId
+        LEFT JOIN StudyLevels Sty ON SAD.LevelId = Sty.LevelId
+        LEFT JOIN Semesters Sem ON SAD.SemesterId = Sem.SemesterId
+        LEFT JOIN Sections Sec ON SAD.SectionId = Sec.SectionId
+        WHERE U.RoleId = (SELECT RoleId FROM Roles WHERE RoleName='Student')
+        AND U.InstituteId=@I";
 
         SqlCommand cmd = new SqlCommand();
         cmd.Parameters.AddWithValue("@I", instituteId);
@@ -176,10 +184,18 @@ AND U.InstituteId=@I";
     {
         SqlCommand cmd = new SqlCommand(@"
         SELECT 
+            U.Username,
             U.Email,
             P.FullName,
             P.ContactNo,
-            SAD.RollNumber   -- ✅ ADD THIS
+            P.Gender,
+            P.DOB,
+            SAD.RollNumber,
+            SAD.StreamId,
+            SAD.CourseId,
+            SAD.LevelId,
+            SAD.SemesterId,
+            SAD.SectionId
         FROM Users U
         INNER JOIN UserProfile P ON U.UserId = P.UserId
         INNER JOIN StudentAcademicDetails SAD ON U.UserId = SAD.UserId  -- ✅ JOIN
@@ -199,31 +215,35 @@ AND U.InstituteId=@I";
     // ✅ Update Student
     // ============================================
     public void UpdateStudent(int userId, string email, string fullName, string contact,
-                         string rollNo, int? courseId, int? sectionId)
+    string rollNo, int? streamId, int? courseId, int? levelId, int? semesterId, int? sectionId)
     {
-        DataLayer dl = new DataLayer();
-
         SqlCommand cmd = new SqlCommand(@"
-    UPDATE Users 
-    SET Email=@Email
-    WHERE UserId=@UserId;
+        UPDATE Users 
+        SET Email=@Email
+        WHERE UserId=@UserId;
 
-    UPDATE UserProfile
-    SET FullName=@FullName, ContactNo=@Contact
-    WHERE UserId=@UserId;
+        UPDATE UserProfile
+        SET FullName=@FullName, ContactNo=@Contact
+        WHERE UserId=@UserId;
 
-    UPDATE StudentAcademicDetails
-    SET RollNumber=@RollNo,
-        CourseId=@Course,
-        SectionId=@Section
-    WHERE UserId=@UserId;
-");
+        UPDATE StudentAcademicDetails
+        SET RollNumber=@RollNo,
+            StreamId=@Stream,
+            CourseId=@Course,
+            LevelId=@Level,
+            SemesterId=@Semester,
+            SectionId=@Section
+        WHERE UserId=@UserId;
+    ");
 
         cmd.Parameters.AddWithValue("@Email", email);
         cmd.Parameters.AddWithValue("@FullName", fullName);
         cmd.Parameters.AddWithValue("@Contact", contact);
         cmd.Parameters.AddWithValue("@RollNo", rollNo);
+        cmd.Parameters.AddWithValue("@Stream", (object)streamId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Course", (object)courseId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Level", (object)levelId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Semester", (object)semesterId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Section", (object)sectionId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@UserId", userId);
 

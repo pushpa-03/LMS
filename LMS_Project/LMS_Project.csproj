@@ -99,8 +99,12 @@
     <Content Include="Admin\ParentList.aspx" />
     <Content Include="Admin\ParentManagement.aspx" />
     <Content Include="Admin\StreamList.aspx" />
+    <Content Include="Admin\StudentDetails.aspx" />
+    <Content Include="Admin\StudentsList.aspx" />
     <Content Include="Admin\SubjectDetails.aspx" />
     <Content Include="Admin\Subjects.aspx" />
+    <Content Include="Admin\TeacherDetails.aspx" />
+    <Content Include="Admin\TeacherList.aspx" />
     <Content Include="Admin\VideoPlayer.aspx" />
     <Content Include="assets\css\bootstrap.min.css" />
     <Content Include="assets\css\style.css" />
@@ -320,6 +324,20 @@
     <Compile Include="Admin\StreamList.aspx.designer.cs">
       <DependentUpon>StreamList.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Admin\StudentDetails.aspx.cs">
+      <DependentUpon>StudentDetails.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\StudentDetails.aspx.designer.cs">
+      <DependentUpon>StudentDetails.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\StudentsList.aspx.cs">
+      <DependentUpon>StudentsList.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\StudentsList.aspx.designer.cs">
+      <DependentUpon>StudentsList.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Admin\SubjectDetails.aspx.cs">
       <DependentUpon>SubjectDetails.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -333,6 +351,20 @@
     </Compile>
     <Compile Include="Admin\Subjects.aspx.designer.cs">
       <DependentUpon>Subjects.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\TeacherDetails.aspx.cs">
+      <DependentUpon>TeacherDetails.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\TeacherDetails.aspx.designer.cs">
+      <DependentUpon>TeacherDetails.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\TeacherList.aspx.cs">
+      <DependentUpon>TeacherList.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\TeacherList.aspx.designer.cs">
+      <DependentUpon>TeacherList.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\VideoPlayer.aspx.cs">
       <DependentUpon>VideoPlayer.aspx</DependentUpon>
@@ -362,6 +394,7 @@
     <Compile Include="App_Code\Masters\BL\StudentAssignmentBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentAttendanceBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentDashboardBL.cs" />
+    <Compile Include="App_Code\Masters\BL\StudentDetailsBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentQuizBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentResultsBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentSubjectsBL.cs" />

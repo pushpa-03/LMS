@@ -290,13 +290,15 @@ namespace LearningManagementSystem.Admin
                     txtFullNameEdit.Text.Trim(),
                     txtContactEdit.Text.Trim(),
                     txtRollNumberEdit.Text.Trim(),
+                    string.IsNullOrEmpty(ddlStreamEdit.SelectedValue) ? (int?)null : Convert.ToInt32(ddlStreamEdit.SelectedValue),
                     string.IsNullOrEmpty(txtCourseEdit.SelectedValue) ? (int?)null : Convert.ToInt32(txtCourseEdit.SelectedValue),
+                    string.IsNullOrEmpty(ddlStudyLevelEdit.SelectedValue) ? (int?)null : Convert.ToInt32(ddlStudyLevelEdit.SelectedValue),
+                    string.IsNullOrEmpty(ddlSemesterEdit.SelectedValue) ? (int?)null : Convert.ToInt32(ddlSemesterEdit.SelectedValue),
                     string.IsNullOrEmpty(txtSecctionEdit.SelectedValue) ? (int?)null : Convert.ToInt32(txtSecctionEdit.SelectedValue)
                 );
 
                 ShowMsg("Student Updated Successfully!", true);
-
-                ReloadEverything();   // 🔥 IMPORTANT
+                ReloadEverything();
             }
             catch (Exception ex)
             {
@@ -354,6 +356,8 @@ namespace LearningManagementSystem.Admin
             ddlCourse.DataValueField = "CourseId";
             ddlCourse.DataBind();
             ddlCourse.Items.Insert(0, new ListItem("-- Optional Course --", ""));
+
+            ScriptManager.RegisterStartupScript(this, GetType(), "keepModal", "keepModalOpen();", true);
         }
 
         private void LoadStudyLevels()
@@ -383,10 +387,21 @@ namespace LearningManagementSystem.Admin
         private void LoadEditDropdowns()
         {
             DataLayer dl = new DataLayer();
+            int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
-            // Load Courses
+            // ================= STREAM =================
+            SqlCommand cmdStream = new SqlCommand("SELECT StreamId, StreamName FROM Streams WHERE InstituteId=@I");
+            cmdStream.Parameters.AddWithValue("@I", instituteId);
+
+            ddlStreamEdit.DataSource = dl.GetDataTable(cmdStream);
+            ddlStreamEdit.DataTextField = "StreamName";
+            ddlStreamEdit.DataValueField = "StreamId";
+            ddlStreamEdit.DataBind();
+            ddlStreamEdit.Items.Insert(0, new ListItem("-- Select Stream --", ""));
+
+            // ================= COURSE =================
             SqlCommand cmdCourse = new SqlCommand("SELECT CourseId, CourseName FROM Courses WHERE InstituteId=@I");
-            cmdCourse.Parameters.AddWithValue("@I", Session["InstituteId"]);
+            cmdCourse.Parameters.AddWithValue("@I", instituteId);
 
             txtCourseEdit.DataSource = dl.GetDataTable(cmdCourse);
             txtCourseEdit.DataTextField = "CourseName";
@@ -394,9 +409,29 @@ namespace LearningManagementSystem.Admin
             txtCourseEdit.DataBind();
             txtCourseEdit.Items.Insert(0, new ListItem("-- Optional Course --", ""));
 
-            // Load Sections
+            // ================= STUDY LEVEL =================
+            SqlCommand cmdLevel = new SqlCommand("SELECT LevelId, LevelName FROM StudyLevels WHERE InstituteId=@I");
+            cmdLevel.Parameters.AddWithValue("@I", instituteId);
+
+            ddlStudyLevelEdit.DataSource = dl.GetDataTable(cmdLevel);
+            ddlStudyLevelEdit.DataTextField = "LevelName";
+            ddlStudyLevelEdit.DataValueField = "LevelId";
+            ddlStudyLevelEdit.DataBind();
+            ddlStudyLevelEdit.Items.Insert(0, new ListItem("-- Optional Class --", ""));
+
+            // ================= SEMESTER =================
+            SqlCommand cmdSem = new SqlCommand("SELECT SemesterId, SemesterName FROM Semesters WHERE InstituteId=@I");
+            cmdSem.Parameters.AddWithValue("@I", instituteId);
+
+            ddlSemesterEdit.DataSource = dl.GetDataTable(cmdSem);
+            ddlSemesterEdit.DataTextField = "SemesterName";
+            ddlSemesterEdit.DataValueField = "SemesterId";
+            ddlSemesterEdit.DataBind();
+            ddlSemesterEdit.Items.Insert(0, new ListItem("-- Optional Semester --", ""));
+
+            // ================= SECTION =================
             SqlCommand cmdSection = new SqlCommand("SELECT SectionId, SectionName FROM Sections WHERE InstituteId=@I");
-            cmdSection.Parameters.AddWithValue("@I", Session["InstituteId"]);
+            cmdSection.Parameters.AddWithValue("@I", instituteId);
 
             txtSecctionEdit.DataSource = dl.GetDataTable(cmdSection);
             txtSecctionEdit.DataTextField = "SectionName";
@@ -404,6 +439,7 @@ namespace LearningManagementSystem.Admin
             txtSecctionEdit.DataBind();
             txtSecctionEdit.Items.Insert(0, new ListItem("-- Optional Section --", ""));
         }
+
         // ================= GRID COMMAND =================
 
         protected void gvStudents_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -421,14 +457,25 @@ namespace LearningManagementSystem.Admin
             {
                 DataRow dr = bl.GetStudentById(userId);
 
+                LoadEditDropdowns();
+
                 if (dr != null)
                 {
                     hfStudentUserId.Value = userId.ToString();
+                    txtUsernameEdit.Text = dr["Username"].ToString();
                     txtEmailEdit.Text = dr["Email"].ToString();
                     txtFullNameEdit.Text = dr["FullName"].ToString();
                     txtContactEdit.Text = dr["ContactNo"].ToString();
+                    txtRollNumberEdit.Text = dr["RollNumber"].ToString();
 
-                    txtRollNumberEdit.Text = dr["RollNumber"].ToString(); // ✅ ADD THIS
+                    ddlGenderEdit.SelectedValue = dr["Gender"].ToString();
+                    txtDOBEdit.Text = Convert.ToDateTime(dr["DOB"]).ToString("yyyy-MM-dd");
+
+                    ddlStreamEdit.SelectedValue = dr["StreamId"] == DBNull.Value ? "" : dr["StreamId"].ToString();
+                    txtCourseEdit.SelectedValue = dr["CourseId"] == DBNull.Value ? "" : dr["CourseId"].ToString();
+                    ddlStudyLevelEdit.SelectedValue = dr["LevelId"] == DBNull.Value ? "" : dr["LevelId"].ToString();
+                    ddlSemesterEdit.SelectedValue = dr["SemesterId"] == DBNull.Value ? "" : dr["SemesterId"].ToString();
+                    txtSecctionEdit.SelectedValue = dr["SectionId"] == DBNull.Value ? "" : dr["SectionId"].ToString();
 
                     ScriptManager.RegisterStartupScript(this, GetType(), "edit", "setTimeout(showEditModal, 100);", true);
                 }
@@ -498,5 +545,7 @@ namespace LearningManagementSystem.Admin
             lblMsg.Text = msg;
             lblMsg.CssClass = success ? "alert alert-success d-block" : "alert alert-danger d-block";
         }
+
+
     }
 }

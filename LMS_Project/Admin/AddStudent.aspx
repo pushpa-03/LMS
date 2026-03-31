@@ -141,6 +141,12 @@
 
             <Columns>
 
+                <asp:TemplateField HeaderText="#">
+                    <ItemTemplate>
+                        <%# Container.DataItemIndex + 1 %>
+                    </ItemTemplate>
+                </asp:TemplateField>
+
                 <asp:BoundField DataField="RollNumber" HeaderText="Roll No" />
                 <asp:BoundField DataField="FullName" HeaderText="Student" />
                 <asp:BoundField DataField="YearName" HeaderText="Year" />
@@ -208,18 +214,20 @@
                        <asp:DropDownList ID="ddlStream" runat="server"
                         CssClass="form-select"
                         AutoPostBack="true"
-                        OnSelectedIndexChanged="ddlDepartment_SelectedIndexChanged" />
+                        OnSelectedIndexChanged="ddlDepartment_SelectedIndexChanged" 
+                        OnClientClick="setTimeout(keepModalOpen,100);" />
                     </div>
+
                      <div class="col-md-4">
                          <label>Course (Optional)</label>
                          <asp:DropDownList ID="ddlCourse" runat="server" CssClass="form-select" />
                      </div>
                     <div class="col-md-4">
-                        <label>Course (Optional)</label>
+                        <label>Class (Optional)</label>
                         <asp:DropDownList ID="ddlStudyLevel" runat="server" CssClass="form-select" />
                     </div>
                     <div class="col-md-4">
-                        <label>Course (Optional)</label>
+                        <label>Semester (Optional)</label>
                         <asp:DropDownList ID="ddlSemester" runat="server" CssClass="form-select" />
                     </div>
                      <div class="col-md-4">
@@ -249,7 +257,10 @@
 
                     <div class="col-md-4">
                         <label>Gender</label>
-                        <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-select" />
+                        <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-select" >
+                            <asp:ListItem Text="Male" Value="Male" />
+                            <asp:ListItem Text="Female" Value="Female" />
+                        </asp:DropDownList>
                     </div>
 
                     <div class="col-md-4">
@@ -289,28 +300,66 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label>Course (Optional)</label>
+                            <label>Stream</label>
+                            <asp:DropDownList ID="ddlStreamEdit" runat="server" CssClass="form-select" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label>Course</label>
                             <asp:DropDownList ID="txtCourseEdit" runat="server" CssClass="form-select" />
                         </div>
+
                         <div class="col-md-4">
-                            <label>Section (Optional)</label>
+                            <label>Class</label>
+                            <asp:DropDownList ID="ddlStudyLevelEdit" runat="server" CssClass="form-select" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label>Semester</label>
+                            <asp:DropDownList ID="ddlSemesterEdit" runat="server" CssClass="form-select" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label>Section</label>
                             <asp:DropDownList ID="txtSecctionEdit" runat="server" CssClass="form-select" />
                         </div>
+
                         <div class="col-md-6">
-                            <label>Full Name*</label>
-                            <asp:TextBox ID="txtFullNameEdit" runat="server" CssClass="form-control" />
+                            <label>Username</label>
+                            <asp:TextBox ID="txtUsernameEdit" runat="server" CssClass="form-control" />
                         </div>
+
                         <div class="col-md-6">
-                            <label>Contact*</label>
-                            <asp:TextBox ID="txtContactEdit" runat="server" CssClass="form-control" />
-                        </div>
-                        <div class="col-md-6">
-                            <label>Email*</label>
+                            <label>Email</label>
                             <asp:TextBox ID="txtEmailEdit" runat="server" CssClass="form-control" />
                         </div>
+
                         <div class="col-md-6">
-                            <label>Roll Number*</label>
+                            <label>Full Name</label>
+                            <asp:TextBox ID="txtFullNameEdit" runat="server" CssClass="form-control" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label>Roll Number</label>
                             <asp:TextBox ID="txtRollNumberEdit" runat="server" CssClass="form-control" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label>Gender</label>
+                            <asp:DropDownList ID="ddlGenderEdit" runat="server" CssClass="form-select">
+                                <asp:ListItem Text="Male" Value="Male" />
+                                <asp:ListItem Text="Female" Value="Female" />
+                            </asp:DropDownList>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label>DOB</label>
+                            <asp:TextBox ID="txtDOBEdit" runat="server" TextMode="Date" CssClass="form-control" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label>Contact</label>
+                            <asp:TextBox ID="txtContactEdit" runat="server" CssClass="form-control" />
                         </div>
                     </div>
                 </div>
@@ -640,6 +689,11 @@
                active.innerText = activeCount - 1;
                inactive.innerText = inactiveCount + 1;
            }
+       }
+
+       function keepModalOpen() {
+           var modal = new bootstrap.Modal(document.getElementById('CreateModal'));
+           modal.show();
        }
    </script>
 
