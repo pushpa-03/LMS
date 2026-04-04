@@ -1,19 +1,15 @@
 ﻿using LearningManagementSystem.BL;
-using LearningManagementSystem.GC;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
-using System.Xml.Linq;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class AdminMaster1 : System.Web.UI.Page
+    public partial class Dashboard : System.Web.UI.Page
     {
+        int instituteId;
+        int sessionId;
+
         protected void Page_Load(object sender, EventArgs e)
         {
             // 🔐 Check login only
@@ -28,7 +24,7 @@ namespace LearningManagementSystem.Admin
             // 🚫 Only Admin & SuperAdmin allowed
             if (role != "Admin" && role != "SuperAdmin")
             {
-                Response.Redirect("~/Unauthorized.aspx");
+                Response.Redirect("~/Default.aspx");
                 return;
             }
 
@@ -69,45 +65,81 @@ namespace LearningManagementSystem.Admin
 
             if (!IsPostBack)
             {
-                LoadAcademicSessions();
+                instituteId = Convert.ToInt32(Session["InstituteId"]);
+                LoadSessions();
+                LoadDashboard();
             }
         }
 
-
-        private void LoadAcademicSessions()
-    {
-        AcademicSessionBL bl = new AcademicSessionBL();
-        int instituteId = Convert.ToInt32(Session["InstituteId"]);
-
-        DataTable dt = bl.GetSessionsByInstitute(instituteId);
-
-        ddlAcademicSession.DataSource = dt;
-        ddlAcademicSession.DataTextField = "SessionName";
-        ddlAcademicSession.DataValueField = "SessionId";
-        ddlAcademicSession.DataBind();
-
-        DataTable current = bl.GetCurrentSession(instituteId);
-        if (current.Rows.Count > 0)
+        private void LoadSessions()
         {
-            ddlAcademicSession.SelectedValue =
-                current.Rows[0]["SessionId"].ToString();
+            AcademicSessionBL bl = new AcademicSessionBL();
+            DataTable dt = bl.GetSessionsByInstitute(instituteId);
 
-            lblSelectedSession.Text =
-                "Current Session: " +
-                current.Rows[0]["SessionName"].ToString();
+            ddlAcademicSession.DataSource = dt;
+            ddlAcademicSession.DataTextField = "SessionName";
+            ddlAcademicSession.DataValueField = "SessionId";
+            ddlAcademicSession.DataBind();
+
+            DataTable current = bl.GetCurrentSession(instituteId);
+            if (current.Rows.Count > 0)
+            {
+                ddlAcademicSession.SelectedValue = current.Rows[0]["SessionId"].ToString();
+                sessionId = Convert.ToInt32(current.Rows[0]["SessionId"]);
+                Session["CurrentSessionId"] = sessionId;
+            }
+        }
+
+        //protected void ddlAcademicSession_SelectedIndexChanged(object sender, EventArgs e)
+        //{
+        //    instituteId = Convert.ToInt32(Session["InstituteId"]);   // ✅ ADD THIS
+        //    sessionId = Convert.ToInt32(ddlAcademicSession.SelectedValue);
+
+        //    Session["CurrentSessionId"] = sessionId;
+
+        //    lblSelectedSession.Text = "Session: " + ddlAcademicSession.SelectedItem.Text;
+
+        //    LoadDashboard();
+        //}
+        //private void LoadDashboard()
+        //{
+        //    instituteId = Convert.ToInt32(Session["InstituteId"]);   // ✅ FIX
+        //    sessionId = Convert.ToInt32(Session["CurrentSessionId"]);
+
+        //    AdminDashboardBL bl = new AdminDashboardBL();
+
+        //    DataRow r = bl.GetCounts(instituteId, sessionId).Rows[0];
+
+        //    lblStudents.Text = r["Students"].ToString();
+        //    lblTeachers.Text = r["Teachers"].ToString();
+        //    lblSubjects.Text = r["Subjects"].ToString();
+        //    lblCourses.Text = r["Courses"].ToString();
+        //}
+
+        protected void ddlAcademicSession_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            sessionId = Convert.ToInt32(ddlAcademicSession.SelectedValue);
+            Session["CurrentSessionId"] = sessionId;
+
+            lblSelectedSession.Text = "Session: " + ddlAcademicSession.SelectedItem.Text;
+
+            LoadDashboard();
+        }
+
+        private void LoadDashboard()
+        {
+            sessionId = Convert.ToInt32(Session["CurrentSessionId"]);
+
+            AdminDashboardBL bl = new AdminDashboardBL();
+
+            DataRow r = bl.GetCounts(instituteId, sessionId).Rows[0];
+
+            lblStudents.Text = r["Students"].ToString();
+            lblTeachers.Text = r["Teachers"].ToString();
+            lblSubjects.Text = r["Subjects"].ToString();
+            lblCourses.Text = r["Courses"].ToString();
+
         }
     }
-
-    protected void ddlAcademicSession_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        int sessionId = Convert.ToInt32(ddlAcademicSession.SelectedValue);
-
-        Session["CurrentSessionId"] = sessionId;
-
-        lblSelectedSession.Text = "Selected Session: " +
-            ddlAcademicSession.SelectedItem.Text;
-    }
-
-
 }
-}
+

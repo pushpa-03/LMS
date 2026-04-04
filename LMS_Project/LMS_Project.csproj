@@ -177,6 +177,7 @@
     <Content Include="SuperAdmin\AddInstitute.aspx" />
     <Content Include="SuperAdmin\AddSociety.aspx" />
     <Content Include="SuperAdmin\Dashboard.aspx" />
+    <Content Include="Teacher\MyStudentDetails.aspx" />
     <Content Include="Teacher\MyStudents.aspx" />
     <Content Include="Teacher\TeacherAssignment.aspx" />
     <Content Include="Teacher\TeacherCalendar.aspx" />
@@ -382,6 +383,7 @@
     <Compile Include="App_Code\Masters\BL\AddStudentBL.cs" />
     <Compile Include="App_Code\Masters\BL\AddSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AddTeacherBL.cs" />
+    <Compile Include="App_Code\Masters\BL\AdminDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignLevelSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignmentBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignStudentSubjectBL.cs" />
@@ -402,6 +404,7 @@
     <Compile Include="App_Code\Masters\BL\SubjectsBL.cs" />
     <Compile Include="App_Code\Masters\BL\TeacherProfileBL.cs" />
     <Compile Include="App_Code\Masters\BL\TeacherReportBL.cs" />
+    <Compile Include="App_Code\Masters\BL\TeacherStudentDetailsBL.cs" />
     <Compile Include="App_Code\Masters\BL\VideoPlayerBL.cs" />
     <Compile Include="App_Code\Masters\GC\AcademicSessionGC.cs" />
     <Compile Include="App_Code\Masters\GC\AcademicSetupGC.cs" />
@@ -430,6 +433,7 @@
     <Compile Include="App_Code\Masters\GC\SubjectsGC.cs" />
     <Compile Include="App_Code\Masters\GC\TeacherProfileGC.cs" />
     <Compile Include="App_Code\Masters\GC\TeacherReportGC.cs" />
+    <Compile Include="App_Code\Masters\GC\TeacherStudentGC.cs" />
     <Compile Include="App_Code\Masters\GC\VideoPlayerGC.cs" />
     <Compile Include="Parent\ParentDashboard.aspx.cs">
       <DependentUpon>ParentDashboard.aspx</DependentUpon>
@@ -556,6 +560,13 @@
     </Compile>
     <Compile Include="SuperAdmin\SuperAdminMaster.Master.designer.cs">
       <DependentUpon>SuperAdminMaster.Master</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\MyStudentDetails.aspx.cs">
+      <DependentUpon>MyStudentDetails.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\MyStudentDetails.aspx.designer.cs">
+      <DependentUpon>MyStudentDetails.aspx</DependentUpon>
     </Compile>
     <Compile Include="Teacher\MyStudents.aspx.cs">
       <DependentUpon>MyStudents.aspx</DependentUpon>

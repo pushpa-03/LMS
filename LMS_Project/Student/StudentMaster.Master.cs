@@ -86,7 +86,7 @@ namespace LMS_Project.Student
                 logoUrl = Session["LogoURL"].ToString();
 
             lblHeaderInstituteName.Text = displayName;
-            hInstituteName.InnerText = displayName;
+            //hInstituteName.InnerText = displayName;
             imgInstituteLogo.ImageUrl = ResolveUrl(logoUrl);
 
             // ── Student name & profile photo ──────────────────────────

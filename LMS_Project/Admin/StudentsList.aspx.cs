@@ -208,5 +208,25 @@ namespace LearningManagementSystem.Admin
             ddlSection.DataBind();
             ddlSection.Items.Insert(0, new ListItem("Section", ""));
         }
+
+        protected void btnResetFilters_Click(object sender, EventArgs e)
+        {
+            // Reset dropdowns
+            ddlStream.SelectedIndex = 0;
+            ddlCourse.SelectedIndex = 0;
+            ddlLevel.SelectedIndex = 0;
+            ddlSemester.SelectedIndex = 0;
+            ddlSection.SelectedIndex = 0;
+
+            // Reset search
+            txtSearch.Text = "";
+
+            // Reset inactive toggle
+            ShowInactive = false;
+            btnToggleView.Text = "👁 View Inactive";
+
+            // Reload data
+            LoadAll();
+        }
     }
 }

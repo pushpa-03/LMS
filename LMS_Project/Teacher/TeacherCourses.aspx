@@ -10,7 +10,7 @@
 
 /* ── Page Header Banner ── */
 .page-banner {
-    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 60%, #66bb6a 100%);
+    background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);
     border-radius: 16px;
     padding: 24px 32px;
     color: #fff;
@@ -48,7 +48,7 @@
     box-shadow: 0 2px 10px rgba(0,0,0,.06);
     padding: 20px;
     height: 100%;
-    border-left: 4px solid #388e3c;
+    border-left: 4px solid #1976d2;
     transition: transform .2s, box-shadow .2s;
     display: flex;
     flex-direction: column;
@@ -62,10 +62,10 @@
 .subject-card .card-icon {
     width: 44px; height: 44px;
     border-radius: 12px;
-    background: #e8f5e9;
+    background: #e3f2fd;
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;
-    color: #2e7d32;
+    color: #1565c0;
     margin-bottom: 14px;
     flex-shrink: 0;
 }
@@ -88,7 +88,7 @@
 }
 .subject-card .meta-row i {
     width: 14px;
-    color: #388e3c;
+    color: #1976d2;
     font-size: 12px;
 }
 
@@ -100,15 +100,15 @@
     font-size: 11px;
     font-weight: 700;
 }
-.pill-green  { background: #e8f5e9; color: #2e7d32; }
+.pill-green  { background: #e3f2fd; color: #1565c0; }
 .pill-teal   { background: #e0f2f1; color: #00796b; }
-.pill-lime   { background: #f9fbe7; color: #558b2f; }
+.pill-lime   { background: #e8eaf6; color: #283593; }
 
 /* ── Card footer ── */
 .subject-card .card-footer-row {
     margin-top: auto;
     padding-top: 14px;
-    border-top: 1px solid #f0f7f2;
+    border-top: 1px solid #e3f2fd;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -116,8 +116,8 @@
 .btn-manage {
     display: inline-block;
     padding: 5px 16px;
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: #e3f2fd;
+    color: #1565c0;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
@@ -125,7 +125,7 @@
     transition: background .2s, color .2s;
 }
 .btn-manage:hover {
-    background: #2e7d32;
+    background: #1565c0;
     color: #fff;
     text-decoration: none;
 }
@@ -143,8 +143,8 @@
     font-size: 14px;
     color: #455a64;
 }
-.summary-strip i { color: #2e7d32; font-size: 18px; }
-.summary-strip strong { color: #2e7d32; }
+.summary-strip i { color: #1976d2; font-size: 18px; }
+.summary-strip strong { color: #1565c0; }
 
 /* ── Empty state ── */
 .empty-state {
@@ -155,7 +155,7 @@
     border-radius: 14px;
     box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
-.empty-state i { font-size: 48px; margin-bottom: 12px; display: block; color: #c8e6c9; }
+.empty-state i { font-size: 48px; margin-bottom: 12px; display: block; color: #90caf9; }
 .empty-state h6 { font-weight: 700; color: #78909c; margin-bottom: 4px; }
 .empty-state p  { font-size: 13px; margin: 0; }
 
@@ -208,8 +208,6 @@
                             <i class="fas fa-tag"></i>
                             <span>Code: <strong><%# Eval("SubjectCode") %></strong></span>
                         </div>
-
-                        
 
                         <div class="mt-2">
                             <span class="pill pill-green me-1">

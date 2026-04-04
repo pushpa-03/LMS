@@ -8,6 +8,7 @@ namespace LearningManagementSystem.GC
         public int SocietyId { get; set; }
         public int InstituteId { get; set; }
         public int SubjectId { get; set; }
+        public int? ChapterId { get; set; }
 
         public string Title { get; set; }
         public string Description { get; set; }

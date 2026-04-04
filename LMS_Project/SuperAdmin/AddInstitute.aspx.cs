@@ -238,19 +238,18 @@ namespace LMS.SuperAdmin
         protected void btnPrev_Click(object sender, EventArgs e) { CurrentPage--; BindInstitutes(); }
         protected void ddlFilterSociety_SelectedIndexChanged(object sender, EventArgs e) { CurrentPage = 0; BindInstitutes(); }
 
-        protected void btnClear_Click(object sender, EventArgs e) { ClearForm();  }
+        protected void btnClear_Click(object sender, EventArgs e) { ClearForm(); }
 
         private void ClearForm()
         {
             hfInstituteId.Value = "0";
             txtInstName.Text = txtInstCode.Text = txtShortName.Text = txtEducationType.Text = txtPhone.Text = txtEmail.Text = "";
             txtInstCode.ReadOnly = false;
-            txtInstCode.BackColor = System.Drawing.Color.White;            
+            txtInstCode.BackColor = System.Drawing.Color.White;
             btnAddInst.Text = "Save Institute";
             ddlSocieties.SelectedIndex = 0;
 
         }
-        
+
     }
 }
-

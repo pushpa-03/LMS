@@ -13,7 +13,7 @@ namespace LearningManagementSystem.SuperAdmin
         {
             if (!IsPostBack)
             {
-                lblSidebarInstituteName.Text = "LMS Portal"; // Fallback name
+                //lblSidebarInstituteName.Text = "LMS Portal"; // Fallback name
 
             }
         }

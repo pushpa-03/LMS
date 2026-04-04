@@ -8,7 +8,7 @@
 
 /* ── Page Banner ── */
 .page-banner {
-    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 60%, #66bb6a 100%);
+    background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);
     border-radius: 16px;
     padding: 24px 32px;
     color: #fff;
@@ -42,13 +42,13 @@
 .panel-card .section-title {
     font-size: 15px;
     font-weight: 700;
-    color: #2e7d32;
+    color: #1565c0;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 8px;
     padding-bottom: 12px;
-    border-bottom: 2px solid #e8f5e9;
+    border-bottom: 2px solid #e3f2fd;
 }
 
 /* ── Form fields ── */
@@ -63,23 +63,23 @@
 }
 .form-control-custom {
     width: 100%;
-    border: 1.5px solid #e0f2e0;
+    border: 1.5px solid #bbdefb;
     border-radius: 10px;
     padding: 10px 14px;
     font-size: 13px;
     color: #455a64;
-    background: #f9fbe7;
+    background: #e3f2fd;
     outline: none;
     transition: border .2s, background .2s;
     box-sizing: border-box;
 }
 .form-control-custom:focus {
-    border-color: #66bb6a;
+    border-color: #42a5f5;
     background: #fff;
 }
 select.form-control-custom {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2381c784' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364b5f6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 14px center;
     padding-right: 36px;
@@ -88,23 +88,23 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
 
 /* File upload */
 .file-upload-wrap {
-    border: 2px dashed #a5d6a7;
+    border: 2px dashed #90caf9;
     border-radius: 10px;
     padding: 16px;
     text-align: center;
-    background: #f9fbe7;
+    background: #e3f2fd;
     color: #78909c;
     font-size: 13px;
     cursor: pointer;
     transition: border .2s;
 }
-.file-upload-wrap:hover { border-color: #2e7d32; }
-.file-upload-wrap i { font-size: 24px; color: #81c784; display: block; margin-bottom: 6px; }
+.file-upload-wrap:hover { border-color: #1565c0; }
+.file-upload-wrap i { font-size: 24px; color: #64b5f6; display: block; margin-bottom: 6px; }
 .file-upload-wrap input[type=file] { display: none; }
 
 /* Submit button */
 .btn-submit {
-    background: linear-gradient(135deg, #2e7d32, #66bb6a);
+    background: linear-gradient(135deg, #1565c0, #42a5f5);
     color: #fff;
     border: none;
     border-radius: 10px;
@@ -121,12 +121,12 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
 
 /* ── Alert ── */
 .alert-success-custom {
-    background: #e8f5e9;
-    border-left: 4px solid #2e7d32;
+    background: #e3f2fd;
+    border-left: 4px solid #1565c0;
     border-radius: 10px;
     padding: 12px 18px;
     font-size: 13px;
-    color: #2e7d32;
+    color: #1565c0;
     font-weight: 600;
     margin-bottom: 20px;
     display: flex;
@@ -147,8 +147,8 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
     font-size: 14px;
     color: #455a64;
 }
-.summary-strip i      { color: #2e7d32; font-size: 18px; }
-.summary-strip strong { color: #2e7d32; }
+.summary-strip i      { color: #1976d2; font-size: 18px; }
+.summary-strip strong { color: #1565c0; }
 
 /* ── Assignment cards ── */
 .assignment-card {
@@ -156,7 +156,7 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
     border-radius: 14px;
     box-shadow: 0 2px 10px rgba(0,0,0,.06);
     padding: 20px;
-    border-left: 4px solid #388e3c;
+    border-left: 4px solid #1976d2;
     transition: transform .2s, box-shadow .2s;
     display: flex;
     flex-direction: column;
@@ -169,9 +169,9 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
 .assignment-card .card-icon {
     width: 42px; height: 42px;
     border-radius: 12px;
-    background: #e8f5e9;
+    background: #e3f2fd;
     display: flex; align-items: center; justify-content: center;
-    font-size: 17px; color: #2e7d32;
+    font-size: 17px; color: #1565c0;
     margin-bottom: 12px;
 }
 .assignment-card .a-title {
@@ -180,7 +180,7 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
     line-height: 1.3;
 }
 .assignment-card .a-subject {
-    font-size: 12px; color: #388e3c;
+    font-size: 12px; color: #1976d2;
     font-weight: 600; margin-bottom: 12px;
 }
 .assignment-card .meta-row {
@@ -188,7 +188,7 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
     gap: 8px; font-size: 12px;
     color: #78909c; margin-bottom: 7px;
 }
-.assignment-card .meta-row i { width: 14px; color: #388e3c; }
+.assignment-card .meta-row i { width: 14px; color: #1976d2; }
 .assignment-card .desc-text {
     font-size: 12px; color: #607d8b;
     line-height: 1.5; margin-bottom: 14px;
@@ -196,7 +196,7 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
 .assignment-card .card-footer-row {
     margin-top: auto;
     padding-top: 14px;
-    border-top: 1px solid #f0f7f2;
+    border-top: 1px solid #e3f2fd;
     display: flex; align-items: center;
     gap: 8px; flex-wrap: wrap;
 }
@@ -209,7 +209,7 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
     font-size: 11px;
     font-weight: 700;
 }
-.pill-green  { background: #e8f5e9; color: #2e7d32; }
+.pill-green  { background: #e3f2fd; color: #1565c0; }
 .pill-orange { background: #fff3e0; color: #e65100; }
 .pill-red    { background: #ffebee; color: #c62828; }
 
@@ -223,17 +223,17 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
     transition: background .2s, color .2s;
     border: none; cursor: pointer;
 }
-.btn-download  { background: #e8f5e9; color: #2e7d32; }
-.btn-download:hover  { background: #2e7d32; color: #fff; text-decoration: none; }
-.btn-view      { background: #e0f2f1; color: #00796b; }
-.btn-view:hover      { background: #00796b; color: #fff; text-decoration: none; }
+.btn-download       { background: #e3f2fd; color: #1565c0; }
+.btn-download:hover { background: #1565c0; color: #fff; text-decoration: none; }
+.btn-view           { background: #e0f2f1; color: #00796b; }
+.btn-view:hover     { background: #00796b; color: #fff; text-decoration: none; }
 
 /* ── Empty state ── */
 .empty-state {
     text-align: center; padding: 50px 20px;
     color: #90a4ae;
 }
-.empty-state i { font-size: 48px; margin-bottom: 12px; display: block; color: #c8e6c9; }
+.empty-state i { font-size: 48px; margin-bottom: 12px; display: block; color: #90caf9; }
 .empty-state h6 { font-weight: 700; color: #78909c; margin-bottom: 4px; }
 .empty-state p  { font-size: 13px; margin: 0; }
 
@@ -252,7 +252,7 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
 <asp:Panel ID="pnlSuccess" runat="server" Visible="false">
     <div class="alert-success-custom">
         <i class="fas fa-check-circle"></i>
-        Assignment created successfully!
+        <asp:Label ID="lblSuccessMessage" runat="server" />
     </div>
 </asp:Panel>
 
@@ -266,7 +266,20 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
 
         <div class="col-md-6">
             <label class="form-label-custom">Subject</label>
-            <asp:DropDownList ID="ddlSubject" runat="server" CssClass="form-control-custom" />
+            <asp:DropDownList 
+                ID="ddlSubject" 
+                runat="server" 
+                CssClass="form-control-custom"
+                AutoPostBack="true"
+                OnSelectedIndexChanged="ddlSubject_SelectedIndexChanged" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label-custom">Chapter (Optional)</label>
+            <asp:DropDownList 
+                ID="ddlChapter" 
+                runat="server" 
+                CssClass="form-control-custom" />
         </div>
 
         <div class="col-md-6">
@@ -293,24 +306,25 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
                 placeholder="e.g. 100" />
         </div>
 
-       <div class="col-md-4">
-    <label class="form-label-custom">Assignment File (Optional)</label>
-    <div class="file-upload-wrap" onclick="document.getElementById('fuAssignment').click()">
-        <i class="fas fa-cloud-upload-alt"></i>
-        <span id="fileLabel">Click to upload a file</span>
-        <asp:FileUpload ID="fuAssignment" runat="server"
-            Style="display:none"
-            ClientIDMode="Static"
-            onchange="updateLabel(this)" />
-    </div>
-</div>
+        <div class="col-md-4">
+            <label class="form-label-custom">
+                Assignment File <span style="color:red">*</span>
+            </label>
+            <div class="file-upload-wrap" onclick="document.getElementById('fuAssignment').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span id="fileLabel">Click to upload a file</span>
+                <asp:FileUpload ID="fuAssignment" runat="server"
+                    Style="display:none"
+                    ClientIDMode="Static"
+                    onchange="updateLabel(this)" />
+            </div>
+        </div>
 
         <div class="col-12 mt-2">
             <asp:Button ID="btnSave" runat="server" Text="" 
                 CssClass="btn-submit"
                 OnClick="btnSave_Click"
                 OnClientClick="this.innerHTML='<i class=\'fas fa-spinner fa-spin\'></i> Saving...'" />
-            <%-- Text set from code-behind to avoid HTML in markup --%>
         </div>
 
     </div>
@@ -327,7 +341,8 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
 
 <asp:Panel ID="pnlAssignments" runat="server">
     <div class="row g-3">
-        <asp:Repeater ID="rptAssignments" runat="server">
+        <asp:Repeater ID="rptAssignments" runat="server" 
+            OnItemCommand="rptAssignments_ItemCommand">
             <ItemTemplate>
                 <div class="col-md-6 col-lg-4">
                     <div class="assignment-card">
@@ -357,9 +372,9 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
                             <span>Max Marks: <strong><%# Eval("MaxMarks") %></strong></span>
                         </div>
 
-                       <div class="mt-2 mb-1">
-    <%# GetDueBadge(Eval("DueDate")) %>
-</div>
+                        <div class="mt-2 mb-1">
+                            <%# GetDueBadge(Eval("DueDate")) %>
+                        </div>
 
                         <div class="card-footer-row">
                             <asp:HyperLink runat="server"
@@ -375,6 +390,14 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
                                 CssClass="btn-action btn-view">
                                 <i class="fas fa-eye"></i> Submissions
                             </asp:HyperLink>
+
+                            <asp:LinkButton runat="server"
+                                CommandName="DeleteAssignment"
+                                CommandArgument='<%# Eval("AssignmentId") %>'
+                                CssClass="btn-action"
+                                OnClientClick="return confirm('Are you sure you want to delete this assignment?');">
+                                <i class="fas fa-trash"></i> Delete
+                            </asp:LinkButton>
                         </div>
 
                     </div>
@@ -395,12 +418,12 @@ textarea.form-control-custom { resize: vertical; min-height: 100px; }
 </asp:Panel>
 
 <script>
-function updateLabel(input) {
-    const label = document.getElementById("fileLabel");
-    label.textContent = input.files.length > 0
-        ? input.files[0].name
-        : "Click to upload a file";
-}
+    function updateLabel(input) {
+        const label = document.getElementById("fileLabel");
+        label.textContent = input.files.length > 0
+            ? input.files[0].name
+            : "Click to upload a file";
+    }
 </script>
 
 </asp:Content>

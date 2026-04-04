@@ -1,5 +1,4 @@
 ﻿using LearningManagementSystem.GC;
-using LMS_Project.Student;
 using System;
 using System.Data;
 using System.Data.SqlClient;
@@ -14,22 +13,41 @@ namespace LearningManagementSystem.BL
         public DataTable GetTeacherSubjects(int userId, int instituteId)
         {
             SqlCommand cmd = new SqlCommand(@"
-        SELECT DISTINCT 
-            s.SubjectId,
-            s.SubjectName
-        FROM SubjectFaculty sf
-        INNER JOIN Subjects s
-            ON sf.SubjectId = s.SubjectId
-        INNER JOIN AcademicSessions sess
-            ON sf.SessionId = sess.SessionId
-        WHERE sf.TeacherId = @UserId
-        AND sf.InstituteId = @Inst
-        AND s.IsActive = 1
-        AND sess.IsCurrent = 1
-    ");
+                SELECT DISTINCT 
+                    s.SubjectId,
+                    s.SubjectName
+                FROM SubjectFaculty sf
+                INNER JOIN Subjects s
+                    ON sf.SubjectId = s.SubjectId
+                INNER JOIN AcademicSessions sess
+                    ON sf.SessionId = sess.SessionId
+                WHERE sf.TeacherId = @UserId
+                AND sf.InstituteId = @Inst
+                AND s.IsActive = 1
+                AND sess.IsCurrent = 1
+            ");
 
             cmd.Parameters.AddWithValue("@UserId", userId);
             cmd.Parameters.AddWithValue("@Inst", instituteId);
+
+            return dl.GetDataTable(cmd);
+        }
+
+        // ================= GET CHAPTERS =================
+        public DataTable GetChaptersBySubject(int subjectId, int instituteId, int societyId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+                SELECT ChapterId, ChapterName
+                FROM Chapters
+                WHERE SubjectId = @Sub
+                AND InstituteId = @Inst
+                AND SocietyId = @Soc
+                ORDER BY OrderNo
+            ");
+
+            cmd.Parameters.AddWithValue("@Sub", subjectId);
+            cmd.Parameters.AddWithValue("@Inst", instituteId);
+            cmd.Parameters.AddWithValue("@Soc", societyId);
 
             return dl.GetDataTable(cmd);
         }
@@ -39,20 +57,33 @@ namespace LearningManagementSystem.BL
         {
             SqlCommand cmd = new SqlCommand(@"
                 INSERT INTO Assignments
-                (SocietyId, InstituteId, SubjectId, Title, Description,
+                (SocietyId, InstituteId, SubjectId, ChapterId, Title, Description,
                  FilePath, DueDate, MaxMarks, CreatedBy, IsActive)
                 VALUES
-                (@S, @I, @Sub, @T, @D, @F, @Due, @M, @C, 1)
+                (@S, @I, @Sub, @Chap, @T, @D, @F, @Due, @M, @C, 1)
             ");
 
             cmd.Parameters.AddWithValue("@S", obj.SocietyId);
             cmd.Parameters.AddWithValue("@I", obj.InstituteId);
             cmd.Parameters.AddWithValue("@Sub", obj.SubjectId);
+
+            // ✅ FIX: Proper NULL handling
+            cmd.Parameters.AddWithValue("@Chap",
+                obj.ChapterId.HasValue ? (object)obj.ChapterId.Value : DBNull.Value);
+
             cmd.Parameters.AddWithValue("@T", obj.Title);
-            cmd.Parameters.AddWithValue("@D", (object)obj.Description ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@F", (object)obj.FilePath ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@Due", (object)obj.DueDate ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@M", (object)obj.MaxMarks ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@D",
+                string.IsNullOrEmpty(obj.Description) ? (object)DBNull.Value : obj.Description);
+
+            // ❗ File should NEVER be null now (since mandatory)
+            cmd.Parameters.AddWithValue("@F", obj.FilePath);
+
+            cmd.Parameters.AddWithValue("@Due",
+                obj.DueDate.HasValue ? (object)obj.DueDate.Value : DBNull.Value);
+
+            cmd.Parameters.AddWithValue("@M",
+                obj.MaxMarks.HasValue ? (object)obj.MaxMarks.Value : DBNull.Value);
+
             cmd.Parameters.AddWithValue("@C", obj.CreatedBy);
 
             dl.ExecuteCMD(cmd);
@@ -65,6 +96,7 @@ namespace LearningManagementSystem.BL
                 SELECT 
                     a.AssignmentId,
                     s.SubjectName,
+                    c.ChapterName,   -- ✅ NEW
                     a.Title,
                     a.Description,
                     a.FilePath,
@@ -74,6 +106,8 @@ namespace LearningManagementSystem.BL
                 FROM Assignments a
                 INNER JOIN Subjects s 
                     ON a.SubjectId = s.SubjectId
+                LEFT JOIN Chapters c
+                    ON a.ChapterId = c.ChapterId   -- ✅ IMPORTANT (LEFT JOIN)
                 WHERE a.CreatedBy = @UserId
                 AND a.InstituteId = @Inst
                 AND a.SocietyId = @Soc
@@ -93,7 +127,7 @@ namespace LearningManagementSystem.BL
         {
             SqlCommand cmd = new SqlCommand(@"
                 SELECT 
-                    s.SubmissionId,          -- 🔥 VERY IMPORTANT
+                    s.SubmissionId,
                     up.FullName,
                     s.SubmittedOn,
                     s.MarksObtained,
@@ -129,6 +163,18 @@ namespace LearningManagementSystem.BL
             cmd.Parameters.AddWithValue("@Feedback",
                 string.IsNullOrEmpty(feedback) ? (object)DBNull.Value : feedback);
             cmd.Parameters.AddWithValue("@SubmissionId", submissionId);
+
+            dl.ExecuteCMD(cmd);
+        }
+        public void DeleteAssignment(int assignmentId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        UPDATE Assignments
+        SET IsActive = 0
+        WHERE AssignmentId = @Id
+    ");
+
+            cmd.Parameters.AddWithValue("@Id", assignmentId);
 
             dl.ExecuteCMD(cmd);
         }

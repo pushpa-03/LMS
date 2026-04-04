@@ -6,13 +6,13 @@
 .calendar-modern {
     width: 100%;
     border: none !important;
-    background: white;
-    border-radius: 8px;
+    background: #fff;
+    border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0px 1px 3px 0px #364A630D;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
 .calendar-modern th {
-    background: var(--primary);
+    background: linear-gradient(135deg, #1565c0, #42a5f5);
     color: #fff !important;
     text-align: center;
     padding: 12px !important;
@@ -20,27 +20,32 @@
     font-size: 14px;
 }
 .calendar-modern .day-header {
-    background: #e8f5e9;          /* light green — adjust to match your --primary */
-    color: var(--primary) !important;
-    font-weight: 600;
-    font-size: 13px;
+    background: #e3f2fd;
+    color: #1565c0 !important;
+    font-weight: 700;
+    font-size: 12px;
 }
 .calendar-modern td {
     height: 90px;
     vertical-align: top;
     padding: 6px !important;
-    border: 1px solid #EEF1F5;
+    border: 1px solid #e3f2fd;
     position: relative;
+    transition: background .2s;
 }
 .day-number {
     font-weight: bold;
-    color: #333;
+    color: #263238;
     display: block;
     margin-bottom: 4px;
 }
-.calendar-modern td:hover { background: #f8fafc; }
-.calendar-modern .today   { border: 2px solid var(--primary); background: #ecf9ec; }
-
+.calendar-modern td:hover {
+    background: #f5faff;
+}
+.calendar-modern .today {
+    border: 2px solid #1565c0;
+    background: #e3f2fd;
+}
 .event-dot {
     font-size: 11px;
     margin-top: 2px;
@@ -54,14 +59,14 @@
     max-width: 100%;
 }
 .event-general    { background: #41A141; }
-.event-holiday    { background: #e74c3c; }
-.event-exam       { background: #f39c12; }
-.event-assignment { background: #3498db; }
+.event-holiday    { background: #c62828; }
+.event-exam       { background: #ef6c00; }
+.event-assignment { background: #1976d2; }
 
-.badge-general    { background-color: #41A141 !important; }
-.badge-holiday    { background-color: #e74c3c !important; }
-.badge-exam       { background-color: #f39c12 !important; }
-.badge-assignment { background-color: #3498db !important; }
+.badge-general    { background-color: #e3f2fd !important; color:#1565c0; }
+.badge-holiday    { background-color: #ffebee !important; color:#c62828; }
+.badge-exam       { background-color: #fff3e0 !important; color:#ef6c00; }
+.badge-assignment { background-color: #e3f2fd !important; color:#1976d2; }
 </style>
 
 <div class="card shadow p-3 mb-4">

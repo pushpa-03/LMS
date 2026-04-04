@@ -8,10 +8,6 @@
 <!-- HEADER -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
 
-    <%--<div class="title-header">
-        <h3 class="fw-bold mb-1 ">Students Overview</h3>
-        <small class="text-muted">View and analyze students structure</small>
-    </div>--%>
     <div class="page-header">
     <div>
         <h4><i class="fa fa-book me-2"></i>Students Overview</h4>
@@ -77,6 +73,12 @@
                     AutoPostBack="true" OnSelectedIndexChanged="FilterChanged" />
             </div>
 
+            <asp:LinkButton ID="btnResetFilters" runat="server"
+            CssClass="btn btn-light border rounded-pill px-3"
+            OnClick="btnResetFilters_Click">
+            <i class="fas fa-undo me-1 text-primary"></i> Reset
+        </asp:LinkButton>
+
         </div>
     </div>
 </div>
@@ -110,79 +112,92 @@
 
 </div>
 
-<!-- ✅ HIERARCHY VIEW -->
+<!-- ✅ MODERN STUDENT GRID VIEW -->
+<div class="row g-3" id="studentsGrid">
+
 <asp:Repeater ID="rptHierarchy" runat="server">
 <ItemTemplate>
-
-<div class="stream-card">
-
-    <h4 class="stream-title"><%# Eval("StreamName") %></h4>
 
     <asp:Repeater runat="server" DataSource='<%# Eval("Courses") %>'>
     <ItemTemplate>
 
-        <div class="course-card">
-            <h5><%# Eval("CourseName") %></h5>
+        <asp:Repeater runat="server" DataSource='<%# Eval("Levels") %>'>
+        <ItemTemplate>
 
-            <asp:Repeater runat="server" DataSource='<%# Eval("Levels") %>'>
+            <asp:Repeater runat="server" DataSource='<%# Eval("Semesters") %>'>
             <ItemTemplate>
 
-                <div class="level-card">
-                    <b><%# Eval("LevelName") %></b>
+                <asp:Repeater runat="server" DataSource='<%# Eval("Sections") %>'>
+                <ItemTemplate>
 
-                    <asp:Repeater runat="server" DataSource='<%# Eval("Semesters") %>'>
+                    <asp:Repeater runat="server" DataSource='<%# Eval("Students") %>'>
                     <ItemTemplate>
 
-                        <div class="semester-card">
-                            <span>Semester: <%# Eval("SemesterName") %></span>
+                        <!-- 🔥 STUDENT CARD -->
+                        <div class="col-12 col-sm-6 col-md-4 col-xl-3 student-card-wrapper">
 
-                            <asp:Repeater runat="server" DataSource='<%# Eval("Sections") %>'>
-                            <ItemTemplate>
+                            <div class="student-card">
 
-                                <div class="section-card">
-                                    <b>Section <%# Eval("SectionName") %></b>
+                                <!-- Avatar -->
+                                <div class="student-avatar">
+                                    <i class="fas fa-user-graduate"></i>
+                                </div>
 
-                                    <asp:Repeater runat="server" DataSource='<%# Eval("Students") %>'>
-                                    <ItemTemplate>
+                                <!-- Info -->
+                                <div class="student-info">
 
-                                        <div class="student-row">
-                                            <span>
-                                                <%# Eval("RollNumber") %> - <%# Eval("FullName") %>
-                                            </span>
+                                    <div class="student-name">
+                                        <%# Eval("FullName") %>
+                                    </div>
 
-                                            <a href='StudentDetails.aspx?id=<%# Eval("UserId") %>' 
-                                               class="btn btn-sm btn-primary">
-                                               View
-                                            </a>
-                                        </div>
+                                    <div class="student-roll">
+                                        <i class="fas fa-id-badge me-1"></i>
+                                        <%# Eval("RollNumber") %>
+                                    </div>
 
-                                    </ItemTemplate>
-                                    </asp:Repeater>
+                                    <div class="student-meta">
+                                        <i class="fas fa-envelope"></i>
+                                        <%# Eval("Email") %>
+                                    </div>
 
                                 </div>
 
-                            </ItemTemplate>
-                            </asp:Repeater>
+                                <!-- Status -->
+                                <div class="student-status">
+                                    <%# Convert.ToBoolean(Eval("IsActive")) 
+                                        ? "<span class='badge-active'>Active</span>" 
+                                        : "<span class='badge-inactive'>Inactive</span>" %>
+                                </div>
+
+                                <!-- Action -->
+                                <a href='StudentDetails.aspx?id=<%# Eval("UserId") %>' 
+                                   class="btn-view">
+                                    View Profile
+                                </a>
+
+                            </div>
 
                         </div>
 
                     </ItemTemplate>
                     </asp:Repeater>
 
-                </div>
+                </ItemTemplate>
+                </asp:Repeater>
 
             </ItemTemplate>
             </asp:Repeater>
 
-        </div>
+        </ItemTemplate>
+        </asp:Repeater>
 
     </ItemTemplate>
     </asp:Repeater>
 
-</div>
-
 </ItemTemplate>
 </asp:Repeater>
+
+</div>
 
 <style>
 body {
@@ -198,103 +213,214 @@ body {
 .page-header h4 {
     font-weight:800; color:#1565c0;
 }
-.table-header {
-    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
-    color: white;
+
+
+
+/* ===== SEARCH ===== */
+.search-box {
+    position: relative;
+}
+.search-box i {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    color: #90a4ae;
+}
+.search-box input {
+    padding-left: 35px;
+    border-radius: 20px;
+    border: 1px solid #e3e8f0;
 }
 
-/* SUMMARY SAME AS SUBJECT */
-.summary-row{display:flex;gap:14px;flex-wrap:wrap;}
-.summary-card{background:#fff;border-radius:14px;padding:16px;flex:1;min-width:160px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid transparent;}
-.summary-card.blue{border-left-color:#1565c0;}
-.summary-card.green{border-left-color:#2e7d32;}
-.summary-card.red{border-left-color:#c62828;}
-.sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-.sc-icon.blue{background:#e3f2fd;color:#1565c0;}
-.sc-icon.green{background:#e8f5e9;color:#2e7d32;}
-.sc-icon.red{background:#ffebee;color:#c62828;}
-.sc-val{font-size:24px;font-weight:900;}
-.sc-lbl{font-size:11px;color:#90a4ae;font-weight:700;}
-
-/* HIERARCHY */
-.hierarchy-card{
-    font-family: 'Segoe UI', sans-serif;
-    background:#fff;
-    border-radius:16px;
-    padding:18px;
-    margin-bottom:14px;
-    box-shadow:0 4px 12px rgba(0,0,0,.08);
-    transition:.3s;
-}
-.hierarchy-card:hover{transform:translateY(-4px);}
-
-.h-stream{font-weight:800;color:#1565c0;font-size:16px; font-family: 'Segoe UI', sans-serif;}
-.h-course{font-weight:700;color:#0f172a; font-family: 'Segoe UI', sans-serif;}
-.h-meta{font-size:12px;color:#64748b;margin-bottom:10px; font-family: 'Segoe UI', sans-serif;}
-
-.h-students{display:flex;flex-wrap:wrap;gap:8px; font-family: 'Segoe UI', sans-serif;}
-
-.student-pill{
-    background:#eef2ff;
-    padding:6px 10px;
-    border-radius:20px;
-    font-size:12px;
-    font-weight:600;
-     font-family: 'Segoe UI', sans-serif;
+/* ===== FILTER CARD ===== */
+.card {
+    border-radius: 14px !important;
 }
 
-/* SEARCH */
-.search-box{position:relative;}
-.search-box i{position:absolute;top:10px;left:12px;}
-.search-box input{padding-left:35px;border-radius:20px;}
-
-.stream-card{
-    background:#fff;
-    padding:18px;
-    border-radius:16px;
-    margin-bottom:15px;
-    box-shadow:0 4px 10px rgba(0,0,0,.08);
+/* ===== STAT CARDS (Student Style) ===== */
+.summary-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
-.stream-title{
-    color:#1565c0;
-    font-weight:800;
-    font-family: 'Segoe UI', sans-serif;
+.summary-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.07);
+    transition: .2s;
+}
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(0,0,0,.12);
 }
 
-.course-card{
-    margin-top:10px;
-    padding-left:15px;
-    font-family: 'Segoe UI', sans-serif;
+.sc-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
 }
 
-.level-card{
-    margin-top:8px;
-    padding-left:20px;
-    font-family: 'Segoe UI', sans-serif;
+/* COLORS */
+.summary-card.blue  { background:#e3f2fd; }
+.summary-card.green { background:#e8f5e9; }
+.summary-card.red   { background:#ffebee; }
+
+.sc-icon.blue  { background:#1976d2; color:#fff; }
+.sc-icon.green { background:#2e7d32; color:#fff; }
+.sc-icon.red   { background:#c62828; color:#fff; }
+
+.sc-val {
+    font-size: 28px;
+    font-weight: 800;
+}
+.sc-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: #78909c;
 }
 
-.semester-card{
-    margin-top:6px;
-    padding-left:25px;
-    font-family: 'Segoe UI', sans-serif;
+/*===================Reset button ==================*/
+.btn-light {
+    background: #fff;
+    border: 1px solid #e3e8f0;
+    font-weight: 600;
+    font-size: 13px;
+    transition: .2s;
 }
 
-.section-card{
-    margin-top:6px;
-    padding-left:30px;
-    font-family: 'Segoe UI', sans-serif;
+.btn-light:hover {
+    background: #1565c0;
+    color: #fff;
+    border-color: #1565c0;
 }
 
-.student-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:#f1f5f9;
-    padding:6px 10px;
-    border-radius:8px;
-    margin-top:5px;
-    font-family: 'Segoe UI', sans-serif;
+/* ================= STUDENT GRID ================= */
+
+.student-card-wrapper {
+    display: flex;
+}
+
+/* Card */
+.student-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 18px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0,0,0,.07);
+    transition: .25s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.student-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 25px rgba(0,0,0,.12);
+}
+
+/* Avatar */
+.student-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #e3f2fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: #1976d2;
+    margin-bottom: 10px;
+}
+
+/* Name */
+.student-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #263238;
+}
+
+/* Roll */
+.student-roll {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1976d2;
+    margin-top: 4px;
+}
+
+/* Meta */
+.student-meta {
+    font-size: 12px;
+    color: #78909c;
+    margin-top: 6px;
+}
+
+/* Status */
+.student-status {
+    margin-top: 10px;
+}
+
+.badge-active {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.badge-inactive {
+    background: #ffebee;
+    color: #c62828;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Button */
+.btn-view {
+    margin-top: 12px;
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e3f2fd;
+    color: #1565c0;
+    text-decoration: none;
+    transition: .2s;
+}
+
+.btn-view:hover {
+    background: #1565c0;
+    color: #fff;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:768px){
+    .student-card {
+        padding: 16px;
+    }
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+    .page-header {
+        padding:18px;
+    }
 }
 </style>
 

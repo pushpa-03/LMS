@@ -8,8 +8,7 @@
 
 /* ── Page Banner ── */
 .page-banner {
-    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 60%, #66bb6a 100%);
-    border-radius: 16px;
+background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);    border-radius: 16px;
     padding: 24px 32px;
     color: #fff;
     margin-bottom: 24px;
@@ -44,9 +43,8 @@
     font-size: 14px;
     color: #455a64;
 }
-.summary-strip i      { color: #2e7d32; font-size: 18px; }
-.summary-strip strong { color: #2e7d32; }
-
+.summary-strip i      { color: #1976d2; }
+.summary-strip strong { color: #1565c0; }
 /* ── Panel card ── */
 .panel-card {
     background: #fff;
@@ -63,7 +61,7 @@
     border-collapse: collapse;
 }
 .submissions-table thead tr {
-    background: #e8f5e9;
+    background: #e3f2fd;
 }
 .submissions-table thead th {
     padding: 12px 16px;
@@ -71,26 +69,26 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .6px;
-    color: #2e7d32;
+    color: #1565c0;
     border: none;
     white-space: nowrap;
 }
 .submissions-table tbody tr {
-    border-bottom: 1px solid #f0f7f2;
-    transition: background .15s;
+ border-bottom: 1px solid #e3f2fd;
+ transition: background .15s;
 }
 .submissions-table tbody tr:last-child { border-bottom: none; }
 .submissions-table tbody tr:hover { background: #f9fbe7; }
 .submissions-table td {
     padding: 13px 16px;
     font-size: 13px;
-    color: #455a64;
+    color: #f5faff;
     vertical-align: middle;
     border: none;
 }
 
 /* Edit row highlight */
-.submissions-table tr.edit-row { background: #f1f8e9 !important; }
+.submissions-table tr.edit-row { background: #e3f2fd  !important; }
 
 /* ── Student name ── */
 .s-name {
@@ -107,14 +105,13 @@
     font-size: 11px;
     font-weight: 700;
 }
-.pill-green  { background: #e8f5e9; color: #2e7d32; }
-.pill-orange { background: #fff3e0; color: #e65100; }
+.pill-green  { background: #e3f2fd; color: #1565c0; }.pill-orange { background: #fff3e0; color: #e65100; }
 .pill-grey   { background: #f5f5f5; color: #78909c; }
 
 /* ── Form controls in edit mode ── */
 .edit-input {
-    border: 1.5px solid #a5d6a7;
-    border-radius: 8px;
+ border: 1.5px solid #bbdefb;
+ border-radius: 8px;
     padding: 6px 10px;
     font-size: 13px;
     color: #455a64;
@@ -124,7 +121,7 @@
     min-width: 80px;
     box-sizing: border-box;
 }
-.edit-input:focus { border-color: #2e7d32; }
+.edit-input:focus {  border-color: #42a5f5; }
 
 /* ── Action buttons ── */
 .btn-action {
@@ -137,15 +134,26 @@
     border: none; cursor: pointer;
     white-space: nowrap;
 }
-.btn-edit     { background: #e8f5e9; color: #2e7d32; }
-.btn-edit:hover   { background: #2e7d32; color: #fff; }
+.btn-edit {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+.btn-edit:hover {
+    background: #1565c0;
+    color: #fff;
+}
 .btn-save     { background: #e0f2f1; color: #00796b; }
 .btn-save:hover   { background: #00796b; color: #fff; }
 .btn-cancel   { background: #fce4ec; color: #c62828; }
 .btn-cancel:hover { background: #c62828; color: #fff; }
-.btn-download { background: #e3f2fd; color: #1565c0; }
-.btn-download:hover { background: #1565c0; color: #fff; text-decoration: none; }
-
+.btn-download {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+.btn-download:hover {
+    background: #1565c0;
+    color: #fff;
+}
 /* ── Marks display ── */
 .marks-badge {
     display: inline-block;

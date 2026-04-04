@@ -1,18 +1,43 @@
 ﻿using System;
-using System.Web.UI;
 
 namespace LMS_Project.Teacher
 {
-    public partial class TeacherMaster : MasterPage
+    public partial class TeacherMaster : System.Web.UI.MasterPage
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["UserName"] != null)
+            if (!IsPostBack)
             {
-                lblTeacherName.Text = Session["UserName"].ToString();
+                string displayName = "LMS Portal";
+                string logoUrl = "~/assets/images/logo.png";
 
-                // Set first letter as avatar
-                lblInitial.Text = Session["UserName"].ToString().Substring(0, 1).ToUpper();
+                if (Session["ActiveInstituteName"] != null)
+                    displayName = Session["ActiveInstituteName"].ToString();
+                else if (Session["InstituteName"] != null)
+                    displayName = Session["InstituteName"].ToString();
+
+                // ✅ Same logo logic as AdminMaster
+                if (Session["LogoURL"] != null && !string.IsNullOrEmpty(Session["LogoURL"].ToString()))
+                {
+                    logoUrl = Session["LogoURL"].ToString();
+                }
+
+                // Header labels
+                lblHeaderInstituteName.Text = displayName;
+                //hInstituteName.InnerText = displayName;
+
+                // Logo
+                imgInstituteLogo.ImageUrl = ResolveUrl(logoUrl);
+
+                // Teacher name & initial from session
+                if (Session["TeacherName"] != null)
+                {
+                    string teacherName = Session["TeacherName"].ToString();
+                    lblTeacherName.Text = teacherName;
+                    lblInitial.Text = teacherName.Length > 0
+                        ? teacherName[0].ToString().ToUpper()
+                        : "T";
+                }
             }
         }
     }

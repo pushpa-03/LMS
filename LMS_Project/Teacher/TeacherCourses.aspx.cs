@@ -26,32 +26,27 @@ namespace LMS_Project.Teacher
 
             int teacherUserId = Convert.ToInt32(Session["UserId"]);
             int instituteId = Convert.ToInt32(Session["InstituteId"]);
-            int sessionId = Session["CurrentSessionId"] != null
-                            ? Convert.ToInt32(Session["CurrentSessionId"])
-                            : 1;
+
+            SubjectFacultyBL bl = new SubjectFacultyBL();
+            int sessionId = bl.GetCurrentSession(instituteId); // ✅ FIX
 
             SqlCommand cmd = new SqlCommand(@"
-SELECT 
-    S.SubjectName,
-    SEC.SectionName,
-    ASY.SessionName
-
-FROM SubjectFaculty SF
-
-INNER JOIN Subjects S 
-    ON SF.SubjectId = S.SubjectId
-
-INNER JOIN Sections SEC 
-    ON SF.SectionId = SEC.SectionId
-
-INNER JOIN AcademicSessions ASY 
-    ON SF.SessionId = ASY.SessionId
-
-WHERE SF.TeacherId = @UserId
-AND SF.InstituteId = @InstituteId
-AND SF.SessionId = @SessionId
-AND ISNULL(SF.IsActive,1) = 1
-");
+    SELECT 
+        S.SubjectId,
+        S.SubjectName,
+        ISNULL(S.SubjectCode, '') AS SubjectCode,
+        ISNULL(S.Duration, '')    AS Duration,
+        ISNULL(SEC.SectionName, '') AS SectionName,
+        ASY.SessionName
+    FROM SubjectFaculty SF
+    INNER JOIN Subjects S ON SF.SubjectId = S.SubjectId
+    LEFT JOIN Sections SEC ON SF.SectionId = SEC.SectionId
+    INNER JOIN AcademicSessions ASY ON SF.SessionId = ASY.SessionId
+    WHERE SF.TeacherId = @UserId
+    AND SF.InstituteId = @InstituteId
+    AND SF.SessionId = @SessionId
+    AND ISNULL(SF.IsActive, 1) = 1
+    ");
 
             cmd.Parameters.AddWithValue("@UserId", teacherUserId);
             cmd.Parameters.AddWithValue("@InstituteId", instituteId);
@@ -63,6 +58,7 @@ AND ISNULL(SF.IsActive,1) = 1
             {
                 rptCourses.DataSource = dt;
                 rptCourses.DataBind();
+                lblSubjectCount.Text = dt.Rows.Count.ToString(); // ← ADD THIS LINE
 
                 pnlCourses.Visible = true;
                 pnlEmpty.Visible = false;

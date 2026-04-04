@@ -82,7 +82,7 @@ namespace LMS
 
             // Redirect
             if (user.RoleName == "SuperAdmin")
-                Response.Redirect("~/SuperAdmin/AddSociety.aspx", false);
+                Response.Redirect("~/SuperAdmin/Dashboard.aspx", false);
 
             else if (user.RoleName == "Admin" || user.RoleName == "SuperAdmin")
                 Response.Redirect("~/Admin/Dashboard.aspx", false);

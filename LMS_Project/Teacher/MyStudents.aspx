@@ -9,7 +9,7 @@
 
 /* ── Page Banner ── */
 .page-banner {
-    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 60%, #66bb6a 100%);
+    background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);
     border-radius: 16px;
     padding: 24px 32px;
     color: #fff;
@@ -45,8 +45,8 @@
     font-size: 14px;
     color: #455a64;
 }
-.summary-strip i    { color: #2e7d32; font-size: 18px; }
-.summary-strip strong { color: #2e7d32; }
+.summary-strip i      { color: #1976d2; font-size: 18px; }
+.summary-strip strong { color: #1565c0; }
 
 /* ── Search/Filter bar ── */
 .filter-bar {
@@ -61,7 +61,7 @@
     flex-wrap: wrap;
 }
 .filter-bar input {
-    border: 1px solid #e0f2e0;
+    border: 1px solid #bbdefb;
     border-radius: 10px;
     padding: 8px 14px 8px 36px;
     font-size: 13px;
@@ -69,10 +69,10 @@
     flex: 1;
     min-width: 200px;
     color: #455a64;
-    background: #f9fbe7;
+    background: #e3f2fd;
 }
 .filter-bar input:focus {
-    border-color: #66bb6a;
+    border-color: #42a5f5;
     background: #fff;
 }
 .search-wrap {
@@ -85,7 +85,7 @@
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #81c784;
+    color: #64b5f6;
     font-size: 13px;
 }
 
@@ -103,7 +103,7 @@
     border-collapse: collapse;
 }
 .student-table thead tr {
-    background: #e8f5e9;
+    background: #e3f2fd;
 }
 .student-table thead th {
     padding: 12px 16px;
@@ -111,15 +111,15 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .6px;
-    color: #2e7d32;
+    color: #1565c0;
     border: none;
 }
 .student-table tbody tr {
-    border-bottom: 1px solid #f0f7f2;
+    border-bottom: 1px solid #e3f2fd;
     transition: background .15s;
 }
 .student-table tbody tr:last-child { border-bottom: none; }
-.student-table tbody tr:hover { background: #f9fbe7; }
+.student-table tbody tr:hover { background: #e8eaf6; }
 .student-table td {
     padding: 13px 16px;
     font-size: 13px;
@@ -132,8 +132,8 @@
 .s-avatar {
     width: 36px; height: 36px;
     border-radius: 50%;
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: #e3f2fd;
+    color: #1565c0;
     font-weight: 700;
     font-size: 14px;
     display: inline-flex;
@@ -159,9 +159,9 @@
     font-size: 11px;
     font-weight: 700;
 }
-.pill-green  { background: #e8f5e9; color: #2e7d32; }
+.pill-green  { background: #e3f2fd; color: #1565c0; }
 .pill-teal   { background: #e0f2f1; color: #00796b; }
-.pill-lime   { background: #f9fbe7; color: #558b2f; }
+.pill-lime   { background: #e8eaf6; color: #283593; }
 
 /* ── Empty state ── */
 .empty-state {
@@ -169,7 +169,7 @@
     padding: 50px 20px;
     color: #90a4ae;
 }
-.empty-state i { font-size: 48px; margin-bottom: 12px; display: block; color: #c8e6c9; }
+.empty-state i { font-size: 48px; margin-bottom: 12px; display: block; color: #90caf9; }
 .empty-state h6 { font-weight: 700; color: #78909c; margin-bottom: 4px; }
 .empty-state p  { font-size: 13px; margin: 0; }
 
@@ -218,7 +218,7 @@
                 <tbody>
                     <asp:Repeater ID="rptStudents" runat="server">
                         <ItemTemplate>
-                            <tr>
+                           <tr style="cursor:pointer;" onclick="location.href='MyStudentDetails.aspx?UserId=<%# Eval("UserId") %>'">
                                 <td style="color:#b0bec5; font-size:12px;">
                                     <%# Container.ItemIndex + 1 %>
                                 </td>
@@ -269,13 +269,13 @@
 </div>
 
 <script>
-function filterTable() {
-    const input = document.getElementById("txtSearch").value.toLowerCase();
-    const rows = document.querySelectorAll("#studentTable tbody tr");
-    rows.forEach(function (row) {
-        row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
-    });
-}
+    function filterTable() {
+        const input = document.getElementById("txtSearch").value.toLowerCase();
+        const rows = document.querySelectorAll("#studentTable tbody tr");
+        rows.forEach(function (row) {
+            row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+        });
+    }
 </script>
 
 </asp:Content>
