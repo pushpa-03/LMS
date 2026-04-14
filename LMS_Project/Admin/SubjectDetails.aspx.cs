@@ -7,26 +7,28 @@ using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class SubjectDetails : Page
+    public partial class SubjectDetails : BasePage
     {
         SubjectDetailsBL bl = new SubjectDetailsBL();
 
-        int SocietyId => Convert.ToInt32(Session["SocietyId"]);
-        int InstituteId => Convert.ToInt32(Session["InstituteId"]);
-        int UserId => Convert.ToInt32(Session["UserId"]);
+        int UserId => UserId;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
             if (!IsPostBack)
             {
-                if (Request.QueryString["SubjectId"] != null)
+                if (SessionId == 0)
                 {
-                    hfSubjectId.Value = Request.QueryString["SubjectId"];
+                    lblMsg.Text = "No active academic session found!";
+                    lblMsg.Visible = true;
+                    return;
+                }
+
+                if (Request.QueryString["SubjectId"] != null &&
+                    int.TryParse(Request.QueryString["SubjectId"], out int subjectId))
+                {
+                    hfSubjectId.Value = subjectId.ToString();
+
                     LoadSubject();
                     BindChapters();
                     BindSubjectAssignments();
@@ -37,43 +39,46 @@ namespace LearningManagementSystem.Admin
                 }
             }
         }
-
         private void LoadSubject()
         {
-            DataTable dt = bl.GetSubjectDetails(Convert.ToInt32(hfSubjectId.Value));
+            DataTable dt = bl.GetSubjectDetails(Convert.ToInt32(hfSubjectId.Value), SessionId);
 
-            if (dt.Rows.Count > 0)
+            if (dt != null && dt.Rows.Count > 0)
             {
                 DataRow r = dt.Rows[0];
 
                 litSubjectName.Text = "<strong>" + r["SubjectName"] + "</strong>";
-                litSubjectCode.Text = r["SubjectCode"].ToString();
-                litDuration.Text = r["Duration"].ToString();
+                litSubjectCode.Text = r["SubjectCode"]?.ToString() ?? "";
+                litDuration.Text = r["Duration"]?.ToString() ?? "";
+
                 litStatus.Text = Convert.ToBoolean(r["IsActive"])
                     ? "<span class='badge bg-success'>Active</span>"
                     : "<span class='badge bg-danger'>Inactive</span>";
 
-                litSociety.Text = r["SocietyName"].ToString();
-                litInstitute.Text = r["InstituteName"].ToString();
-                litStream.Text = r["StreamName"].ToString();
-                litCourse.Text = r["CourseName"].ToString();
-                litLevel.Text = r["LevelName"].ToString();
-                litSemester.Text = r["SemesterName"].ToString();
-                litDescription.Text = r["Description"].ToString();
+                litSociety.Text = r["SocietyName"]?.ToString() ?? "";
+                litInstitute.Text = r["InstituteName"]?.ToString() ?? "";
+                litStream.Text = r["StreamName"]?.ToString() ?? "";
+                litCourse.Text = r["CourseName"]?.ToString() ?? "";
+                litLevel.Text = r["LevelName"]?.ToString() ?? "";
+                litSemester.Text = r["SemesterName"]?.ToString() ?? "";
+                litDescription.Text = r["Description"]?.ToString() ?? "";
             }
         }
 
         private void BindChapters()
         {
-            DataTable dt = bl.GetChapters(Convert.ToInt32(hfSubjectId.Value));
+            DataTable dt = bl.GetChapters(Convert.ToInt32(hfSubjectId.Value),SessionId);
 
             rptChapters.DataSource = dt;
             rptChapters.DataBind();
 
-            ddlChapters.DataSource = dt;
-            ddlChapters.DataTextField = "ChapterName";
-            ddlChapters.DataValueField = "ChapterId";
-            ddlChapters.DataBind();
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                ddlChapters.DataSource = dt;
+                ddlChapters.DataTextField = "ChapterName";
+                ddlChapters.DataValueField = "ChapterId";
+                ddlChapters.DataBind();
+            }
         }
 
         // ================= BIND VIDEOS & MATERIALS =================
@@ -87,10 +92,10 @@ namespace LearningManagementSystem.Admin
                 Repeater rptVideos = (Repeater)e.Item.FindControl("rptVideos");
                 Repeater rptMaterials = (Repeater)e.Item.FindControl("rptMaterials");
 
-                rptVideos.DataSource = bl.GetVideosByChapter(Convert.ToInt32(chapterId));
+                rptVideos.DataSource = bl.GetVideosByChapter(Convert.ToInt32(chapterId),SessionId);
                 rptVideos.DataBind();
 
-                rptMaterials.DataSource = bl.GetMaterialsByChapter(Convert.ToInt32(chapterId));
+                rptMaterials.DataSource = bl.GetMaterialsByChapter(Convert.ToInt32(chapterId),SessionId);
                 rptMaterials.DataBind();
 
 
@@ -111,7 +116,7 @@ namespace LearningManagementSystem.Admin
                 int subjectId = Convert.ToInt32(hfSubjectId.Value);
 
                 // Bind directly to the Repeater that is now outside the chapters
-                rptAssignments.DataSource = bl.GetAssignmentsBySubject(subjectId);
+                rptAssignments.DataSource = bl.GetAssignmentsBySubject(subjectId,SessionId);
                 rptAssignments.DataBind();
             }
             catch (Exception ex)
@@ -132,6 +137,7 @@ namespace LearningManagementSystem.Admin
 
             bl.SaveChapter(
                 hfChapterId.Value,
+                SessionId,
                 hfSubjectId.Value,
                 txtChapterName.Text.Trim(),
                 txtOrderNo.Text.Trim()
@@ -152,9 +158,9 @@ namespace LearningManagementSystem.Admin
 
             if (e.CommandName == "EditChapter")
             {
-                DataTable dt = bl.GetChapterById(id);
+                DataTable dt = bl.GetChapterById(id,SessionId);
 
-                if (dt.Rows.Count > 0)
+                if (dt != null && dt.Rows.Count > 0)
                 {
                     hfChapterId.Value = id.ToString();
                     txtChapterName.Text = dt.Rows[0]["ChapterName"].ToString();
@@ -166,7 +172,7 @@ namespace LearningManagementSystem.Admin
             }
             else if (e.CommandName == "DeleteChapter")
             {
-                bl.DeleteChapter(id);
+                bl.DeleteChapter(id,SessionId);
 
                 BindChapters();
                 ShowMsg("Chapter Deleted Successfully", true);
@@ -201,12 +207,20 @@ namespace LearningManagementSystem.Admin
 
                 string dbPath = folderRelPath.Replace("~", "") + fileName;
 
+
                 if (ddlContentType.SelectedValue == "Video")
                 {
+                    if (!int.TryParse(ddlChapters.SelectedValue, out int chapterId))
+                    {
+                        ShowMsg("Invalid chapter selected", false);
+                        return;
+                    }
+
                     int newVideoId = bl.InsertVideo(
                         SocietyId,
                         InstituteId,
-                        Convert.ToInt32(ddlChapters.SelectedValue),
+                        SessionId,
+                        chapterId,
                         txtContentTitle.Text.Trim(),
                         txtVideoDesc.Text.Trim(),
                         dbPath,
@@ -218,26 +232,37 @@ namespace LearningManagementSystem.Admin
                     string[] titles = Request.Form.GetValues("topicTitle");
 
                     if (times != null && titles != null)
-                    {
+                    {         
+
                         bl.InsertVideoTopics(
-                            SocietyId,
-                            InstituteId,
-                            newVideoId,
-                            times,
-                            titles
-                        );
+                             SocietyId,
+                             InstituteId,
+                             SessionId,
+                             newVideoId,
+                             times,
+                             titles
+                         );
                     }
                 }
                 else
                 {
+                    // ✅ Validate first
+                    if (!int.TryParse(ddlChapters.SelectedValue, out int chapterId))
+                    {
+                        ShowMsg("Invalid chapter selected", false);
+                        return;
+                    }
+
+                    // ✅ Then call method
                     bl.InsertMaterial(
-                        SocietyId,
-                        InstituteId,
-                        Convert.ToInt32(ddlChapters.SelectedValue),
-                        txtContentTitle.Text.Trim(),
-                        dbPath,
-                        Path.GetExtension(fileName)
-                    );
+                         SocietyId,
+                         InstituteId,
+                         SessionId,
+                         chapterId,
+                         txtContentTitle.Text.Trim(),
+                         dbPath,
+                         Path.GetExtension(fileName)
+                     );
                 }
 
                 txtContentTitle.Text = "";

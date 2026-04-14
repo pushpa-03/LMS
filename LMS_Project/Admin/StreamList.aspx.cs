@@ -4,14 +4,11 @@ using System.Data;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class StreamList : System.Web.UI.Page
+    public partial class StreamList : BasePage
     {
         StreamBL bl = new StreamBL();
 
-        private int CurrentInstituteId
-        {
-            get { return Convert.ToInt32(Session["InstituteId"]); }
-        }
+       
 
         private string CurrentFilter
         {
@@ -21,9 +18,8 @@ namespace LearningManagementSystem.Admin
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
+            if(SessionId == 0)
             {
-                Response.Redirect("~/Default.aspx");
                 return;
             }
 
@@ -33,7 +29,7 @@ namespace LearningManagementSystem.Admin
         // ================= LOAD =================
         void LoadStreams()
         {
-            DataTable dt = bl.GetStreams(CurrentInstituteId, CurrentFilter);
+            DataTable dt = bl.GetStreams(InstituteId, SessionId,CurrentFilter);
 
             // SERVER SEARCH SAFE
             if (!string.IsNullOrWhiteSpace(txtSearch.Value))

@@ -55,24 +55,28 @@ namespace LMS
         {
             lblMsg.CssClass = "text-danger small mb-3 d-block";
             lblMsg.Text = "";
+            lblMsg.Visible = false;
 
             if (string.IsNullOrWhiteSpace(txtUsername.Text) ||
                 string.IsNullOrWhiteSpace(txtEmail.Text) ||
                 string.IsNullOrWhiteSpace(txtPassword.Text))
             {
                 lblMsg.Text = "All fields are required.";
+                lblMsg.Visible = true;
                 return;
             }
 
             if (txtPassword.Text != txtConfirm.Text)
             {
                 lblMsg.Text = "Passwords do not match.";
+                lblMsg.Visible = true;
                 return;
             }
 
             if (ddlSociety.SelectedValue == "0" || ddlInstitute.SelectedValue == "0")
             {
                 lblMsg.Text = "Please select a valid Society and Institute.";
+                lblMsg.Visible = true;
                 return;
             }
 
@@ -85,6 +89,7 @@ namespace LMS
                 if (roleId == 0)
                 {
                     lblMsg.Text = "Required roles not found. Contact system administrator.";
+                    lblMsg.Visible = true;
                     return;
                 }
 
@@ -93,6 +98,7 @@ namespace LMS
                 if (exists > 0)
                 {
                     lblMsg.Text = "Username already exists.";
+                    lblMsg.Visible = true;
                     return;
                 }
 
@@ -108,12 +114,14 @@ namespace LMS
 
                 lblMsg.CssClass = "text-success small mb-3 d-block";
                 lblMsg.Text = "Registration successful. Please login.";
+                lblMsg.Visible = true;
 
                 ClearForm();
             }
             catch
             {
                 lblMsg.Text = "Registration failed. Please try again.";
+                lblMsg.Visible = true;
             }
         }
         private byte[] Hash(string input)

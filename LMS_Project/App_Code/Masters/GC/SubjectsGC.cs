@@ -11,5 +11,6 @@
         public string SemesterName { get; set; }
         public bool IsMandatory { get; set; }
         public int StudentCount { get; set; }
+
     }
 }

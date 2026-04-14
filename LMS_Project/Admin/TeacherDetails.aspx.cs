@@ -4,18 +4,14 @@ using System.Web.UI;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class TeacherDetails : Page
+    public partial class TeacherDetails : BasePage
     {
         TeacherBL tbl = new TeacherBL();
         SubjectFacultyBL sbl = new SubjectFacultyBL();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["UserId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
+            
             if (Request.QueryString["id"] != null && !IsPostBack)
             {
                 int userId = Convert.ToInt32(Request.QueryString["id"]);
@@ -39,7 +35,7 @@ namespace LearningManagementSystem.Admin
 
         private void LoadProfile(int userId)
         {
-            DataTable dt = tbl.GetTeacherById(userId);
+            DataTable dt = tbl.GetTeacherById(userId,SessionId);
             if (dt != null && dt.Rows.Count > 0)
             {
                 DataRow row = dt.Rows[0];
@@ -82,8 +78,8 @@ namespace LearningManagementSystem.Admin
 
         private void LoadSubjectHistory(int userId)
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-            int currentSessionId = sbl.GetCurrentSession(instituteId);
+            int instituteId = InstituteId;
+            int currentSessionId = SessionId;
 
             // Fetching subjects assigned to this specific teacher
             DataTable dt = sbl.GetAllByTeacher(instituteId, userId);

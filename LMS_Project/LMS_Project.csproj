@@ -133,9 +133,12 @@
     <Content Include="assets\images\avatar-3.jpg" />
     <Content Include="assets\images\avatar-4.jpg" />
     <Content Include="assets\images\avatar-5.jpg" />
-    <Content Include="assets\images\bgImg.jpeg" />
+    <Content Include="assets\images\bgImg.png" />
+    <Content Include="assets\images\bgImg_green.jpeg" />
+    <Content Include="assets\images\book.png" />
     <Content Include="assets\images\default-user.png" />
     <Content Include="assets\images\favicon.ico" />
+    <Content Include="assets\images\lms-login-hero.png" />
     <Content Include="assets\images\logo.png" />
     <Content Include="assets\images\p1.jfif" />
     <Content Include="assets\images\p2.jfif" />
@@ -388,6 +391,9 @@
     <Compile Include="App_Code\Masters\BL\AssignmentBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignStudentSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignSubjectFacultyBL.cs" />
+    <Compile Include="App_Code\Masters\BL\BasePage.cs">
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
     <Compile Include="App_Code\Masters\BL\CalendarBL.cs" />
     <Compile Include="App_Code\Masters\BL\HelpBL.cs" />
     <Compile Include="App_Code\Masters\BL\MaterialBL.cs" />
@@ -654,6 +660,7 @@
     <Content Include="assets\images\login-bg.webp" />
     <Content Include="AIService\ai_server.py" />
     <Content Include="assets\images\profile-icon.webp" />
+    <Content Include="assets\images\bg.webp" />
     <None Include="packages.config" />
     <Content Include="Student\StudentMaster.Master" />
     <Content Include="SuperAdmin\SuperAdminMaster.Master" />

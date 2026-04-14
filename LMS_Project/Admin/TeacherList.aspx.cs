@@ -5,19 +5,17 @@ using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class TeacherList : Page
+    public partial class TeacherList : BasePage
     {
         TeacherBL bl = new TeacherBL();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["UserId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
+            
             if (!IsPostBack)
             {
+                if (SessionId == 0) return;
+
                 LoadStreams();
                 BindTeacherData();
             }
@@ -25,8 +23,8 @@ namespace LearningManagementSystem.Admin
 
         private void LoadStreams()
         {
-            int instId = Convert.ToInt32(Session["InstituteId"]);
-            ddlStream.DataSource = bl.GetStreams(instId);
+            int instId = InstituteId;
+            ddlStream.DataSource = bl.GetStreams(instId,SessionId);
             ddlStream.DataTextField = "StreamName";
             ddlStream.DataValueField = "StreamId";
             ddlStream.DataBind();
@@ -35,12 +33,12 @@ namespace LearningManagementSystem.Admin
 
         private void BindTeacherData()
         {
-            int instId = Convert.ToInt32(Session["InstituteId"]);
+            int instId = InstituteId;
             string search = txtSearch.Text.Trim();
             int streamId = Convert.ToInt32(ddlStream.SelectedValue);
             string status = ddlStatus.SelectedValue;
 
-            DataTable dt = bl.GetFilteredTeachers(instId, search, streamId, status);
+            DataTable dt = bl.GetFilteredTeachers(instId,SessionId,search, streamId, status);
             gvTeachers.DataSource = dt;
             gvTeachers.DataBind();
 

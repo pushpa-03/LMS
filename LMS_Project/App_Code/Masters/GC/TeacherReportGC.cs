@@ -49,6 +49,7 @@ namespace LMS_Project.GC
         // FILTER PARAMETERS (INPUT USE)
         // =============================
         public int InstituteId { get; set; }
+        public int SessionId { get; set; }
         public string ReportType { get; set; }
 
         public bool OnlyActive { get; set; }

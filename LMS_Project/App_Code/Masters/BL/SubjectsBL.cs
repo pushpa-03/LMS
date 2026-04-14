@@ -10,13 +10,13 @@ public class SubjectsBL
     {
         SqlCommand cmd = new SqlCommand(@"
             SELECT 
-    (SELECT COUNT(*) FROM Subjects WHERE InstituteId = @InstId) as TotalSubjects,
+    (SELECT COUNT(*) FROM Subjects WHERE InstituteId = @InstId And SessionId = @SessId) as TotalSubjects,
 
     (SELECT COUNT(*) FROM Subjects 
-     WHERE InstituteId = @InstId AND IsActive = 1) as ActiveCount,
+     WHERE InstituteId = @InstId AND IsActive = 1 AND SessionId = @SessId) as ActiveCount,
 
     (SELECT COUNT(*) FROM Subjects 
-     WHERE InstituteId = @InstId AND IsActive = 0) as InactiveCount,
+     WHERE InstituteId = @InstId AND IsActive = 0 AND SessionId = @SessId) as InactiveCount,
 
     (SELECT COUNT(*) FROM LevelSemesterSubjects 
      WHERE InstituteId = @InstId AND IsMandatory = 1 AND SessionId = @SessId) as MandatoryCount,
@@ -24,7 +24,10 @@ public class SubjectsBL
     (SELECT COUNT(*) FROM AssignStudentSubject 
      WHERE InstituteId = @InstId AND SessionId = @SessId) as TotalEnrollments,
 
-    CAST(ROUND(AVG(CAST(EnrollCount AS FLOAT)), 1) AS VARCHAR) as AvgPerSubject
+ISNULL(
+    CAST(ROUND(AVG(CAST(EnrollCount AS FLOAT)), 1) AS VARCHAR),
+    '0'
+) as AvgPerSubject
 
 FROM (
     SELECT COUNT(Id) as EnrollCount 
@@ -40,7 +43,14 @@ FROM (
         // Handle empty case to prevent crash
         if (dt.Rows.Count == 0)
         {
-            dt.Rows.Add(0, 0, 0, "0");
+            DataRow row = dt.NewRow();
+            row["TotalSubjects"] = 0;
+            row["ActiveCount"] = 0;
+            row["InactiveCount"] = 0;
+            row["MandatoryCount"] = 0;
+            row["TotalEnrollments"] = 0;
+            row["AvgPerSubject"] = "0";
+            dt.Rows.Add(row);
         }
         return dt;
     }
@@ -72,13 +82,13 @@ FROM (
         return dl.GetDataTable(cmd);
     }
 
-    public int GetCurrentSession(int instituteId)
-    {
-        SqlCommand cmd = new SqlCommand("SELECT TOP 1 SessionId FROM AcademicSessions WHERE InstituteId=@InstId AND IsCurrent=1");
-        cmd.Parameters.AddWithValue("@InstId", instituteId);
-        DataTable dt = dl.GetDataTable(cmd);
-        return dt.Rows.Count > 0 ? Convert.ToInt32(dt.Rows[0]["SessionId"]) : 0;
-    }
+    //public int GetCurrentSession(int instituteId)
+    //{
+    //    SqlCommand cmd = new SqlCommand("SELECT TOP 1 SessionId FROM AcademicSessions WHERE InstituteId=@InstId AND IsCurrent=1");
+    //    cmd.Parameters.AddWithValue("@InstId", instituteId);
+    //    DataTable dt = dl.GetDataTable(cmd);
+    //    return dt.Rows.Count > 0 ? Convert.ToInt32(dt.Rows[0]["SessionId"]) : 0;
+    //}
 
     public void ToggleSubjectStatus(int subjectId)
     {

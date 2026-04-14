@@ -26,6 +26,7 @@ namespace LMS_Project.GC
         public string Designation { get; set; }
         public string StreamName { get; set; }
 
+        public int SessionId { get; set; }
         public string ProfileImage { get; set; }
     }
 }

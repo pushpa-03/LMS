@@ -11,25 +11,26 @@ namespace LearningManagementSystem.BL
 
         // ================= GRID =================
 
-        public DataTable GetSubjects(int instituteId, string status, string search)
+        public DataTable GetSubjects(int instituteId, int sessionId, string status, string search)
         {
             string query = @"
-            SELECT
-            SubjectId,
-            SubjectCode,
-            SubjectName,
-            Duration,
-            IsActive
-            FROM Subjects
-            WHERE InstituteId=@I";
+    SELECT
+        SubjectId,
+        SubjectCode,
+        SubjectName,
+        Duration,
+        IsActive
+    FROM Subjects
+    WHERE InstituteId=@I AND SessionId=@SessionId";
 
             SqlCommand cmd = new SqlCommand();
             cmd.Parameters.AddWithValue("@I", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
             if (status != "All")
             {
                 query += " AND IsActive=@Status";
-                cmd.Parameters.AddWithValue("@Status", status);
+                cmd.Parameters.AddWithValue("@Status", status == "1");
             }
 
             if (!string.IsNullOrEmpty(search))
@@ -78,9 +79,10 @@ namespace LearningManagementSystem.BL
             SubjectName=@Name,
             Description=@Desc,
             Duration=@Duration
-            WHERE SubjectId=@Id
+            WHERE SubjectId=@Id AND SessionId=@SessionId
             ");
 
+            cmd.Parameters.AddWithValue("@SessionId", obj.SessionId);
             cmd.Parameters.AddWithValue("@Id", obj.SubjectId);
             cmd.Parameters.AddWithValue("@Code", obj.SubjectCode);
             cmd.Parameters.AddWithValue("@Name", obj.SubjectName);
@@ -90,48 +92,36 @@ namespace LearningManagementSystem.BL
             dl.ExecuteCMD(cmd);
         }
 
-        // ================= OTHER =================
-        public int GetCurrentSession(int instituteId)
-        {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandText =
-            "SELECT SessionId FROM AcademicSessions WHERE InstituteId=@I AND IsCurrent=1";
-
-            cmd.Parameters.AddWithValue("@I", instituteId);
-
-            DataTable dt = dl.GetDataTable(cmd);
-
-            if (dt.Rows.Count > 0)
-                return Convert.ToInt32(dt.Rows[0]["SessionId"]);
-
-            return 0;
-        }
-        public void Toggle(int id)
+        
+        public void Toggle(int id, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(
-                "UPDATE Subjects SET IsActive = IIF(IsActive=1,0,1) WHERE SubjectId=@Id");
+                "UPDATE Subjects SET IsActive = IIF(IsActive=1,0,1) WHERE SubjectId=@Id AND SessionId=@SessionId");
 
             cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
             dl.ExecuteCMD(cmd);
         }
 
-        public void Delete(int id)
+        public void Delete(int id, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(
-                "DELETE FROM Subjects WHERE SubjectId=@Id");
+                "DELETE FROM Subjects WHERE SubjectId=@Id AND SessionId=@SessionId");
 
             cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
             dl.ExecuteCMD(cmd);
         }
 
-        public DataTable GetById(int id)
+        public DataTable GetById(int id, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(
-                "SELECT * FROM Subjects WHERE SubjectId=@Id");
+                "SELECT * FROM Subjects WHERE SubjectId=@Id AND SessionId=@SessionId");
 
             cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
             return dl.GetDataTable(cmd);
         }

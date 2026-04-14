@@ -7,7 +7,7 @@ using System.Web.UI.WebControls;
 
 namespace LMS_Project.Student
 {
-    public partial class StudyMaterial : System.Web.UI.Page
+    public partial class StudyMaterial : BasePage
     {
         SubjectDetailsBL bl = new SubjectDetailsBL();
         StudentSubjectsBL subjectsBL = new StudentSubjectsBL();
@@ -18,11 +18,9 @@ namespace LMS_Project.Student
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            _userId = Convert.ToInt32(Session["UserId"]);
-            _instituteId = Convert.ToInt32(Session["InstituteId"]);
-            _sessionId = Session["CurrentSessionId"] != null
-                           ? Convert.ToInt32(Session["CurrentSessionId"])
-                           : subjectsBL.GetCurrentSessionId(_instituteId);
+            _userId = UserId;
+            _instituteId = InstituteId;
+            _sessionId = SessionId;
 
             if (!IsPostBack)
             {
@@ -68,7 +66,7 @@ namespace LMS_Project.Student
         {
             DataTable dt = subjectsBL.GetSubjectById(subjectId, _instituteId, _sessionId);
 
-            if (dt.Rows.Count == 0) return;
+            if (dt == null || dt.Rows.Count == 0) return;
 
             DataRow r = dt.Rows[0];
 
@@ -79,7 +77,7 @@ namespace LMS_Project.Student
             lblDuration.Text = r["Duration"].ToString();
 
             // Chapter count
-            DataTable dtChapters = bl.GetChapters(subjectId);
+            DataTable dtChapters = bl.GetChapters(subjectId,SessionId);
             lblChapterCount.Text = dtChapters.Rows.Count.ToString();
         }
 
@@ -88,9 +86,9 @@ namespace LMS_Project.Student
         // ============================================================
         private void LoadChapters(int subjectId)
         {
-            DataTable dt = bl.GetChapters(subjectId);
+            DataTable dt = bl.GetChapters(subjectId,SessionId);
 
-            if (dt.Rows.Count == 0)
+            if (dt == null || dt.Rows.Count == 0)
             {
                 pnlNoChapters.Visible = true;
                 rptChapters.Visible = false;
@@ -119,10 +117,10 @@ namespace LMS_Project.Student
 
             int chapterId = Convert.ToInt32(hfChapterId.Value);
 
-            rptVideos.DataSource = bl.GetVideosByChapter(chapterId);
+            rptVideos.DataSource = bl.GetVideosByChapter(chapterId,SessionId);
             rptVideos.DataBind();
 
-            rptMaterials.DataSource = bl.GetMaterialsByChapter(chapterId);
+            rptMaterials.DataSource = bl.GetMaterialsByChapter(chapterId,SessionId);
             rptMaterials.DataBind();
         }
 
@@ -156,50 +154,53 @@ namespace LMS_Project.Student
                 SELECT COUNT(*) FROM AssignStudentSubject
                 WHERE UserId      = @UserId
                   AND SubjectId   = @SubjectId
-                  AND InstituteId = @InstId");
+                  AND InstituteId = @InstId AND SessionId = @SessionId");
 
             cmd.Parameters.AddWithValue("@UserId", _userId);
             cmd.Parameters.AddWithValue("@SubjectId", subjectId);
             cmd.Parameters.AddWithValue("@InstId", _instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", SessionId);
+
 
             DataTable dt = dl.GetDataTable(cmd);
+            if (dt == null || dt.Rows.Count == 0) return false;
             return Convert.ToInt32(dt.Rows[0][0]) > 0;
         }
 
         [WebMethod]
-        public static void PostComment(int videoId, string comment)
+        public static void PostComment(int videoId,int SessionId, string comment)
         {
             VideoPlayerBL bl = new VideoPlayerBL();
             int userId = Convert.ToInt32(HttpContext.Current.Session["UserId"]);
-            bl.SaveComment(videoId, userId, comment);
+            bl.SaveComment(videoId,SessionId, userId, comment);
         }
 
         [WebMethod]
-        public static object GetComments(int videoId)
+        public static object GetComments(int videoId, int SessionId)
         {
             VideoPlayerBL bl = new VideoPlayerBL();
-            return bl.GetComments(videoId);
+            return bl.GetComments(videoId,SessionId);
         }
 
         [WebMethod]
-        public static void AddView(int videoId)
+        public static void AddView(int videoId, int SessionId)
         {
             VideoPlayerBL bl = new VideoPlayerBL();
-            bl.IncreaseViewCount(videoId);
+            bl.IncreaseViewCount(videoId,SessionId); 
         }
 
         [WebMethod]
-        public static object GetStats(int videoId)
+        public static object GetStats(int videoId, int SessionId)
         {
             VideoPlayerBL bl = new VideoPlayerBL();
-            return bl.GetVideoStats(videoId);
+            return bl.GetVideoStats(videoId,SessionId);
         }
 
         [WebMethod]
-        public static object GetPlaylist()
+        public static object GetPlaylist(int SessionId)
         {
             VideoPlayerBL bl = new VideoPlayerBL();
-            return bl.GetPlaylist(0);
+            return bl.GetPlaylist(0,SessionId);
         }
     }
 }

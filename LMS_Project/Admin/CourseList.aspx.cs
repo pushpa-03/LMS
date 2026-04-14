@@ -6,17 +6,13 @@ using LearningManagementSystem.BL;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class CourseList : Page
+    public partial class CourseList : BasePage
     {
         CourseBL bl = new CourseBL();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
+            
 
             if (!IsPostBack)
             {
@@ -30,13 +26,12 @@ namespace LearningManagementSystem.Admin
 
         private void LoadCourses(string status = "All")
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
             // 🔥 1. GET FULL DATA FOR STATS
-            DataTable dtAll = bl.GetCourses(instituteId, "All");
+            DataTable dtAll = bl.GetCourses(InstituteId,SessionId ,"All");
 
             // 🔥 2. APPLY FILTER FOR DISPLAY
-            DataTable dt = status == "All" ? dtAll : bl.GetCourses(instituteId, status);
+            DataTable dt = status == "All" ? dtAll : bl.GetCourses(InstituteId,SessionId, status);
 
             // 🔍 SEARCH (apply only on display data)
             if (!string.IsNullOrEmpty(txtSearch.Value))

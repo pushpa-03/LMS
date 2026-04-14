@@ -9,17 +9,17 @@ using ExcelDataReader;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class Student : Page
+    public partial class Student : BasePage
     {
         StudentBL bl = new StudentBL();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
+            //if (Session["InstituteId"] == null)
+            //{
+            //    Response.Redirect("~/Default.aspx");
+            //    return;
+            //}
 
             if (!IsPostBack)
             {
@@ -43,8 +43,8 @@ namespace LearningManagementSystem.Admin
         }
         private void LoadStudents(string search = "", string status = "All")
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-            gvStudents.DataSource = bl.GetStudents(instituteId, search, status);
+            int instituteId = InstituteId;
+            gvStudents.DataSource = bl.GetStudents(instituteId, SessionId, search, status);
             gvStudents.DataBind();
         }
 
@@ -60,7 +60,7 @@ namespace LearningManagementSystem.Admin
             try
             {
                 int societyId = Convert.ToInt32(Session["SocietyId"]);
-                int instituteId = Convert.ToInt32(Session["InstituteId"]);
+                int instituteId = InstituteId;
 
                 int successCount = 0;
                 int duplicateCount = 0;
@@ -138,13 +138,19 @@ namespace LearningManagementSystem.Admin
 
                     string gender = row[9].ToString().Trim();
 
+                    //DateTime dob;
+                    //DateTime.TryParse(row[10].ToString(), out dob);
+
                     DateTime dob;
-                    DateTime.TryParse(row[10].ToString(), out dob);
+                    if (!DateTime.TryParse(row[10].ToString(), out dob))
+                    {
+                        continue; // skip invalid row
+                    }
 
                     string contact = row[11].ToString().Trim();
 
                     // 🔎 Duplicate check
-                    if (bl.StudentExists(username, email, rollNo, instituteId))
+                    if (bl.StudentExists(username, email, rollNo, instituteId,SessionId))
                     {
                         duplicateCount++;
                         duplicateStudents.Add(fullName + " (" + rollNo + ")");
@@ -154,6 +160,7 @@ namespace LearningManagementSystem.Admin
                     bl.InsertStudent(
                         societyId,
                         instituteId,
+                        SessionId,
                         username,
                         email,
                         fullName,
@@ -206,8 +213,8 @@ namespace LearningManagementSystem.Admin
 
         private void LoadStreamCourseStats()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-            StreamCourseStats = bl.GetStudentStatsByStreamCourse(instituteId);
+            int instituteId = InstituteId;
+            StreamCourseStats = bl.GetStudentStatsByStreamCourse(instituteId, SessionId);
 
             rptStats.DataSource = StreamCourseStats;
             rptStats.DataBind();
@@ -220,7 +227,7 @@ namespace LearningManagementSystem.Admin
             try
             {
                 int societyId = Convert.ToInt32(Session["SocietyId"]);
-                int instituteId = Convert.ToInt32(Session["InstituteId"]);
+                int instituteId = InstituteId;
 
                 DateTime dob = Convert.ToDateTime(txtDOB.Text);
                 int age = DateTime.Now.Year - dob.Year;
@@ -241,13 +248,21 @@ namespace LearningManagementSystem.Admin
 
                 if (!txtEmail.Text.Contains("@"))
                 {
-                    ShowMsg("Invalid Email!", false);
-                    return;
+                    try
+                    {
+                        var addr = new System.Net.Mail.MailAddress(txtEmail.Text);
+                    }
+                    catch
+                    {
+                        ShowMsg("Invalid Email!", false);
+                        return;
+                    }
                 }
 
                 bl.InsertStudent(
                      societyId,
                      instituteId,
+                     SessionId,
                      txtUsername.Text.Trim(),
                      txtEmail.Text.Trim(),
                      txtFullName.Text.Trim(),
@@ -316,25 +331,55 @@ namespace LearningManagementSystem.Admin
             DataLayer dl = new DataLayer();
 
             SqlCommand cmd = new SqlCommand(@"
-        SELECT 
-            COUNT(*) Total,
-            SUM(CASE WHEN IsActive = 1 THEN 1 ELSE 0 END) AS Active,
-            SUM(CASE WHEN IsActive = 0 THEN 1 ELSE 0 END) AS Inactive,
-            SUM(CASE WHEN MONTH(CreatedOn)=MONTH(GETDATE()) THEN 1 ELSE 0 END) NewStudents
-        FROM Users WHERE RoleId = (SELECT RoleId FROM Roles WHERE RoleName='Student')
-        AND InstituteId=@I");
+            SELECT 
+                ISNULL(COUNT(*), 0) AS Total,
+                ISNULL(SUM(CASE WHEN IsActive = 1 THEN 1 ELSE 0 END), 0) AS Active,
+                ISNULL(SUM(CASE WHEN IsActive = 0 THEN 1 ELSE 0 END), 0) AS Inactive,
+                ISNULL(SUM(CASE WHEN MONTH(CreatedOn)=MONTH(GETDATE()) THEN 1 ELSE 0 END), 0) AS NewStudents
+            FROM Users U
+            WHERE RoleId = (SELECT RoleId FROM Roles WHERE RoleName='Student')
+            AND U.InstituteId=@I
+            AND EXISTS (
+                SELECT 1 FROM StudentAcademicDetails SAD
+                WHERE SAD.UserId = U.UserId
+                AND SAD.SessionId = @SessionId
 
-            cmd.Parameters.AddWithValue("@I", Session["InstituteId"]);
+
+            )");
+
+            cmd.Parameters.AddWithValue("@I", InstituteId);
+            cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
             DataTable dt = dl.GetDataTable(cmd);
 
-            if (dt.Rows.Count > 0)
+            if (dt == null || dt.Rows.Count == 0)
             {
-                TotalStudents = Convert.ToInt32(dt.Rows[0]["Total"]);
-                ActiveStudents = Convert.ToInt32(dt.Rows[0]["Active"]);
-                InactiveStudents = Convert.ToInt32(dt.Rows[0]["Inactive"]);
-                NewStudents = Convert.ToInt32(dt.Rows[0]["NewStudents"]);
+                TotalStudents = 0;
+                ActiveStudents = 0;
+                InactiveStudents = 0;
+                NewStudents = 0;
+                return;
             }
+
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                TotalStudents = SafeInt(dt.Rows[0]["Total"]);
+                ActiveStudents = SafeInt(dt.Rows[0]["Active"]);
+                InactiveStudents = SafeInt(dt.Rows[0]["Inactive"]);
+                NewStudents = SafeInt(dt.Rows[0]["NewStudents"]);
+            }
+        }
+
+        public int SafeInt(object val)
+        {
+            if (val == null || val == DBNull.Value)
+                return 0;
+
+            int result;
+            if (int.TryParse(val.ToString(), out result))
+                return result;
+
+            return 0;
         }
 
         // ================= STREAM CHANGE =================
@@ -348,8 +393,9 @@ namespace LearningManagementSystem.Admin
             }
 
             DataLayer dl = new DataLayer();
-            SqlCommand cmd = new SqlCommand("SELECT CourseId, CourseName FROM Courses WHERE StreamId=@S");
+            SqlCommand cmd = new SqlCommand("SELECT CourseId, CourseName FROM Courses WHERE StreamId=@S AND SessionId=@SessionId");
             cmd.Parameters.AddWithValue("@S", ddlStream.SelectedValue);
+            cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlCourse.DataSource = dl.GetDataTable(cmd);
             ddlCourse.DataTextField = "CourseName";
@@ -363,8 +409,9 @@ namespace LearningManagementSystem.Admin
         private void LoadStudyLevels()
         {
             DataLayer dl = new DataLayer();
-            SqlCommand cmd = new SqlCommand("SELECT LevelId, LevelName FROM StudyLevels WHERE InstituteId=@I");
+            SqlCommand cmd = new SqlCommand("SELECT LevelId, LevelName FROM StudyLevels WHERE InstituteId=@I AND SessionId=@SessionId");
             cmd.Parameters.AddWithValue("@I", Session["InstituteId"]);
+            cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlStudyLevel.DataSource = dl.GetDataTable(cmd);
             ddlStudyLevel.DataTextField = "LevelName";
@@ -375,8 +422,9 @@ namespace LearningManagementSystem.Admin
         private void LoadSemesters()
         {
             DataLayer dl = new DataLayer();
-            SqlCommand cmd = new SqlCommand("SELECT SemesterId, SemesterName FROM Semesters WHERE InstituteId=@I");
+            SqlCommand cmd = new SqlCommand("SELECT SemesterId, SemesterName FROM Semesters WHERE InstituteId=@I AND SessionId=@SessionId");
             cmd.Parameters.AddWithValue("@I", Session["InstituteId"]);
+            cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlSemester.DataSource = dl.GetDataTable(cmd);
             ddlSemester.DataTextField = "SemesterName";
@@ -387,11 +435,12 @@ namespace LearningManagementSystem.Admin
         private void LoadEditDropdowns()
         {
             DataLayer dl = new DataLayer();
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+            int instituteId = InstituteId;
 
             // ================= STREAM =================
-            SqlCommand cmdStream = new SqlCommand("SELECT StreamId, StreamName FROM Streams WHERE InstituteId=@I");
+            SqlCommand cmdStream = new SqlCommand("SELECT StreamId, StreamName FROM Streams WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdStream.Parameters.AddWithValue("@I", instituteId);
+            cmdStream.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlStreamEdit.DataSource = dl.GetDataTable(cmdStream);
             ddlStreamEdit.DataTextField = "StreamName";
@@ -400,8 +449,9 @@ namespace LearningManagementSystem.Admin
             ddlStreamEdit.Items.Insert(0, new ListItem("-- Select Stream --", ""));
 
             // ================= COURSE =================
-            SqlCommand cmdCourse = new SqlCommand("SELECT CourseId, CourseName FROM Courses WHERE InstituteId=@I");
+            SqlCommand cmdCourse = new SqlCommand("SELECT CourseId, CourseName FROM Courses WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdCourse.Parameters.AddWithValue("@I", instituteId);
+            cmdCourse.Parameters.AddWithValue("@SessionId", SessionId);
 
             txtCourseEdit.DataSource = dl.GetDataTable(cmdCourse);
             txtCourseEdit.DataTextField = "CourseName";
@@ -410,8 +460,9 @@ namespace LearningManagementSystem.Admin
             txtCourseEdit.Items.Insert(0, new ListItem("-- Optional Course --", ""));
 
             // ================= STUDY LEVEL =================
-            SqlCommand cmdLevel = new SqlCommand("SELECT LevelId, LevelName FROM StudyLevels WHERE InstituteId=@I");
+            SqlCommand cmdLevel = new SqlCommand("SELECT LevelId, LevelName FROM StudyLevels WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdLevel.Parameters.AddWithValue("@I", instituteId);
+            cmdLevel.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlStudyLevelEdit.DataSource = dl.GetDataTable(cmdLevel);
             ddlStudyLevelEdit.DataTextField = "LevelName";
@@ -420,8 +471,9 @@ namespace LearningManagementSystem.Admin
             ddlStudyLevelEdit.Items.Insert(0, new ListItem("-- Optional Class --", ""));
 
             // ================= SEMESTER =================
-            SqlCommand cmdSem = new SqlCommand("SELECT SemesterId, SemesterName FROM Semesters WHERE InstituteId=@I");
+            SqlCommand cmdSem = new SqlCommand("SELECT SemesterId, SemesterName FROM Semesters WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdSem.Parameters.AddWithValue("@I", instituteId);
+            cmdSem.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlSemesterEdit.DataSource = dl.GetDataTable(cmdSem);
             ddlSemesterEdit.DataTextField = "SemesterName";
@@ -430,8 +482,9 @@ namespace LearningManagementSystem.Admin
             ddlSemesterEdit.Items.Insert(0, new ListItem("-- Optional Semester --", ""));
 
             // ================= SECTION =================
-            SqlCommand cmdSection = new SqlCommand("SELECT SectionId, SectionName FROM Sections WHERE InstituteId=@I");
+            SqlCommand cmdSection = new SqlCommand("SELECT SectionId, SectionName FROM Sections WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdSection.Parameters.AddWithValue("@I", instituteId);
+            cmdSection.Parameters.AddWithValue("@SessionId", SessionId);
 
             txtSecctionEdit.DataSource = dl.GetDataTable(cmdSection);
             txtSecctionEdit.DataTextField = "SectionName";
@@ -455,7 +508,7 @@ namespace LearningManagementSystem.Admin
             }
             else if (e.CommandName == "EditRow")
             {
-                DataRow dr = bl.GetStudentById(userId);
+                DataRow dr = bl.GetStudentById(userId, SessionId);
 
                 LoadEditDropdowns();
 
@@ -515,8 +568,9 @@ namespace LearningManagementSystem.Admin
         private void LoadStreams()
         {
             DataLayer dl = new DataLayer();
-            SqlCommand cmd = new SqlCommand("SELECT StreamId, StreamName FROM Streams WHERE InstituteId=@I");
-            cmd.Parameters.AddWithValue("@I", Session["InstituteId"]);
+            SqlCommand cmd = new SqlCommand("SELECT StreamId, StreamName FROM Streams WHERE InstituteId=@I AND SessionId=@SessionId");
+            cmd.Parameters.AddWithValue("@I", InstituteId);
+            cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlStream.DataSource = dl.GetDataTable(cmd);
             ddlStream.DataTextField = "StreamName";
@@ -528,8 +582,9 @@ namespace LearningManagementSystem.Admin
         private void LoadSections()
         {
             DataLayer dl = new DataLayer();
-            SqlCommand cmd = new SqlCommand("SELECT SectionId, SectionName FROM Sections WHERE InstituteId=@I");
-            cmd.Parameters.AddWithValue("@I", Session["InstituteId"]);
+            SqlCommand cmd = new SqlCommand("SELECT SectionId, SectionName FROM Sections WHERE InstituteId=@I AND SessionId=@SessionId");
+            cmd.Parameters.AddWithValue("@I", InstituteId);
+            cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlSection.DataSource = dl.GetDataTable(cmd);
             ddlSection.DataTextField = "SectionName";

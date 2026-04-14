@@ -8,5 +8,6 @@
     public string Duration { get; set; }
     public int ViewCount { get; set; }
 
+    public int SessionId { get; set; }
     public string SubjectName { get; set; }
 }

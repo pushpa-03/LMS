@@ -6,40 +6,43 @@ public class VideoPlayerBL
 {
     DataLayer dl = new DataLayer();
 
-    public DataTable GetVideoDetails(int videoId)
+    public DataTable GetVideoDetails(int videoId,int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
         SELECT *
         FROM Videos
-        WHERE VideoId=@VideoId AND IsActive=1
+        WHERE VideoId=@VideoId AND IsActive=1  And SessionId = @SessionId
         ");
 
         cmd.Parameters.AddWithValue("@VideoId", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         return dl.GetDataTable(cmd);
     }
 
-    public void IncreaseViewCount(int videoId)
+    public void IncreaseViewCount(int videoId,int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
         UPDATE Videos
         SET ViewCount = ISNULL(ViewCount,0) + 1
-        WHERE VideoId=@VideoId
+        WHERE VideoId=@VideoId AND SessionId = @SessionId
         ");
 
         cmd.Parameters.AddWithValue("@VideoId", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         dl.ExecuteCMD(cmd);
     }
 
-    public void SaveNote(int videoId, int userId, string note, int seconds)
+    public void SaveNote(int videoId, int sessionId, int userId, string note, int seconds)
     {
         SqlCommand cmd = new SqlCommand(@"
-        INSERT INTO VideoNotes(VideoId,UserId,NoteText,TimeStampSeconds)
-        VALUES(@V,@U,@N,@T)
+        INSERT INTO VideoNotes(VideoId, SessionId,UserId,NoteText,TimeStampSeconds)
+        VALUES(@V,@SessionId, @U,@N,@T)
         ");
 
         cmd.Parameters.AddWithValue("@V", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         cmd.Parameters.AddWithValue("@U", userId);
         cmd.Parameters.AddWithValue("@N", note);
         cmd.Parameters.AddWithValue("@T", seconds);
@@ -47,115 +50,127 @@ public class VideoPlayerBL
         dl.ExecuteCMD(cmd);
     }
 
-    public DataTable GetNotes(int videoId, int userId)
+    public DataTable GetNotes(int videoId, int sessionId, int userId)
     {
         SqlCommand cmd = new SqlCommand(@"
         SELECT *
         FROM VideoNotes
-        WHERE VideoId=@V AND UserId=@U
+        WHERE VideoId=@V AND UserId=@U AND SessionId = @SessionId
         ORDER BY TimeStampSeconds
         ");
 
         cmd.Parameters.AddWithValue("@V", videoId);
         cmd.Parameters.AddWithValue("@U", userId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         return dl.GetDataTable(cmd);
     }
 
-    public void SaveDoubt(int videoId, int userId, string doubt, int seconds)
+    public void SaveDoubt(int videoId,int sessionId, int userId, string doubt, int seconds)
     {
         SqlCommand cmd = new SqlCommand(@"
-        INSERT INTO VideoDoubts(VideoId,UserId,DoubtText,TimeStampSeconds)
-        VALUES(@V,@U,@D,@T)
+        INSERT INTO VideoDoubts(VideoId, SessionId,UserId,DoubtText,TimeStampSeconds)
+        VALUES(@V, @SessionId,@U,@D,@T)
         ");
 
         cmd.Parameters.AddWithValue("@V", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         cmd.Parameters.AddWithValue("@U", userId);
         cmd.Parameters.AddWithValue("@D", doubt);
         cmd.Parameters.AddWithValue("@T", seconds);
 
         dl.ExecuteCMD(cmd);
     }
-    public DataTable GetVideoTopics(int videoId)
+    public DataTable GetVideoTopics(int videoId, int sessionId)
     {
         // Fetches timestamps/topics defined for this video
         SqlCommand cmd = new SqlCommand(@"
         SELECT StartTime, TopicTitle 
         FROM VideoTopics 
-        WHERE VideoId = @VideoId 
+        WHERE VideoId = @VideoId AND SessionId = @SessionId
         ORDER BY StartTime");
         cmd.Parameters.AddWithValue("@VideoId", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
         return dl.GetDataTable(cmd);
     }
 
-    public DataTable GetEngagement(int videoId)
+    public DataTable GetEngagement(int videoId, int sessionId)
     {
         // Joins Progress with Users to show who is watching
         SqlCommand cmd = new SqlCommand(@"
         SELECT U.UserName, P.WatchedPercent 
         FROM VideoWatchProgress P
         INNER JOIN Users U ON P.UserId = U.UserId
-        WHERE P.VideoId = @VideoId");
+        WHERE P.VideoId = @VideoId AND P.SessionId = @SessionId");
         cmd.Parameters.AddWithValue("@VideoId", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
         return dl.GetDataTable(cmd);
     }
 
-    public void SaveComment(int videoId, int userId, string comment)
+    public void SaveComment(int videoId,int sessionId, int userId, string comment)
     {
         SqlCommand cmd = new SqlCommand(@"
-        INSERT INTO VideoComments(VideoId,UserId,Comment)
-        VALUES(@V,@U,@C)
+        INSERT INTO VideoComments(VideoId,SessioId,UserId,Comment)
+        VALUES(@V,@SessionId,@U,@C)
         ");
 
         cmd.Parameters.AddWithValue("@V", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         cmd.Parameters.AddWithValue("@U", userId);
         cmd.Parameters.AddWithValue("@C", comment);
 
         dl.ExecuteCMD(cmd);
     }
 
-    public DataTable GetVideoStats(int videoId)
+    public DataTable GetVideoStats(int videoId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
     SELECT 
-        (SELECT COUNT(*) FROM VideoViews WHERE VideoId=@V) Views,
-        (SELECT COUNT(DISTINCT UserId) FROM VideoViews WHERE VideoId=@V) Students,
-        (SELECT ISNULL(AVG(WatchedPercent),0) FROM VideoWatchProgress WHERE VideoId=@V) Completion,
-        (SELECT COUNT(*) FROM VideoComments WHERE VideoId=@V) Comments
+        (SELECT COUNT(*) FROM VideoViews WHERE VideoId=@V AND SessionId = @SessionId) Views,
+        (SELECT COUNT(DISTINCT UserId) FROM VideoViews WHERE VideoId=@V AND SessionId = @SessionId) Students,
+        (SELECT ISNULL(AVG(WatchedPercent),0) FROM VideoWatchProgress WHERE VideoId=@V AND SessionId = @SessionId) Completion,
+        (SELECT COUNT(*) FROM VideoComments WHERE VideoId=@V AND SessionId = @SessionId) Comments
     ");
 
         cmd.Parameters.AddWithValue("@V", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         return dl.GetDataTable(cmd);
     }
 
-    public DataTable GetComments(int videoId)
+    public DataTable GetComments(int videoId,int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
-    SELECT C.CommentId,U.Username,C.Comment
-    FROM VideoComments C
-    JOIN Users U ON U.UserId=C.UserId
-    WHERE C.VideoId=@V
-    ORDER BY C.CommentedOn DESC");
+            SELECT C.CommentId,U.Username,C.Comment
+            FROM VideoComments C
+            JOIN Users U ON U.UserId=C.UserId
+            WHERE C.VideoId=@V AND C.SessionId = @SessionId
+            ORDER BY C.CommentedOn DESC");
 
         cmd.Parameters.AddWithValue("@V", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         return dl.GetDataTable(cmd);
     }
 
-    public void DeleteComment(int id)
+    public void DeleteComment(int id, int sessionId)
     {
-        SqlCommand cmd = new SqlCommand("DELETE FROM VideoComments WHERE CommentId=@Id");
+        SqlCommand cmd = new SqlCommand("DELETE FROM VideoComments WHERE CommentId=@Id AND SessionId = @SessionId");
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         dl.ExecuteCMD(cmd);
     }
 
-    public DataTable GetPlaylist(int videoId)
+    public DataTable GetPlaylist(int videoId,int sessionId)
     {
         // Added 'Duration' to the SELECT statement
         SqlCommand cmd = new SqlCommand(@"
         SELECT VideoId, Title, Duration 
         FROM Videos 
-        WHERE IsActive = 1 
+        WHERE IsActive = 1 AND SessionId = @SessionId
         ORDER BY VideoId ASC");
+
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         return dl.GetDataTable(cmd);
     }
@@ -188,37 +203,39 @@ public class VideoPlayerBL
 
         return 4.5; // Default fallback if something goes wrong
     }
-    public int GetNextVideo(int videoId)
+    public int GetNextVideo(int videoId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
         SELECT TOP 1 VideoId 
         FROM Videos 
-        WHERE VideoId > @V AND IsActive=1
+        WHERE VideoId > @V AND IsActive=1 AND SessionId = @SessionId
         ORDER BY VideoId");
 
         cmd.Parameters.AddWithValue("@V", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         DataTable dt = dl.GetDataTable(cmd);
 
-        if (dt.Rows.Count > 0)
+        if (dt != null || dt.Rows.Count > 0)
             return Convert.ToInt32(dt.Rows[0]["VideoId"]);
 
         return videoId; // fallback
     }
 
-    public int GetPrevVideo(int videoId)
+    public int GetPrevVideo(int videoId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
         SELECT TOP 1 VideoId 
         FROM Videos 
-        WHERE VideoId < @V AND IsActive=1
+        WHERE VideoId < @V AND IsActive=1 AND SessionId
         ORDER BY VideoId DESC");
 
         cmd.Parameters.AddWithValue("@V", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         DataTable dt = dl.GetDataTable(cmd);
 
-        if (dt.Rows.Count > 0)
+        if (dt != null || dt.Rows.Count > 0)
             return Convert.ToInt32(dt.Rows[0]["VideoId"]);
 
         return videoId; // fallback

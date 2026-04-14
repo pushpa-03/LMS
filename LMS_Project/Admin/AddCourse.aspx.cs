@@ -7,17 +7,17 @@ using LearningManagementSystem.GC;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class AddCourse : Page
+    public partial class AddCourse : BasePage
     {
         CourseBL bl = new CourseBL();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
+            //if (Session["InstituteId"] == null)
+            //{
+            //    Response.Redirect("~/Default.aspx");
+            //    return;
+            //}
             if (!IsPostBack)
             {
                 LoadStreams();
@@ -28,9 +28,8 @@ namespace LearningManagementSystem.Admin
         // ================= LOAD STREAMS =================
         private void LoadStreams()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
-            DataTable dt = bl.GetStreams(instituteId);
+            DataTable dt = bl.GetStreams(InstituteId, SessionId);
 
             ddlStream.DataSource = dt;
             ddlStream.DataTextField = "StreamName";
@@ -48,9 +47,8 @@ namespace LearningManagementSystem.Admin
         // ================= LOAD COURSES =================
         private void LoadCourses(string status = "All")
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
-            DataTable dt = bl.GetCourses(instituteId, status);
+            DataTable dt = bl.GetCourses(InstituteId, SessionId, status);
 
             // 🔥 SEARCH FILTER
             if (!string.IsNullOrEmpty(txtSearch.Value))
@@ -115,7 +113,8 @@ namespace LearningManagementSystem.Admin
             CourseGC c = new CourseGC
             {
                 SocietyId = Convert.ToInt32(Session["SocietyId"]),
-                InstituteId = Convert.ToInt32(Session["InstituteId"]),
+                InstituteId = InstituteId,
+                SessionId = SessionId,
                 StreamId = Convert.ToInt32(ddlStream.SelectedValue),
                 CourseName = txtCourseName.Text.Trim(),
                 CourseCode = txtCourseCode.Text.Trim()
@@ -135,13 +134,13 @@ namespace LearningManagementSystem.Admin
         protected void gvCourses_RowCommand(object sender, GridViewCommandEventArgs e)
         {
             int id = Convert.ToInt32(e.CommandArgument);
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+          
 
             if (e.CommandName == "EditRow")
             {
-                DataTable dt = bl.GetById(id, instituteId);
+                DataTable dt = bl.GetById(id, InstituteId,SessionId);
 
-                if (dt.Rows.Count > 0)
+                if (dt != null && dt.Rows.Count > 0)
                 {
                     hfCourseId.Value = id.ToString();
                     ddlStreamEdit.SelectedValue = dt.Rows[0]["StreamId"].ToString();
@@ -157,12 +156,12 @@ namespace LearningManagementSystem.Admin
             }
             else if (e.CommandName == "Toggle")
             {
-                bl.Toggle(id, instituteId);
+                bl.Toggle(id, InstituteId, SessionId);
                 LoadCourses();
             }
             else if (e.CommandName == "DeleteRow")
             {
-                bl.Delete(id, instituteId);
+                bl.Delete(id, InstituteId, SessionId);
                 LoadCourses();
             }
         }
@@ -196,7 +195,8 @@ namespace LearningManagementSystem.Admin
             CourseGC c = new CourseGC
             {
                 CourseId = Convert.ToInt32(hfCourseId.Value),
-                InstituteId = Convert.ToInt32(Session["InstituteId"]),
+                InstituteId = InstituteId,
+                SessionId = SessionId,
                 StreamId = Convert.ToInt32(ddlStreamEdit.SelectedValue),
                 CourseName = txtCourseNameEdit.Text.Trim(),
                 CourseCode = txtCourseCodeEdit.Text.Trim()

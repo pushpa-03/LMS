@@ -3,6 +3,7 @@ using LMS.GC;
 using System;
 using System.Data;
 using System.Web.UI;
+using LearningManagementSystem.BL;
 
 namespace LearningManagementSystem.Admin
 {
@@ -28,10 +29,19 @@ namespace LearningManagementSystem.Admin
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
+            if (Session["UserId"] == null)
             {
                 Response.Redirect("~/Default.aspx");
                 return;
+            }
+
+            if (Session["InstituteId"] == null)
+                return;
+
+            // ✅ SET DEFAULT SESSION IF NOT SET
+            if (Session["CurrentSessionId"] == null)
+            {
+                SetDefaultSession();
             }
 
             if (!IsPostBack)
@@ -40,27 +50,38 @@ namespace LearningManagementSystem.Admin
             }
             else
             {
-                // 🔥 Always reload on postback to apply search
-                LoadStreams();
+                LoadStreams(); // for search/filter
+            }
+        }
+
+        private void SetDefaultSession()
+        {
+            AcademicSessionBL bl = new AcademicSessionBL();
+
+            DataTable dt = bl.GetCurrentSession(CurrentInstituteId);
+
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                Session["CurrentSessionId"] = dt.Rows[0]["SessionId"];
+                Session["SessionName"] = dt.Rows[0]["SessionName"];
             }
         }
 
         // ================= LOAD =================
         void LoadStreams()
         {
-            DataTable dt = bl.GetStreams(CurrentInstituteId, CurrentFilter);
+            int sessionId = Convert.ToInt32(Session["CurrentSessionId"]);
 
-            // 🔥 SEARCH FILTER
+            DataTable dt = bl.GetStreams(CurrentInstituteId, sessionId, CurrentFilter);
+
+            // 🔍 SEARCH FILTER
             if (!string.IsNullOrWhiteSpace(txtSearch.Value))
             {
-                string search = txtSearch.Value.Replace("'", "''"); // prevent error
+                string search = txtSearch.Value.Replace("'", "''");
 
                 DataRow[] rows = dt.Select($"StreamName LIKE '%{search}%'");
 
-                if (rows.Length > 0)
-                    dt = rows.CopyToDataTable();
-                else
-                    dt = dt.Clone(); // ✅ prevents crash
+                dt = rows.Length > 0 ? rows.CopyToDataTable() : dt.Clone();
             }
 
             gvStreams.DataSource = dt;
@@ -68,11 +89,8 @@ namespace LearningManagementSystem.Admin
 
             lblTotal.Text = dt.Rows.Count.ToString();
 
-            int active = dt.Select("IsActive = true").Length;
-            int inactive = dt.Select("IsActive = false").Length;
-
-            lblActive.Text = active.ToString();
-            lblInactive.Text = inactive.ToString();
+            lblActive.Text = dt.Select("IsActive = true").Length.ToString();
+            lblInactive.Text = dt.Select("IsActive = false").Length.ToString();
         }
 
         // ================= SAVE =================
@@ -94,6 +112,7 @@ namespace LearningManagementSystem.Admin
             {
                 SocietyId = CurrentSocietyId,
                 InstituteId = CurrentInstituteId,
+                SessionId = Convert.ToInt32(Session["CurrentSessionId"]), // ✅ NEW
                 StreamName = txtStreamName.Text.Trim()
             };
 

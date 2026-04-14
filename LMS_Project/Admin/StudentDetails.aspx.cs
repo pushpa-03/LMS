@@ -6,7 +6,7 @@ using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class StudentDetails : System.Web.UI.Page
+    public partial class StudentDetails : BasePage
     {
         StudentDetailsBL bl = new StudentDetailsBL();
         protected string AttendanceJson = "[0,0]";
@@ -14,7 +14,7 @@ namespace LearningManagementSystem.Admin
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null) Response.Redirect("~/Default.aspx");
+            //if (Session["InstituteId"] == null) Response.Redirect("~/Default.aspx");
             if (!IsPostBack)
             {
                 int userId = Convert.ToInt32(Request.QueryString["id"] ?? "0");

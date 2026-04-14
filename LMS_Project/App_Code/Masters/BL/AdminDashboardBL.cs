@@ -10,14 +10,31 @@ namespace LearningManagementSystem.BL
 
         public DataTable GetCounts(int instituteId, int sessionId)
         {
-            SqlCommand cmd = new SqlCommand(@"
+            SqlCommand cmd = new SqlCommand();
+
+            cmd.CommandText = @"
             SELECT 
-            (SELECT COUNT(*) FROM Users WHERE RoleId = 4 AND InstituteId=@InstituteId and IsActive = '1') AS Students,
-            (SELECT COUNT(*) FROM Users WHERE RoleId = 3 AND InstituteId=@InstituteId and IsActive = '1') AS Teachers,
-            (SELECT COUNT(*) FROM Subjects WHERE InstituteId=@InstituteId and IsActive = '1') AS Subjects,
-            (SELECT COUNT(*) FROM Courses WHERE InstituteId=@InstituteId and IsActive = '1') AS Courses
-            ");
+                (SELECT COUNT(*) FROM Users 
+                    WHERE InstituteId = @InstituteId 
+                    AND SessionId = @SessionId 
+                    AND RoleId = 4) AS Students,
+
+                (SELECT COUNT(*) FROM Users 
+                    WHERE InstituteId = @InstituteId 
+                    AND SessionId = @SessionId 
+                    AND RoleId = 3) AS Teachers,
+
+                (SELECT COUNT(*) FROM Subjects 
+                    WHERE InstituteId = @InstituteId 
+                    AND SessionId = @SessionId) AS Subjects,
+
+                (SELECT COUNT(*) FROM Courses 
+                    WHERE InstituteId = @InstituteId 
+                    AND SessionId = @SessionId) AS Courses
+            ";
+
             cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
             return dl.GetDataTable(cmd);
         }
@@ -44,7 +61,7 @@ namespace LearningManagementSystem.BL
             CAST(AVG(CASE WHEN vv.IsCompleted=1 THEN 100 ELSE 0 END) AS INT) AS Progress
             FROM Users u
             LEFT JOIN VideoViews vv ON u.UserId = vv.UserId
-            WHERE u.InstituteId=@InstituteId
+            WHERE u.InstituteId=@InstituteId AND SessionId = @SessionId
             GROUP BY u.Username
             ");
             cmd.Parameters.AddWithValue("@InstituteId", instituteId);

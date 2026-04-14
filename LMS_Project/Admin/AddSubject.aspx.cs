@@ -7,50 +7,33 @@ using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class AddSubject : Page
+    public partial class AddSubject : BasePage
     {
         AddSubjectBL bl = new AddSubjectBL();
 
-        int SocietyId => Convert.ToInt32(Session["SocietyId"]);
-        int InstituteId => Convert.ToInt32(Session["InstituteId"]);
-        int CurrentSessionId => GetCurrentSessionId();
+
+
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
-
             if (!IsPostBack)
-            {
                 BindGrid();
-            }
         }
 
-        private int GetCurrentSessionId()
-        {
-            // If session already stored
-            if (Session["CurrentSessionId"] != null)
-                return Convert.ToInt32(Session["CurrentSessionId"]);
 
-            // Otherwise fetch from DB
-            int id = bl.GetCurrentSession(InstituteId);
-
-            if (id > 0)
-            {
-                Session["CurrentSessionId"] = id; // store for later
-                return id;
-            }
-
-            throw new Exception("No Current Academic Session Set.");
-        }
         private void BindGrid()
         {
+
             string status = ViewStateStatus;
             string search = txtSearch?.Text?.Trim() ?? "";
 
-            DataTable dt = bl.GetSubjects(InstituteId, status, search);
+            DataTable dt = bl.GetSubjects(InstituteId, SessionId, status, search);
+
+            if (SessionId == 0)
+            {
+                gvSubjects.DataSource = null;
+                gvSubjects.DataBind();
+                return;
+            }
 
             gvSubjects.DataSource = dt;
             gvSubjects.DataBind();
@@ -64,6 +47,12 @@ namespace LearningManagementSystem.Admin
         {
             try
             {
+                if (SessionId == 0)
+                {
+                    ShowToast("No active academic session found!", false);
+                    return;
+                }
+
                 if (string.IsNullOrWhiteSpace(txtSubjectCode.Text) ||
                     string.IsNullOrWhiteSpace(txtSubjectName.Text))
                 {
@@ -79,7 +68,7 @@ namespace LearningManagementSystem.Admin
 
                     SocietyId = SocietyId,
                     InstituteId = InstituteId,
-                    SessionId = CurrentSessionId,
+                    SessionId = SessionId,
 
                     SubjectCode = txtSubjectCode.Text.Trim(),
                     SubjectName = txtSubjectName.Text.Trim(),
@@ -105,14 +94,18 @@ namespace LearningManagementSystem.Admin
 
         protected void gvSubjects_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            int id = Convert.ToInt32(e.CommandArgument);
+            if (e.CommandArgument == null) return;
+
+            int id;
+            if (!int.TryParse(e.CommandArgument.ToString(), out id))
+                return;
 
 
             if (e.CommandName == "EditRow")
             {
                 hfSubjectId.Value = id.ToString();
 
-                DataTable dt = bl.GetById(id);
+                DataTable dt = bl.GetById(id,SessionId);
 
                 if (dt.Rows.Count > 0)
                 {
@@ -130,12 +123,12 @@ namespace LearningManagementSystem.Admin
             }
             else if (e.CommandName == "Toggle")
             {
-                bl.Toggle(id);
+                bl.Toggle(id,SessionId);
                 BindGrid();
             }
             else if (e.CommandName == "DeleteRow")
             {
-                bl.Delete(id);
+                bl.Delete(id, SessionId);
                 BindGrid();
             }
         }

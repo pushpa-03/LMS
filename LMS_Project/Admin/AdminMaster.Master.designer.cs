@@ -42,6 +42,24 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.Label lblHeaderInstituteName;
 
         /// <summary>
+        /// ddlGlobalSession control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlGlobalSession;
+
+        /// <summary>
+        /// lblGlobalSession control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblGlobalSession;
+
+        /// <summary>
         /// imgProfilePhoto control.
         /// </summary>
         /// <remarks>

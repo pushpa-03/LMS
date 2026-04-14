@@ -9,7 +9,7 @@ namespace LMS.GC
         public int InstituteId { get; set; }
 
         public string StreamName { get; set; }
-
+        public int SessionId { get; set; }
         public bool IsActive { get; set; }
     }
 }

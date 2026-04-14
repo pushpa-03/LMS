@@ -9,13 +9,14 @@ namespace LearningManagementSystem.BL
         DataLayer dl = new DataLayer();
 
         // ================= GET LIST =================
-        public DataTable GetData(string type, int instituteId)
+        public DataTable GetData(string type, int instituteId, int sessionId)
         {
             string table = GetTable(type);
             SqlCommand cmd = new SqlCommand(
-                $"SELECT * FROM {table} WHERE InstituteId=@Inst ORDER BY 1 DESC");
+                $"SELECT * FROM {table} WHERE InstituteId=@Inst  AND SessionId=@SessionId ORDER BY 1 DESC");
 
             cmd.Parameters.AddWithValue("@Inst", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
             return dl.GetDataTable(cmd);
         }
@@ -27,7 +28,7 @@ namespace LearningManagementSystem.BL
             string col = GetColumn(obj.Type);
 
             SqlCommand cmd = new SqlCommand(
-                $"INSERT INTO {table} (SocietyId,InstituteId,{col}) VALUES (@S,@I,@N)");
+                $"INSERT INTO {table} (SocietyId,InstituteId,SessionId, {col}) VALUES (@S,@I,@SessionId,@N)");
 
             cmd.Parameters.AddWithValue("@S", obj.SocietyId);
             cmd.Parameters.AddWithValue("@I", obj.InstituteId);
@@ -44,11 +45,12 @@ namespace LearningManagementSystem.BL
             string pk = GetPk(obj.Type);
 
             SqlCommand cmd = new SqlCommand(
-                $"UPDATE {table} SET {col}=@N WHERE {pk}=@Id AND InstituteId=@Inst");
+                $"UPDATE {table} SET {col}=@N WHERE {pk}=@Id  AND InstituteId=@Inst AND SessionId=@SessionId");
 
             cmd.Parameters.AddWithValue("@N", obj.Name);
             cmd.Parameters.AddWithValue("@Id", obj.Id);
             cmd.Parameters.AddWithValue("@Inst", obj.InstituteId);
+            cmd.Parameters.AddWithValue("@SessionId", obj.SessionId);
 
             dl.ExecuteCMD(cmd);
         }
@@ -60,7 +62,7 @@ namespace LearningManagementSystem.BL
             string pk = GetPk(type);
 
             SqlCommand cmd = new SqlCommand(
-                $"DELETE FROM {table} WHERE {pk}=@Id AND InstituteId=@Inst");
+                $"DELETE FROM {table} WHERE {pk}=@Id AND InstituteId=@Inst AND SessionId=@SessionId");
 
             cmd.Parameters.AddWithValue("@Id", id);
             cmd.Parameters.AddWithValue("@Inst", instituteId);
@@ -76,7 +78,7 @@ namespace LearningManagementSystem.BL
             string pk = GetPk(type);
 
             SqlCommand cmd = new SqlCommand(
-                $"SELECT {col} FROM {table} WHERE {pk}=@Id AND InstituteId=@Inst");
+                $"SELECT {col} FROM {table} WHERE {pk}=@Id AND InstituteId=@Inst AND SessionId=@SessionId");
 
             cmd.Parameters.AddWithValue("@Id", id);
             cmd.Parameters.AddWithValue("@Inst", instituteId);

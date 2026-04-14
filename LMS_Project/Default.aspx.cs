@@ -20,6 +20,7 @@ namespace LMS
         protected void btnLogin_Click(object sender, EventArgs e)
         {
             lblMsg.Text = "";
+            lblMsg.Visible = false;
 
             string username = txtUsername.Text.Trim();
             string password = txtPassword.Text.Trim();
@@ -27,6 +28,7 @@ namespace LMS
             if (username == "" || password == "")
             {
                 lblMsg.Text = "Username and password required.";
+                lblMsg.Visible = true;
                 return;
             }
 
@@ -38,12 +40,14 @@ namespace LMS
             if (user == null)
             {
                 lblMsg.Text = "Invalid username or password.";
+                lblMsg.Visible = true;
                 return;
             }
 
             if (!user.IsActive)
             {
                 lblMsg.Text = "Your account is inactive. Contact administrator.";
+                lblMsg.Visible = true;
                 return;
             }
 

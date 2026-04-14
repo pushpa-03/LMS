@@ -208,7 +208,7 @@ namespace LMS.SuperAdmin
                 Session["InstituteId"] = instituteId;
                 Session["SocietyId"] = societyId;
 
-                Response.Redirect("~/Admin/Dashboard.aspx");
+                Response.Redirect("~/Admin/Dashboard.aspx?InstituteId=" + instituteId);
             }
             else if (e.CommandName == "Toggle")
             {

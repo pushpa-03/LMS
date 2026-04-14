@@ -7,7 +7,7 @@ using System.Web.UI;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class ParentList : Page
+    public partial class ParentList : BasePage
     {
         ParentBL bl = new ParentBL();
 
@@ -24,8 +24,11 @@ namespace LearningManagementSystem.Admin
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
-                Response.Redirect("~/Default.aspx");
+            if (SessionId == 0)
+            {
+                //Alert("No active academic session found!", false);
+                return;
+            }
 
             if (!IsPostBack)
             {
@@ -49,10 +52,10 @@ namespace LearningManagementSystem.Admin
 
         private void LoadData()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+            
             bool isActive = CurrentFilter == "1";
 
-            DataTable dt = bl.GetParentsWithStudentDetails(instituteId, isActive);
+            DataTable dt = bl.GetParentsWithStudentDetails(InstituteId,SessionId, isActive);
 
             var grouped = dt.AsEnumerable()
                 .GroupBy(r => new
@@ -91,8 +94,8 @@ namespace LearningManagementSystem.Admin
 
         private void LoadStats()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-            DataTable dt = bl.GetStats(instituteId);
+            
+            DataTable dt = bl.GetStats(InstituteId,SessionId);
 
             if (dt.Rows.Count > 0)
             {

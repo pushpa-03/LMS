@@ -7,6 +7,8 @@ namespace LearningManagementSystem.GC
         public int AssignmentId { get; set; }
         public int SocietyId { get; set; }
         public int InstituteId { get; set; }
+
+        public int SessionId { get; set; }
         public int SubjectId { get; set; }
         public int? ChapterId { get; set; }
 

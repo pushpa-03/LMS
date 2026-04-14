@@ -7,7 +7,7 @@ using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class StudentsList : Page
+    public partial class StudentsList : BasePage
     {
         StudentBL bl = new StudentBL();
 
@@ -18,11 +18,11 @@ namespace LearningManagementSystem.Admin
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["InstituteId"] == null)
-                Response.Redirect("~/Default.aspx");
 
             if (!IsPostBack)
             {
+                if (SessionId == 0) return;
+
                 if (ViewState["ShowInactive"] == null)
                     ShowInactive = false;
 
@@ -40,10 +40,10 @@ namespace LearningManagementSystem.Admin
 
         private void LoadStats()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-
+            
             DataTable dt = bl.GetStudents(
-                instituteId,
+                InstituteId,
+                SessionId,
                 txtSearch.Text.Trim(),
                 ShowInactive ? "0" : "1"
             );
@@ -55,10 +55,10 @@ namespace LearningManagementSystem.Admin
 
         private void LoadHierarchy()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-
+           
             DataTable dt = bl.GetStudents(
-                instituteId,
+                InstituteId,
+                SessionId,
                 txtSearch.Text.Trim(),
                 ShowInactive ? "0" : "1"
             );
@@ -89,7 +89,8 @@ namespace LearningManagementSystem.Admin
             }
 
             // ✅ SORT STUDENTS BY ROLL NUMBER
-            data = data.OrderBy(x => x["RollNumber"]);
+            //data = data.OrderBy(x => x["RollNumber"]);
+            data = data.OrderBy(x => Convert.ToInt32(x["RollNumber"]));
 
             // ✅ MULTI-LEVEL GROUPING
             var result = data
@@ -139,24 +140,24 @@ namespace LearningManagementSystem.Admin
                 : "👁 View Inactive";
 
             LoadAll(); // ✅ works now correctly
-            LoadStats();
+            //LoadStats();
         }
 
         protected void FilterChanged(object sender, EventArgs e)
         {
-            LoadHierarchy();
             LoadAll();
         }
 
         private void LoadFilters()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+            int instituteId = InstituteId;
             DataLayer dl = new DataLayer();
 
             // ✅ STREAM
             SqlCommand cmdStream = new SqlCommand(
-                "SELECT StreamId, StreamName FROM Streams WHERE InstituteId=@I");
+                "SELECT StreamId, StreamName FROM Streams WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdStream.Parameters.AddWithValue("@I", instituteId);
+            cmdStream.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlStream.DataSource = dl.GetDataTable(cmdStream);
             ddlStream.DataTextField = "StreamName";
@@ -166,8 +167,9 @@ namespace LearningManagementSystem.Admin
 
             // ✅ COURSE
             SqlCommand cmdCourse = new SqlCommand(
-                "SELECT CourseId, CourseName FROM Courses WHERE InstituteId=@I");
+                "SELECT CourseId, CourseName FROM Courses WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdCourse.Parameters.AddWithValue("@I", instituteId);
+            cmdCourse.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlCourse.DataSource = dl.GetDataTable(cmdCourse);
             ddlCourse.DataTextField = "CourseName";
@@ -177,8 +179,9 @@ namespace LearningManagementSystem.Admin
 
             // ✅ LEVEL
             SqlCommand cmdLevel = new SqlCommand(
-                "SELECT LevelId, LevelName FROM StudyLevels WHERE InstituteId=@I");
+                "SELECT LevelId, LevelName FROM StudyLevels WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdLevel.Parameters.AddWithValue("@I", instituteId);
+            cmdLevel.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlLevel.DataSource = dl.GetDataTable(cmdLevel);
             ddlLevel.DataTextField = "LevelName";
@@ -188,8 +191,9 @@ namespace LearningManagementSystem.Admin
 
             // ✅ SEMESTER
             SqlCommand cmdSem = new SqlCommand(
-                "SELECT SemesterId, SemesterName FROM Semesters WHERE InstituteId=@I");
+                "SELECT SemesterId, SemesterName FROM Semesters WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdSem.Parameters.AddWithValue("@I", instituteId);
+            cmdSem.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlSemester.DataSource = dl.GetDataTable(cmdSem);
             ddlSemester.DataTextField = "SemesterName";
@@ -199,8 +203,9 @@ namespace LearningManagementSystem.Admin
 
             // ✅ SECTION
             SqlCommand cmdSec = new SqlCommand(
-                "SELECT SectionId, SectionName FROM Sections WHERE InstituteId=@I");
+                "SELECT SectionId, SectionName FROM Sections WHERE InstituteId=@I AND SessionId=@SessionId");
             cmdSec.Parameters.AddWithValue("@I", instituteId);
+            cmdSec.Parameters.AddWithValue("@SessionId", SessionId);
 
             ddlSection.DataSource = dl.GetDataTable(cmdSec);
             ddlSection.DataTextField = "SectionName";

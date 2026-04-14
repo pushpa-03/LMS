@@ -169,10 +169,7 @@
     <h4>Admin Dashboard 👑</h4>
     <p>Monitor and manage your LMS platform efficiently.</p>
 
-    <asp:DropDownList ID="ddlAcademicSession" runat="server"
-        CssClass="form-control w-auto mt-2"
-        AutoPostBack="true"
-        OnSelectedIndexChanged="ddlAcademicSession_SelectedIndexChanged" />
+   
 
     <asp:Label ID="lblSelectedSession" runat="server"
         CssClass="meta-pill" />

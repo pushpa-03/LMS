@@ -50,6 +50,9 @@
 //                string virtualPath = path.Replace("..", "~");
 //                string resolvedUrl = ResolveUrl(virtualPath);
 
+
+
+
 //                videoPlayer.Attributes["src"] = resolvedUrl.Replace("#", "%23");
 
 //                bl.IncreaseViewCount(VideoId);
@@ -132,7 +135,7 @@ using Newtonsoft.Json;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class VideoPlayer : System.Web.UI.Page
+    public partial class VideoPlayer : BasePage
     {
         VideoPlayerBL bl = new VideoPlayerBL();
 
@@ -146,6 +149,8 @@ namespace LearningManagementSystem.Admin
             {
                 if (!IsPostBack)
                 {
+                    if (SessionId == 0) return;
+
                     LoadVideoData();
                     LoadEngagement();
                     LoadTopics();
@@ -164,7 +169,7 @@ namespace LearningManagementSystem.Admin
         {
             try
             {
-                DataTable dt = bl.GetVideoDetails(VideoId);
+                DataTable dt = bl.GetVideoDetails(VideoId,SessionId);
                 if (dt.Rows != null && dt.Rows.Count > 0)
                 {
                     var row = dt.Rows[0];
@@ -185,18 +190,18 @@ namespace LearningManagementSystem.Admin
                     dynamicRating.InnerHtml = starsHtml + $" <span class='ms-1'>{avgRating:F1} Rating</span>";
 
                     // SYNCED PLAYLIST LOGIC
-                    int nextId = bl.GetNextVideo(VideoId);
-                    int prevId = bl.GetPrevVideo(VideoId);
+                    int nextId = bl.GetNextVideo(VideoId,SessionId);
+                    int prevId = bl.GetPrevVideo(VideoId,SessionId);
 
                     // Hide buttons if same as current (meaning no further videos)
                     btnNext.Visible = (nextId != VideoId);
                     btnPrev.Visible = (prevId != VideoId);
 
-                    rptPlaylist.DataSource = bl.GetPlaylist(VideoId);
+                    rptPlaylist.DataSource = bl.GetPlaylist(VideoId,SessionId);
                     rptPlaylist.DataBind();
 
                     // Stats
-                    var stats = bl.GetVideoStats(VideoId);
+                    var stats = bl.GetVideoStats(VideoId,SessionId);
                     if (stats.Rows.Count > 0)
                     {
                         liveViews.InnerText = stats.Rows[0]["Views"].ToString();
@@ -221,12 +226,12 @@ namespace LearningManagementSystem.Admin
 
         void LoadTopics()
         {
-            rptTopics.DataSource = bl.GetVideoTopics(VideoId);
+            rptTopics.DataSource = bl.GetVideoTopics(VideoId,SessionId);
             rptTopics.DataBind();
         }
         private void LoadEngagement()
         {
-            DataTable dt = bl.GetEngagement(VideoId);
+            DataTable dt = bl.GetEngagement(VideoId,SessionId);
             string html = "<table class='table table-borderless small'><thead><tr class='text-muted'><th>Student</th><th>Progress</th></tr></thead><tbody>";
             foreach (DataRow r in dt.Rows)
             {
@@ -238,21 +243,21 @@ namespace LearningManagementSystem.Admin
 
         // AJAX METHODS FOR LIVE UPDATE
         [WebMethod]
-        public static string GetComments(int vid)
+        public static string GetComments(int vid,int SessionId)
         {
             VideoPlayerBL bl = new VideoPlayerBL();
-            return JsonConvert.SerializeObject(bl.GetComments(vid));
+            return JsonConvert.SerializeObject(bl.GetComments(vid, SessionId));
         }
 
         [WebMethod]
-        public static void AddComment(int vid, string msg)
+        public static void AddComment(int vid, int SessionId, string msg)
         {
             VideoPlayerBL bl = new VideoPlayerBL();
             // Assuming current admin ID is 1 for this context
-            bl.SaveComment(vid, 1, msg);
+            bl.SaveComment(vid,SessionId, 1, msg);
         }
 
-        protected void btnNext_Click(object sender, EventArgs e) => Response.Redirect("VideoPlayer.aspx?VideoId=" + bl.GetNextVideo(VideoId));
-        protected void btnPrev_Click(object sender, EventArgs e) => Response.Redirect("VideoPlayer.aspx?VideoId=" + bl.GetPrevVideo(VideoId));
+        protected void btnNext_Click(object sender, EventArgs e) => Response.Redirect("VideoPlayer.aspx?VideoId=" + bl.GetNextVideo(VideoId,SessionId));
+        protected void btnPrev_Click(object sender, EventArgs e) => Response.Redirect("VideoPlayer.aspx?VideoId=" + bl.GetPrevVideo(VideoId,SessionId));
     }
 }

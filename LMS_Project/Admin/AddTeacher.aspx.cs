@@ -5,39 +5,37 @@ using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class Teachers : Page
+    public partial class Teachers : BasePage
     {
         TeacherBL bl = new TeacherBL();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["UserId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
-
             if (!IsPostBack)
             {
-                CurrentFilter = "1"; // Active default
+                if (SessionId == 0)
+                {
+                    ShowMsg("No active academic session found!", false);
+                    return;
+                }
+
+                CurrentFilter = "1";
                 LoadStreams();
-                LoadTeachers(txtSearch.Text.Trim());
+                LoadTeachers();
                 LoadStats();
             }
         }
 
 
-        private void LoadTeachers(string search = "", string status = "All")
-        {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-            gvTeachers.DataSource = bl.GetTeachers(instituteId, search, status);
-            gvTeachers.DataBind();
-
-
-        }
 
         protected void btnSave_Click(object sender, EventArgs e)
         {
+            if (SessionId == 0)
+            {
+                ShowMsg("No active session!", false);
+                return;
+            }
+
             TeacherGC t = new TeacherGC
             {
                 StreamId = Convert.ToInt32(ddlStream.SelectedValue),
@@ -45,6 +43,7 @@ namespace LearningManagementSystem.Admin
                 Email = txtEmail.Text.Trim(),
                 SocietyId = Convert.ToInt32(Session["SocietyId"]),
                 InstituteId = Convert.ToInt32(Session["InstituteId"]),
+                SessionId = SessionId,
                 FullName = txtFullName.Text.Trim(),
                 Gender = ddlGender.SelectedValue,
                 DOB = Convert.ToDateTime(txtDOB.Text),
@@ -56,7 +55,8 @@ namespace LearningManagementSystem.Admin
 
             bl.InsertTeacher(t);
 
-            LoadTeachers(txtSearch.Text.Trim());
+            //LoadTeachers(txtSearch.Text.Trim());
+            LoadTeachers();
             LoadStats();
             ShowMsg("Parent added successfully", true);
         }
@@ -67,21 +67,23 @@ namespace LearningManagementSystem.Admin
 
             if (e.CommandName == "Toggle")
             {
-                bl.ToggleStatus(userId);
-                LoadTeachers(txtSearch.Text.Trim());
+                bl.ToggleStatus(userId,SessionId);
+                //LoadTeachers(txtSearch.Text.Trim());
+                LoadTeachers();
                 LoadStats();
                 ShowMsg("Status changed successfully", true);
             }
             else if (e.CommandName == "DeleteRow")
             {
-                bl.DeleteTeacher(userId);
-                LoadTeachers(txtSearch.Text.Trim());
+                bl.DeleteTeacher(userId,SessionId);
+                //LoadTeachers(txtSearch.Text.Trim());
+                LoadTeachers();
                 LoadStats();
                 ShowMsg("parent deleted successfully", true);
             }
             else if (e.CommandName == "EditRow")
             {
-                DataTable dt = bl.GetTeacherById(userId);
+                DataTable dt = bl.GetTeacherById(userId, SessionId);
 
                 if (dt.Rows.Count > 0)
                 {
@@ -104,9 +106,9 @@ namespace LearningManagementSystem.Admin
 
         private void LoadStreams()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+            int instituteId = InstituteId;
 
-            DataTable dt = bl.GetStreams(instituteId);
+            DataTable dt = bl.GetStreams(instituteId,SessionId);
 
             ddlStream.DataSource = dt;
             ddlStream.DataTextField = "StreamName";
@@ -122,7 +124,8 @@ namespace LearningManagementSystem.Admin
         }
         protected void btnFilter_Click(object sender, EventArgs e)
         {
-            LoadTeachers(txtSearch.Text.Trim(), "All");
+            //LoadTeachers(txtSearch.Text.Trim(), "All");
+            LoadTeachers();
         }
         protected void btnUpdate_Click(object sender, EventArgs e)
         {
@@ -137,14 +140,16 @@ namespace LearningManagementSystem.Admin
             };
 
             bl.UpdateTeacher(t);
-            LoadTeachers(txtSearch.Text.Trim());
+            //LoadTeachers(txtSearch.Text.Trim());
+            LoadTeachers();
             LoadStats();
             ShowMsg("Updated successfully", true);
         }
         protected void FilterStatus_Click(object sender, EventArgs e)
         {
             string status = ((LinkButton)sender).CommandArgument;
-            LoadTeachers(txtSearch.Text.Trim(), status);
+            //LoadTeachers(txtSearch.Text.Trim(), status);
+            LoadTeachers();
         }
 
         public int TotalTeachers = 0;
@@ -157,13 +162,31 @@ namespace LearningManagementSystem.Admin
             set { ViewState["Filter"] = value; }
         }
 
-        private void LoadTeachers(string search = "")
+        //private void LoadTeachers(string search = "", string status = "All")
+        //{
+        //    int instituteId = Convert.ToInt32(Session["InstituteId"]);
+        //    gvTeachers.DataSource = bl.GetTeachers(instituteId, search, status);
+        //    gvTeachers.DataBind();
+
+
+        //}
+
+        //private void LoadTeachers(string search = "")
+        //{
+        //    int instituteId = Convert.ToInt32(Session["InstituteId"]);
+
+        //    string status = CurrentFilter == "1" ? "1" : "0";
+
+        //    gvTeachers.DataSource = bl.GetTeachers(instituteId, search, status);
+        //    gvTeachers.DataBind();
+        //}
+
+        private void LoadTeachers()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+            string search = txtSearch.Text.Trim();
+            string status = CurrentFilter;
 
-            string status = CurrentFilter == "1" ? "1" : "0";
-
-            gvTeachers.DataSource = bl.GetTeachers(instituteId, search, status);
+            gvTeachers.DataSource = bl.GetTeachers(InstituteId, SessionId, search, status);
             gvTeachers.DataBind();
         }
 
@@ -175,20 +198,22 @@ namespace LearningManagementSystem.Admin
                 ? "👁 View Inactive"
                 : "👁 View Active";
 
-            LoadTeachers(txtSearch.Text.Trim());
+            //LoadTeachers(txtSearch.Text.Trim());
+            LoadTeachers();
             LoadStats();
         }
 
         protected void Search_Click(object sender, EventArgs e)
         {
-            LoadTeachers(txtSearch.Text.Trim());
+            //LoadTeachers(txtSearch.Text.Trim());
+            LoadTeachers();
         }
 
         private void LoadStats()
         {
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+            int instituteId = InstituteId;
 
-            DataTable dt = bl.GetTeachers(instituteId);
+            DataTable dt = bl.GetTeachers(InstituteId, SessionId, "", "All");
 
             TotalTeachers = dt.Rows.Count;
             ActiveTeachers = dt.Select("IsActive = 1").Length;

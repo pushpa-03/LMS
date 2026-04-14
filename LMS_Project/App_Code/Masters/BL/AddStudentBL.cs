@@ -33,6 +33,7 @@ public class StudentBL
     public bool InsertStudent(
     int societyId,
     int instituteId,
+    int sessionId,
     string username,
     string email,
     string fullName,
@@ -46,7 +47,6 @@ public class StudentBL
     int? sectionId,
     string rollNo)
     {
-        int sessionId = GetCurrentSessionId(instituteId);
 
         if (sessionId == 0)
             throw new Exception("No Current Academic Session Found.");
@@ -124,55 +124,54 @@ public class StudentBL
     // ============================================
     // ✅ Get Students (Grid)
     // ============================================
-    public DataTable GetStudents(int instituteId, string search = "", string status = "All")
+    public DataTable GetStudents(int instituteId, int sessionId, string search = "", string status = "All")
     {
         string query = @"
-        SELECT U.UserId,
-               U.Email,
-               U.IsActive,
-               P.FullName,
-               P.ContactNo,
-               SAD.RollNumber,
-               ASes.SessionName AS YearName,
-               S.StreamName,
-               SAD.StreamId,
-               C.CourseName,
-               SAD.CourseId,
-               Sty.LevelName,
-               SAD.LevelId,
-               Sem.SemesterName,
-               SAD.SemesterId,
-               Sec.SectionName,
-               SAD.SectionId,     
-               SAD.RollNumber
-                FROM Users U
-        INNER JOIN UserProfile P ON U.UserId = P.UserId
-        INNER JOIN StudentAcademicDetails SAD ON U.UserId = SAD.UserId
-        INNER JOIN AcademicSessions ASes ON SAD.SessionId = ASes.SessionId
-        LEFT JOIN Streams S ON SAD.StreamId = S.StreamId
-        LEFT JOIN Courses C ON SAD.CourseId = C.CourseId
-        LEFT JOIN StudyLevels Sty ON SAD.LevelId = Sty.LevelId
-        LEFT JOIN Semesters Sem ON SAD.SemesterId = Sem.SemesterId
-        LEFT JOIN Sections Sec ON SAD.SectionId = Sec.SectionId
-        WHERE U.RoleId = (SELECT RoleId FROM Roles WHERE RoleName='Student')
-        AND U.InstituteId=@I";
+    SELECT U.UserId,
+           U.Email,
+           U.IsActive,
+           P.FullName,
+           P.ContactNo,
+           SAD.RollNumber,
+           ASes.SessionName AS YearName,
+           S.StreamName,
+           SAD.StreamId,
+           C.CourseName,
+           SAD.CourseId,
+           Sty.LevelName,
+           SAD.LevelId,
+           Sem.SemesterName,
+           SAD.SemesterId,
+           Sec.SectionName,
+           SAD.SectionId
+    FROM Users U
+    INNER JOIN UserProfile P ON U.UserId = P.UserId
+    INNER JOIN StudentAcademicDetails SAD ON U.UserId = SAD.UserId
+    INNER JOIN AcademicSessions ASes ON SAD.SessionId = ASes.SessionId
+    LEFT JOIN Streams S ON SAD.StreamId = S.StreamId
+    LEFT JOIN Courses C ON SAD.CourseId = C.CourseId
+    LEFT JOIN StudyLevels Sty ON SAD.LevelId = Sty.LevelId
+    LEFT JOIN Semesters Sem ON SAD.SemesterId = Sem.SemesterId
+    LEFT JOIN Sections Sec ON SAD.SectionId = Sec.SectionId
+    WHERE U.RoleId = (SELECT RoleId FROM Roles WHERE RoleName='Student')
+    AND U.InstituteId=@I
+    AND SAD.SessionId=@SessionId";
 
-        SqlCommand cmd = new SqlCommand();
+        SqlCommand cmd = new SqlCommand(query);
         cmd.Parameters.AddWithValue("@I", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query += " AND (P.FullName LIKE @S OR SAD.RollNumber LIKE @S)";
+            cmd.CommandText += " AND (P.FullName LIKE @S OR SAD.RollNumber LIKE @S)";
             cmd.Parameters.AddWithValue("@S", "%" + search + "%");
         }
 
         if (status != "All")
         {
-            query += " AND U.IsActive=@Status";
-            cmd.Parameters.AddWithValue("@Status", status == "1" ? 1 : 0);
+            cmd.CommandText += " AND U.IsActive=@Status";
+            cmd.Parameters.AddWithValue("@Status", status == "1");
         }
-
-        cmd.CommandText = query;
 
         return dl.GetDataTable(cmd);
     }
@@ -180,37 +179,34 @@ public class StudentBL
     // ============================================
     // ✅ Get Single Student (For Edit Modal)
     // ============================================
-    public DataRow GetStudentById(int userId)
+    public DataRow GetStudentById(int userId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
-        SELECT 
-            U.Username,
-            U.Email,
-            P.FullName,
-            P.ContactNo,
-            P.Gender,
-            P.DOB,
-            SAD.RollNumber,
-            SAD.StreamId,
-            SAD.CourseId,
-            SAD.LevelId,
-            SAD.SemesterId,
-            SAD.SectionId
-        FROM Users U
-        INNER JOIN UserProfile P ON U.UserId = P.UserId
-        INNER JOIN StudentAcademicDetails SAD ON U.UserId = SAD.UserId  -- ✅ JOIN
-        WHERE U.UserId=@Id");
+    SELECT 
+        U.Username,
+        U.Email,
+        P.FullName,
+        P.ContactNo,
+        P.Gender,
+        P.DOB,
+        SAD.RollNumber,
+        SAD.StreamId,
+        SAD.CourseId,
+        SAD.LevelId,
+        SAD.SemesterId,
+        SAD.SectionId
+    FROM Users U
+    INNER JOIN UserProfile P ON U.UserId = P.UserId
+    INNER JOIN StudentAcademicDetails SAD ON U.UserId = SAD.UserId
+    WHERE U.UserId=@Id AND SAD.SessionId=@SessionId");
 
         cmd.Parameters.AddWithValue("@Id", userId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId); // ✅ FIX
 
         DataTable dt = dl.GetDataTable(cmd);
 
-        if (dt.Rows.Count > 0)
-            return dt.Rows[0];
-
-        return null;
+        return dt.Rows.Count > 0 ? dt.Rows[0] : null;
     }
-
     // ============================================
     // ✅ Update Student
     // ============================================
@@ -220,11 +216,11 @@ public class StudentBL
         SqlCommand cmd = new SqlCommand(@"
         UPDATE Users 
         SET Email=@Email
-        WHERE UserId=@UserId;
+        WHERE UserId=@UserId And SessionId=@SessionId;;
 
         UPDATE UserProfile
         SET FullName=@FullName, ContactNo=@Contact
-        WHERE UserId=@UserId;
+        WHERE UserId=@UserId And SessionId=@SessionId;;
 
         UPDATE StudentAcademicDetails
         SET RollNumber=@RollNo,
@@ -233,7 +229,7 @@ public class StudentBL
             LevelId=@Level,
             SemesterId=@Semester,
             SectionId=@Section
-        WHERE UserId=@UserId;
+        WHERE UserId=@UserId And SessionId=@SessionId;;
     ");
 
         cmd.Parameters.AddWithValue("@Email", email);
@@ -246,6 +242,7 @@ public class StudentBL
         cmd.Parameters.AddWithValue("@Semester", (object)semesterId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Section", (object)sectionId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@UserId", userId);
+
 
         dl.ExecuteCMD(cmd);
     }
@@ -273,7 +270,7 @@ public class StudentBL
 
         return false;
     }
-    public DataTable GetStudentStatsByStreamCourse(int instituteId)
+    public DataTable GetStudentStatsByStreamCourse(int instituteId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
     SELECT 
@@ -284,26 +281,28 @@ public class StudentBL
     LEFT JOIN Streams S ON SAD.StreamId = S.StreamId
     LEFT JOIN Courses C ON SAD.CourseId = C.CourseId
     INNER JOIN Users U ON U.UserId = SAD.UserId
-    WHERE U.InstituteId = @I AND U.IsActive = 1
+    WHERE U.InstituteId = @I AND U.IsActive = 1 AND SAD.SessionId = @SessionId
     GROUP BY S.StreamName, C.CourseName
     ORDER BY S.StreamName, TotalStudents DESC");
 
         cmd.Parameters.AddWithValue("@I", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         return dl.GetDataTable(cmd);
     }
 
 
-    public bool StudentExists(string username, string email, string rollNo, int instituteId)
+    public bool StudentExists(string username, string email, string rollNo, int instituteId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
         SELECT COUNT(*) 
         FROM Users U
         INNER JOIN StudentAcademicDetails SAD ON U.UserId = SAD.UserId
-        WHERE U.InstituteId=@I
+        WHERE U.InstituteId=@I AND SAD.SessionId = @SessionId
         AND (U.Username=@U OR U.Email=@E OR SAD.RollNumber=@R)");
 
         cmd.Parameters.AddWithValue("@I", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         cmd.Parameters.AddWithValue("@U", username);
         cmd.Parameters.AddWithValue("@E", email);
         cmd.Parameters.AddWithValue("@R", rollNo);
@@ -318,15 +317,15 @@ public class StudentBL
         List<SqlCommand> cmds = new List<SqlCommand>();
 
         SqlCommand cmd1 = new SqlCommand(
-            "DELETE FROM StudentAcademicDetails WHERE UserId=@Id");
+            "DELETE FROM StudentAcademicDetails WHERE UserId=@Id AND SessionId=@SessionId");
         cmd1.Parameters.AddWithValue("@Id", userId);
 
         SqlCommand cmd2 = new SqlCommand(
-            "DELETE FROM UserProfile WHERE UserId=@Id");
+            "DELETE FROM UserProfile WHERE UserId=@Id AND SessionId=@SessionId");
         cmd2.Parameters.AddWithValue("@Id", userId);
 
         SqlCommand cmd3 = new SqlCommand(
-            "DELETE FROM Users WHERE UserId=@Id");
+            "DELETE FROM Users WHERE UserId=@Id AND SessionId=@SessionId");
         cmd3.Parameters.AddWithValue("@Id", userId);
 
         cmds.Add(cmd1);

@@ -23,32 +23,34 @@ public class ParentBL
             // INSERT USER
             SqlCommand userCmd = new SqlCommand(@"
             INSERT INTO Users
-            (Username, Email, PasswordHash, RoleId, SocietyId, InstituteId, IsActive, IsFirstLogin)
+            (Username, Email, PasswordHash, RoleId, SocietyId, InstituteId, SessionId, IsActive, IsFirstLogin)
             VALUES
             (@U, @E, HASHBYTES('SHA2_256','Parent@123'),
             (SELECT RoleId FROM Roles WHERE RoleName='Parent'),
-            @S, @I, 1, 1);
+            @S, @I, @SessionId, 1, 1);
             SELECT SCOPE_IDENTITY();", con, trans);
 
             userCmd.Parameters.AddWithValue("@U", gc.Username);
             userCmd.Parameters.AddWithValue("@E", gc.Email);
             userCmd.Parameters.AddWithValue("@S", gc.SocietyId);
             userCmd.Parameters.AddWithValue("@I", gc.InstituteId);
+            userCmd.Parameters.AddWithValue("@SessionId", gc.SessionId);
 
             int newUserId = Convert.ToInt32(userCmd.ExecuteScalar());
 
             // INSERT PROFILE
             SqlCommand profileCmd = new SqlCommand(@"
             INSERT INTO UserProfile
-            (SocietyId, InstituteId, UserId, FullName, Gender, DOB,
+            (SocietyId, InstituteId,SessionId, UserId, FullName, Gender, DOB,
              ContactNo, EmergencyContactName, EmergencyContactNo,
              Address, JoinedDate)
             VALUES
-            (@S,@I,@Id,@FN,@G,@DOB,@C,'N/A','0000000000','N/A',GETDATE())",
+            (@S,@I,@SessionId, @Id,@FN,@G,@DOB,@C,'N/A','0000000000','N/A',GETDATE())",
             con, trans);
 
             profileCmd.Parameters.AddWithValue("@S", gc.SocietyId);
             profileCmd.Parameters.AddWithValue("@I", gc.InstituteId);
+            profileCmd.Parameters.AddWithValue("@SessionId", gc.SessionId);
             profileCmd.Parameters.AddWithValue("@Id", newUserId);
             profileCmd.Parameters.AddWithValue("@FN", gc.FullName);
             profileCmd.Parameters.AddWithValue("@G", gc.Gender);
@@ -63,13 +65,14 @@ public class ParentBL
             {
                 SqlCommand mapCmd = new SqlCommand(@"
                 INSERT INTO ParentStudentMapping
-                (SocietyId, InstituteId, ParentUserId, StudentUserId,
+                (SocietyId, InstituteId,SessionId, ParentUserId, StudentUserId,
                  RelationshipType, IsPrimaryGuardian)
                 VALUES
-                (@S,@I,@P,@Stu,@R,@Primary)", con, trans);
+                (@S,@I,@SessionId,@P,@Stu,@R,@Primary)", con, trans);
 
                 mapCmd.Parameters.AddWithValue("@S", gc.SocietyId);
                 mapCmd.Parameters.AddWithValue("@I", gc.InstituteId);
+                mapCmd.Parameters.AddWithValue("@SessionId", gc.SessionId);
                 mapCmd.Parameters.AddWithValue("@P", newUserId);
                 mapCmd.Parameters.AddWithValue("@Stu", studentId);
                 mapCmd.Parameters.AddWithValue("@R", gc.RelationshipType);
@@ -91,7 +94,7 @@ public class ParentBL
         }
     }
 
-    public DataTable GetParents(int instituteId)
+    public DataTable GetParents(int instituteId, int SessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
     SELECT
@@ -118,17 +121,46 @@ public class ParentBL
     INNER JOIN UserProfile PP 
         ON PU.UserId = PP.UserId
 
-    WHERE SU.InstituteId = @I
+    WHERE SU.InstituteId = @I And SU.SessionId = @SessionId
     ORDER BY SP.FullName
     ");
 
         cmd.Parameters.AddWithValue("@I", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         return dl.GetDataTable(cmd);
     }
 
 
-    public bool ToggleParent(int userId)
+    public DataTable GetParents(int instituteId, int sessionId, bool isActive)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+            SELECT
+                SP.FullName AS StudentName,
+                PU.UserId AS ParentUserId,
+                PP.FullName AS ParentName,
+                PU.Email,
+                PP.ContactNo,
+                PS.RelationshipType AS Relation,
+                PU.IsActive
+            FROM ParentStudentMapping PS
+            INNER JOIN Users PU ON PS.ParentUserId = PU.UserId
+            INNER JOIN UserProfile PP ON PU.UserId = PP.UserId
+            INNER JOIN Users SU ON PS.StudentUserId = SU.UserId
+            INNER JOIN UserProfile SP ON SU.UserId = SP.UserId
+            WHERE SU.InstituteId = @I
+            AND PU.SessionId = @SessionId
+            AND PU.IsActive = @A");
+
+        cmd.Parameters.AddWithValue("@I", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+        cmd.Parameters.AddWithValue("@A", isActive);
+
+        return dl.GetDataTable(cmd);
+    }
+
+
+    public bool ToggleParent(int userId, int SessionId)
     {
         DataLayer dl = new DataLayer();
 
@@ -136,9 +168,10 @@ public class ParentBL
         UPDATE Users
         SET IsActive = CASE WHEN IsActive = 1 THEN 0 ELSE 1 END
         OUTPUT INSERTED.IsActive
-        WHERE UserId = @U");
+        WHERE UserId = @U And SessionId = @SessionId");
 
         cmd.Parameters.AddWithValue("@U", userId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         DataTable dt = dl.GetDataTable(cmd);
 
@@ -149,21 +182,24 @@ public class ParentBL
 
         return false;
     }
-    public void DeleteParent(int userId)
+    public void DeleteParent(int userId, int SessionId)
     {
         List<SqlCommand> cmds = new List<SqlCommand>();
 
         SqlCommand cmd1 = new SqlCommand(
-        "DELETE FROM ParentStudentMapping WHERE ParentUserId=@Id");
+        "DELETE FROM ParentStudentMapping WHERE ParentUserId=@Id And SessionId = @SessionId");
         cmd1.Parameters.AddWithValue("@Id", userId);
+        cmd1.Parameters.AddWithValue("@SessionId", SessionId);
 
         SqlCommand cmd2 = new SqlCommand(
-        "DELETE FROM UserProfile WHERE UserId=@Id");
+        "DELETE FROM UserProfile WHERE UserId=@Id And SessionId = @SessionId");
         cmd2.Parameters.AddWithValue("@Id", userId);
+        cmd2.Parameters.AddWithValue("@SessionId", SessionId);
 
         SqlCommand cmd3 = new SqlCommand(
-        "DELETE FROM Users WHERE UserId=@Id");
+        "DELETE FROM Users WHERE UserId=@Id And SessionId = @SessionId");
         cmd3.Parameters.AddWithValue("@Id", userId);
+        cmd3.Parameters.AddWithValue("@SessionId", SessionId);
 
         cmds.Add(cmd1);
         cmds.Add(cmd2);
@@ -171,32 +207,8 @@ public class ParentBL
 
         dl.ExecuteTransaction(cmds);
     }
-    public DataTable GetParents(int instituteId, bool isActive)
-    {
-        SqlCommand cmd = new SqlCommand(@"
-    SELECT
-        SP.FullName AS StudentName,
-        PU.UserId AS ParentUserId,
-        PP.FullName AS ParentName,
-        PU.Email,
-        PP.ContactNo,
-        PS.RelationshipType AS Relation,
-        PU.IsActive
-    FROM ParentStudentMapping PS
-    INNER JOIN Users PU ON PS.ParentUserId = PU.UserId
-    INNER JOIN UserProfile PP ON PU.UserId = PP.UserId
-    INNER JOIN Users SU ON PS.StudentUserId = SU.UserId
-    INNER JOIN UserProfile SP ON SU.UserId = SP.UserId
-    WHERE SU.InstituteId = @I
-    AND PU.IsActive = @A");
-
-        cmd.Parameters.AddWithValue("@I", instituteId);
-        cmd.Parameters.AddWithValue("@A", isActive);
-
-        return dl.GetDataTable(cmd);
-    }
-
-    public DataTable GetParentById(int userId)
+  
+    public DataTable GetParentById(int userId, int SessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
     SELECT 
@@ -206,9 +218,10 @@ public class ParentBL
         P.ContactNo
     FROM Users U
     INNER JOIN UserProfile P ON U.UserId = P.UserId
-    WHERE U.UserId = @Id");
+    WHERE U.UserId = @Id And U.SessionId = @SessionId");
 
         cmd.Parameters.AddWithValue("@Id", userId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         return dl.GetDataTable(cmd);
     }
@@ -219,30 +232,33 @@ public class ParentBL
 
         SqlCommand userCmd = new SqlCommand(@"
     UPDATE Users SET Username=@U, Email=@E
-    WHERE UserId=@Id");
+    WHERE UserId=@Id And SessionId = @SessionId");
 
         userCmd.Parameters.AddWithValue("@U", gc.Username);
         userCmd.Parameters.AddWithValue("@E", gc.Email);
         userCmd.Parameters.AddWithValue("@Id", gc.UserId);
+        userCmd.Parameters.AddWithValue("@SessionId", gc.SessionId);
 
         cmds.Add(userCmd);
 
         SqlCommand profileCmd = new SqlCommand(@"
     UPDATE UserProfile
     SET FullName=@FN, ContactNo=@C, Gender=@G, DOB=@DOB
-    WHERE UserId=@Id");
+    WHERE UserId=@Id And SessionId = @SessionId");
 
         profileCmd.Parameters.AddWithValue("@FN", gc.FullName);
         profileCmd.Parameters.AddWithValue("@C", gc.ContactNo);
         profileCmd.Parameters.AddWithValue("@G", gc.Gender);
         profileCmd.Parameters.AddWithValue("@DOB", gc.DOB ?? (object)DBNull.Value);
         profileCmd.Parameters.AddWithValue("@Id", gc.UserId);
+        profileCmd.Parameters.AddWithValue("@SessionId", gc.SessionId);
 
         cmds.Add(profileCmd);
 
         SqlCommand delMap = new SqlCommand(
-            "DELETE FROM ParentStudentMapping WHERE ParentUserId=@Id");
+            "DELETE FROM ParentStudentMapping WHERE ParentUserId=@Id And SessionId = @SessionId");
         delMap.Parameters.AddWithValue("@Id", gc.UserId);
+        delMap.Parameters.AddWithValue("@SessionId", gc.SessionId);
 
         cmds.Add(delMap);
 
@@ -250,12 +266,13 @@ public class ParentBL
         {
             SqlCommand mapCmd = new SqlCommand(@"
         INSERT INTO ParentStudentMapping
-        (SocietyId, InstituteId, ParentUserId, StudentUserId,
+        (SocietyId, InstituteId, SessionId, ParentUserId, StudentUserId,
          RelationshipType, IsPrimaryGuardian)
-        VALUES (@S,@I,@P,@Stu,@R,@Primary)");
+        VALUES (@S,@I,@SessionId,@P,@Stu,@R,@Primary)");
 
             mapCmd.Parameters.AddWithValue("@S", gc.SocietyId);
             mapCmd.Parameters.AddWithValue("@I", gc.InstituteId);
+            mapCmd.Parameters.AddWithValue("@SessionId", gc.SessionId);
             mapCmd.Parameters.AddWithValue("@P", gc.UserId);
             mapCmd.Parameters.AddWithValue("@Stu", studentId);
             mapCmd.Parameters.AddWithValue("@R", gc.RelationshipType);
@@ -268,7 +285,7 @@ public class ParentBL
     }
 
     //---called in ParentList.aspx
-    public DataTable GetParentsWithStudentDetails(int instituteId, bool isActive)
+    public DataTable GetParentsWithStudentDetails(int instituteId, int SessionId, bool isActive)
     {
         SqlCommand cmd = new SqlCommand(@"
     SELECT
@@ -305,7 +322,7 @@ public class ParentBL
     LEFT JOIN Sections SEC ON SAD.SectionId = SEC.SectionId
     LEFT JOIN AcademicSessions ASess ON SAD.SessionId = ASess.SessionId
 
-    WHERE SU.InstituteId = @I
+    WHERE SU.InstituteId = @I And PU.SessionId = @SessionId
     AND PU.IsActive = @A
 
     ORDER BY SP.FullName
@@ -313,11 +330,12 @@ public class ParentBL
 
         cmd.Parameters.AddWithValue("@I", instituteId);
         cmd.Parameters.AddWithValue("@A", isActive);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         return dl.GetDataTable(cmd);
     }
 
-    public DataTable GetStats(int instituteId)
+    public DataTable GetStats(int instituteId, int SessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
         SELECT 
@@ -328,10 +346,11 @@ public class ParentBL
         FROM ParentStudentMapping PS
         INNER JOIN Users PU ON PS.ParentUserId = PU.UserId
         INNER JOIN Users SU ON PS.StudentUserId = SU.UserId
-        WHERE SU.InstituteId = @I
+       WHERE SU.InstituteId = @I AND SU.SessionId = @SessionId
     ");
 
         cmd.Parameters.AddWithValue("@I", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         return dl.GetDataTable(cmd);
     }

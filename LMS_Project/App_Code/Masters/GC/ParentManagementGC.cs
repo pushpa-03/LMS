@@ -8,6 +8,8 @@ namespace LearningManagementSystem.GC
         public int SocietyId { get; set; }
         public int InstituteId { get; set; }
 
+        public int SessionId { get; set; }
+
         public string Username { get; set; }
         public string Email { get; set; }
 

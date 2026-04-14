@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LearningManagementSystem.Admin;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -7,7 +8,7 @@ public class SubjectDetailsBL
     DataLayer dl = new DataLayer();
 
     // ================= SUBJECT =================
-    public DataTable GetSubjectDetails(int subjectId)
+    public DataTable GetSubjectDetails(int subjectId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
 
@@ -40,92 +41,102 @@ public class SubjectDetailsBL
     LEFT JOIN Semesters Sem
         ON LSS.SemesterId = Sem.SemesterId
 
-    WHERE S.SubjectId = @SubjectId
+    WHERE S.SubjectId = @SubjectId AND LSS.SessionId = @SessionId
     ");
 
         cmd.Parameters.AddWithValue("@SubjectId", subjectId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
 
         return dl.GetDataTable(cmd);
     }
     // ================= CHAPTER =================
-    public DataTable GetChapters(int subjectId)
+    public DataTable GetChapters(int subjectId, int SessionId)
     {
         SqlCommand cmd = new SqlCommand(
-            "SELECT * FROM Chapters WHERE SubjectId=@SubjectId ORDER BY OrderNo");
+            "SELECT * FROM Chapters WHERE SubjectId=@SubjectId AND SessionId = @SessionId ORDER BY OrderNo");
 
         cmd.Parameters.AddWithValue("@SubjectId", subjectId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         return dl.GetDataTable(cmd);
     }
 
-    public DataTable GetChapterById(int chapterId)
+    public DataTable GetChapterById(int chapterId, int SessionId)
     {
         SqlCommand cmd = new SqlCommand(
-            "SELECT * FROM Chapters WHERE ChapterId=@Id");
+            "SELECT * FROM Chapters WHERE ChapterId=@Id AND SessionID = @SessionID");
 
         cmd.Parameters.AddWithValue("@Id", chapterId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         return dl.GetDataTable(cmd);
     }
 
-    public void SaveChapter(string chapterId, string subjectId, string name, string orderNo)
+    public void SaveChapter(string chapterId, int SessionId, string subjectId, string name, string orderNo)
     {
         SqlCommand cmd = new SqlCommand();
 
         if (string.IsNullOrEmpty(chapterId))
         {
-            cmd.CommandText = @"INSERT INTO Chapters
-            (SocietyId, InstituteId, SubjectId, ChapterName, OrderNo)
-            SELECT SocietyId, InstituteId, SubjectId, @Name, @OrderNo
-            FROM Subjects WHERE SubjectId=@SubjectId";
+            cmd.CommandText = @"
+        INSERT INTO Chapters
+        (SocietyId, InstituteId, SessionId, SubjectId, ChapterName, OrderNo)
+        SELECT SocietyId, InstituteId, SessionId, SubjectId, @Name, @OrderNo
+        FROM LevelSemesterSubjects 
+        WHERE SubjectId=@SubjectId AND SessionId=@SessionId";
         }
         else
         {
-            cmd.CommandText = @"UPDATE Chapters
-                                SET ChapterName=@Name, OrderNo=@OrderNo
-                                WHERE ChapterId=@ChapterId";
+            cmd.CommandText = @"
+        UPDATE Chapters
+        SET ChapterName=@Name, OrderNo=@OrderNo
+        WHERE ChapterId=@ChapterId AND SessionId=@SessionId";
+
             cmd.Parameters.AddWithValue("@ChapterId", chapterId);
         }
 
         cmd.Parameters.AddWithValue("@SubjectId", subjectId);
         cmd.Parameters.AddWithValue("@Name", name);
         cmd.Parameters.AddWithValue("@OrderNo", orderNo);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         dl.ExecuteCMD(cmd);
     }
-
-    public void DeleteChapter(int chapterId)
+    public void DeleteChapter(int chapterId, int SessionId)
     {
         SqlCommand cmd = new SqlCommand(
-            "DELETE FROM Chapters WHERE ChapterId=@Id");
+            "DELETE FROM Chapters WHERE ChapterId=@Id And SessionId = @SessionId");
 
         cmd.Parameters.AddWithValue("@Id", chapterId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         dl.ExecuteCMD(cmd);
     }
 
     // ================= VIDEOS =================
-    public DataTable GetVideosByChapter(int chapterId)
+    public DataTable GetVideosByChapter(int chapterId, int SessionId)
     {
         SqlCommand cmd = new SqlCommand(
-            "SELECT * FROM Videos WHERE ChapterId=@Cid");
+            "SELECT * FROM Videos WHERE ChapterId=@Cid And SessionId = @SessionId");
 
         cmd.Parameters.AddWithValue("@Cid", chapterId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         return dl.GetDataTable(cmd);
     }
 
-    public int InsertVideo(int societyId, int instituteId, int chapterId,
+    public int InsertVideo(int societyId, int instituteId,int sessionId, int chapterId,
                            string title, string desc, string path,
                            string instructor, int userId)
     {
         SqlCommand cmd = new SqlCommand(@"
         INSERT INTO Videos
-        (SocietyId, InstituteId, ChapterId, Title, Duration,
+        (SocietyId, InstituteId, SessionId, ChapterId, Title, Duration,
          Description, VideoPath, InstructorName,
          UploadedBy, UploadedOn, IsActive)
         VALUES
-        (@SocietyId, @InstituteId, @ChapterId, @Title, '',
+        (@SocietyId, @InstituteId, @SessionId, @ChapterId, @Title, '',
          @Desc, @Path, @Instructor,
          @UserId, GETDATE(), 1);
 
@@ -133,6 +144,7 @@ public class SubjectDetailsBL
 
         cmd.Parameters.AddWithValue("@SocietyId", societyId);
         cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         cmd.Parameters.AddWithValue("@ChapterId", chapterId);
         cmd.Parameters.AddWithValue("@Title", title);
         cmd.Parameters.AddWithValue("@Desc", desc);
@@ -140,10 +152,13 @@ public class SubjectDetailsBL
         cmd.Parameters.AddWithValue("@Instructor", instructor);
         cmd.Parameters.AddWithValue("@UserId", userId);
 
-        return Convert.ToInt32(dl.GetDataTable(cmd).Rows[0][0]);
+        DataTable dt = dl.GetDataTable(cmd);
+        if (dt.Rows.Count == 0) return 0;
+
+        return Convert.ToInt32(dt.Rows[0][0]);
     }
 
-    public void InsertVideoTopics(int societyId, int instituteId,
+    public void InsertVideoTopics(int societyId, int instituteId,int sessionId,
                                   int videoId,
                                   string[] times, string[] titles)
     {
@@ -153,12 +168,13 @@ public class SubjectDetailsBL
             {
                 SqlCommand cmd = new SqlCommand(@"
                 INSERT INTO VideoTopics
-                (SocietyId, InstituteId, VideoId, StartTime, TopicTitle)
+                (SocietyId, InstituteId, SessionId, VideoId, StartTime, TopicTitle)
                 VALUES
-                (@SocietyId, @InstituteId, @VideoId, @Time, @Title)");
+                (@SocietyId, @InstituteId, @SessionId, @VideoId, @Time, @Title)");
 
                 cmd.Parameters.AddWithValue("@SocietyId", societyId);
                 cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+                cmd.Parameters.AddWithValue("@SessionId", sessionId);
                 cmd.Parameters.AddWithValue("@VideoId", videoId);
                 cmd.Parameters.AddWithValue("@Time", times[i]);
                 cmd.Parameters.AddWithValue("@Title", titles[i]);
@@ -169,30 +185,32 @@ public class SubjectDetailsBL
     }
 
     // ================= MATERIALS =================
-    public DataTable GetMaterialsByChapter(int chapterId)
+    public DataTable GetMaterialsByChapter(int chapterId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(
-            "SELECT * FROM Materials WHERE ChapterId=@Cid");
+            "SELECT * FROM Materials WHERE ChapterId=@Cid And SessionId = @SessionId");
 
         cmd.Parameters.AddWithValue("@Cid", chapterId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         return dl.GetDataTable(cmd);
     }
 
-    public void InsertMaterial(int societyId, int instituteId,
+    public void InsertMaterial(int societyId, int instituteId,int sessionId,
                                int chapterId, string title,
                                string path, string fileType)
     {
         SqlCommand cmd = new SqlCommand(@"
         INSERT INTO Materials
-        (SocietyId, InstituteId, ChapterId,
+        (SocietyId, InstituteId, SessionId, ChapterId,
          Title, FilePath, FileType, UploadedOn)
         VALUES
-        (@SocietyId, @InstituteId, @ChapterId,
+        (@SocietyId, @InstituteId, @SessionId, @ChapterId,
          @Title, @Path, @Type, GETDATE())");
 
         cmd.Parameters.AddWithValue("@SocietyId", societyId);
         cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
         cmd.Parameters.AddWithValue("@ChapterId", chapterId);
         cmd.Parameters.AddWithValue("@Title", title);
         cmd.Parameters.AddWithValue("@Path", path);
@@ -202,16 +220,17 @@ public class SubjectDetailsBL
     }
 
     // ================= ASSIGNMENTS =================
-    public DataTable GetAssignmentsBySubject(int subjectId)
+    public DataTable GetAssignmentsBySubject(int subjectId,int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
         SELECT *
         FROM Assignments
-        WHERE SubjectId = @SubjectId AND IsActive = 1
+        WHERE SubjectId = @SubjectId AND IsActive = 1 And SessionId = @SessionId
         ORDER BY CreatedOn DESC
     ");
 
         cmd.Parameters.AddWithValue("@SubjectId", subjectId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         return dl.GetDataTable(cmd);
     }

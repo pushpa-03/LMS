@@ -7,7 +7,7 @@ using LearningManagementSystem.GC;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class AcademicSetup : Page
+    public partial class AcademicSetup : BasePage
     {
         AcademicSetupBL bl = new AcademicSetupBL();
 
@@ -22,17 +22,37 @@ namespace LearningManagementSystem.Admin
                 return;
             }
 
+
+
             if (!IsPostBack)
             {
                 BindAll();
             }
         }
 
+        int SessionId => Convert.ToInt32(
+    Session["CurrentSessionId"] ?? SetDefaultSessionAndReturn()
+);
+
+        private int SetDefaultSessionAndReturn()
+        {
+            AcademicSessionBL bl = new AcademicSessionBL();
+            DataTable dt = bl.GetCurrentSession(InstituteId);
+
+            if (dt.Rows.Count > 0)
+            {
+                Session["CurrentSessionId"] = dt.Rows[0]["SessionId"];
+                Session["SessionName"] = dt.Rows[0]["SessionName"];
+                return Convert.ToInt32(dt.Rows[0]["SessionId"]);
+            }
+
+            return 0;
+        }
         private void BindAll()
         {
-            DataTable dtLevel = bl.GetData("Level", InstituteId);
-            DataTable dtSem = bl.GetData("Semester", InstituteId);
-            DataTable dtSec = bl.GetData("Section", InstituteId);
+            DataTable dtLevel = bl.GetData("Level", InstituteId,SessionId);
+            DataTable dtSem = bl.GetData("Semester", InstituteId, SessionId);
+            DataTable dtSec = bl.GetData("Section", InstituteId, SessionId);
 
             gvLevels.DataSource = dtLevel;
             gvLevels.DataBind();
@@ -94,6 +114,8 @@ namespace LearningManagementSystem.Admin
                 Id = string.IsNullOrEmpty(hfEntryId.Value) ? 0 : Convert.ToInt32(hfEntryId.Value),
                 SocietyId = SocietyId,
                 InstituteId = InstituteId,
+                SessionId = SessionId, // 🔥 IMPORTANT
+
                 Name = txtName.Text.Trim(),
                 Type = hfEntryType.Value
             };

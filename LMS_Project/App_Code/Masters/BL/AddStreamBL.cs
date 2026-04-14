@@ -14,12 +14,13 @@ namespace LMS.BL
         {
             SqlCommand cmd = new SqlCommand();
             cmd.CommandText = @"INSERT INTO Streams
-                                (SocietyId, InstituteId, StreamName, IsActive)
-                                VALUES
-                                (@SocietyId, @InstituteId, @StreamName, 1)";
+                        (SocietyId, InstituteId, SessionId, StreamName, IsActive)
+                        VALUES
+                        (@SocietyId, @InstituteId, @SessionId, @StreamName, 1)";
 
             cmd.Parameters.AddWithValue("@SocietyId", model.SocietyId);
             cmd.Parameters.AddWithValue("@InstituteId", model.InstituteId);
+            cmd.Parameters.AddWithValue("@SessionId", model.SessionId);
             cmd.Parameters.AddWithValue("@StreamName", model.StreamName);
 
             dl.ExecuteCMD(cmd);
@@ -71,15 +72,17 @@ namespace LMS.BL
         }
 
         // ================= GET ALL =================
-        public DataTable GetStreams(int instituteId, string filter = "All")
+        public DataTable GetStreams(int instituteId, int sessionId, string filter = "All")
         {
             SqlCommand cmd = new SqlCommand();
 
             cmd.CommandText = @"SELECT StreamId, StreamName, IsActive
-                                FROM Streams
-                                WHERE InstituteId=@InstituteId";
+                        FROM Streams
+                        WHERE InstituteId=@InstituteId
+                        AND SessionId=@SessionId";
 
             cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
             if (filter != "All")
             {

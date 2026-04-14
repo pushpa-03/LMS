@@ -9,6 +9,7 @@ public class TeacherGC
     public int RoleId { get; set; }
     public int SocietyId { get; set; }
     public int InstituteId { get; set; }
+    public int SessionId { get; set; }
     public bool IsActive { get; set; }
 
     // UserProfile Table
