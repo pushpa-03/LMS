@@ -93,9 +93,15 @@
     <Content Include="Admin\AssignLevelSubject.aspx" />
     <Content Include="Admin\AssignStudentSubject.aspx" />
     <Content Include="Admin\AssignSubjectFaculty.aspx" />
+    <Content Include="Admin\AttendanceDashboard.aspx" />
     <Content Include="Admin\CourseList.aspx" />
     <Content Include="Admin\Dashboard.aspx" />
+    <Content Include="Admin\Dashboards\CourseWiseDashboard.aspx" />
+    <Content Include="Admin\Dashboards\MonthlyAnalyticsDashboard.aspx" />
+    <Content Include="Admin\Dashboards\Streamwisedashboard.aspx" />
+    <Content Include="Admin\EngagementAnalytics.aspx" />
     <Content Include="Admin\MaterialPlayer.aspx" />
+    <Content Include="Admin\OverviewDashboard.aspx" />
     <Content Include="Admin\ParentList.aspx" />
     <Content Include="Admin\ParentManagement.aspx" />
     <Content Include="Admin\StreamList.aspx" />
@@ -182,12 +188,16 @@
     <Content Include="SuperAdmin\Dashboard.aspx" />
     <Content Include="Teacher\MyStudentDetails.aspx" />
     <Content Include="Teacher\MyStudents.aspx" />
+    <Content Include="Teacher\SubjectDetails_T_Side.aspx" />
+    <Content Include="Teacher\Subjects_T_Side.aspx" />
     <Content Include="Teacher\TeacherAssignment.aspx" />
+    <Content Include="Teacher\TeacherAttendance.aspx" />
     <Content Include="Teacher\TeacherCalendar.aspx" />
     <Content Include="Teacher\TeacherCourses.aspx" />
     <Content Include="Teacher\TeacherDashboard.aspx" />
     <Content Include="Teacher\TeacherHelp.aspx" />
     <Content Include="Teacher\TeacherProfile.aspx" />
+    <Content Include="Teacher\TeacherVideoPlayer.aspx" />
     <Content Include="Teacher\ViewSubmissions.aspx" />
     <Content Include="Uploads\InstituteLogos\4cdae9c2-5673-4538-8241-78abd22e46e9.jpg" />
     <Content Include="Uploads\InstituteLogos\4d5bcc38-b8c6-45fa-ad51-42833d28df9a.jpg" />
@@ -286,6 +296,13 @@
     <Compile Include="Admin\AssignSubjectFaculty.aspx.designer.cs">
       <DependentUpon>AssignSubjectFaculty.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Admin\AttendanceDashboard.aspx.cs">
+      <DependentUpon>AttendanceDashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\AttendanceDashboard.aspx.designer.cs">
+      <DependentUpon>AttendanceDashboard.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Admin\CourseList.aspx.cs">
       <DependentUpon>CourseList.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -300,12 +317,47 @@
     <Compile Include="Admin\Dashboard.aspx.designer.cs">
       <DependentUpon>Dashboard.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Admin\Dashboards\CourseWiseDashboard.aspx.cs">
+      <DependentUpon>CourseWiseDashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\Dashboards\CourseWiseDashboard.aspx.designer.cs">
+      <DependentUpon>CourseWiseDashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\Dashboards\MonthlyAnalyticsDashboard.aspx.cs">
+      <DependentUpon>MonthlyAnalyticsDashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\Dashboards\MonthlyAnalyticsDashboard.aspx.designer.cs">
+      <DependentUpon>MonthlyAnalyticsDashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\Dashboards\Streamwisedashboard.aspx.cs">
+      <DependentUpon>Streamwisedashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\Dashboards\Streamwisedashboard.aspx.designer.cs">
+      <DependentUpon>Streamwisedashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\EngagementAnalytics.aspx.cs">
+      <DependentUpon>EngagementAnalytics.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\EngagementAnalytics.aspx.designer.cs">
+      <DependentUpon>EngagementAnalytics.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Admin\MaterialPlayer.aspx.cs">
       <DependentUpon>MaterialPlayer.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Admin\MaterialPlayer.aspx.designer.cs">
       <DependentUpon>MaterialPlayer.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\OverviewDashboard.aspx.cs">
+      <DependentUpon>OverviewDashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\OverviewDashboard.aspx.designer.cs">
+      <DependentUpon>OverviewDashboard.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\ParentList.aspx.cs">
       <DependentUpon>ParentList.aspx</DependentUpon>
@@ -391,10 +443,15 @@
     <Compile Include="App_Code\Masters\BL\AssignmentBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignStudentSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignSubjectFacultyBL.cs" />
+    <Compile Include="App_Code\Masters\BL\AttendanceBL.cs" />
     <Compile Include="App_Code\Masters\BL\BasePage.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="App_Code\Masters\BL\CalendarBL.cs" />
+    <Compile Include="App_Code\Masters\BL\DashboardBL\CourseWiseDashboardBL.cs" />
+    <Compile Include="App_Code\Masters\BL\DashboardBL\MonthlyAnalyticsDashboardBL.cs" />
+    <Compile Include="App_Code\Masters\BL\DashboardBL\OverviewDashboardBL.cs" />
+    <Compile Include="App_Code\Masters\BL\DashboardBL\StreamWiseDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\HelpBL.cs" />
     <Compile Include="App_Code\Masters\BL\MaterialBL.cs" />
     <Compile Include="App_Code\Masters\BL\ParentManagementBL.cs" />
@@ -408,6 +465,7 @@
     <Compile Include="App_Code\Masters\BL\StudentSubjectsBL.cs" />
     <Compile Include="App_Code\Masters\BL\SubjectDetailsBL.cs" />
     <Compile Include="App_Code\Masters\BL\SubjectsBL.cs" />
+    <Compile Include="App_Code\Masters\BL\TeacherDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\TeacherProfileBL.cs" />
     <Compile Include="App_Code\Masters\BL\TeacherReportBL.cs" />
     <Compile Include="App_Code\Masters\BL\TeacherStudentDetailsBL.cs" />
@@ -425,6 +483,7 @@
     <Compile Include="App_Code\Masters\GC\AssignmentGC.cs" />
     <Compile Include="App_Code\Masters\GC\AssignStudentSubjectGC.cs" />
     <Compile Include="App_Code\Masters\GC\AssignSubjectFacultyGC.cs" />
+    <Compile Include="App_Code\Masters\GC\AttendanceGC.cs" />
     <Compile Include="App_Code\Masters\GC\CalendarGC.cs" />
     <Compile Include="App_Code\Masters\GC\HelpGC.cs" />
     <Compile Include="App_Code\Masters\GC\LoginGC.cs" />
@@ -581,12 +640,33 @@
     <Compile Include="Teacher\MyStudents.aspx.designer.cs">
       <DependentUpon>MyStudents.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Teacher\SubjectDetails_T_Side.aspx.cs">
+      <DependentUpon>SubjectDetails_T_Side.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\SubjectDetails_T_Side.aspx.designer.cs">
+      <DependentUpon>SubjectDetails_T_Side.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\Subjects_T_Side.aspx.cs">
+      <DependentUpon>Subjects_T_Side.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\Subjects_T_Side.aspx.designer.cs">
+      <DependentUpon>Subjects_T_Side.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Teacher\TeacherAssignment.aspx.cs">
       <DependentUpon>TeacherAssignment.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Teacher\TeacherAssignment.aspx.designer.cs">
       <DependentUpon>TeacherAssignment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\TeacherAttendance.aspx.cs">
+      <DependentUpon>TeacherAttendance.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\TeacherAttendance.aspx.designer.cs">
+      <DependentUpon>TeacherAttendance.aspx</DependentUpon>
     </Compile>
     <Compile Include="Teacher\TeacherCalendar.aspx.cs">
       <DependentUpon>TeacherCalendar.aspx</DependentUpon>
@@ -638,6 +718,13 @@
     </Compile>
     <Compile Include="Teacher\TeacherProfile.aspx.designer.cs">
       <DependentUpon>TeacherProfile.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Teacher\TeacherVideoPlayer.aspx.cs">
+      <DependentUpon>TeacherVideoPlayer.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Teacher\TeacherVideoPlayer.aspx.designer.cs">
+      <DependentUpon>TeacherVideoPlayer.aspx</DependentUpon>
     </Compile>
     <Compile Include="Teacher\ViewSubmissions.aspx.cs">
       <DependentUpon>ViewSubmissions.aspx</DependentUpon>

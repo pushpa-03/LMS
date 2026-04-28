@@ -82,14 +82,6 @@ FROM (
         return dl.GetDataTable(cmd);
     }
 
-    //public int GetCurrentSession(int instituteId)
-    //{
-    //    SqlCommand cmd = new SqlCommand("SELECT TOP 1 SessionId FROM AcademicSessions WHERE InstituteId=@InstId AND IsCurrent=1");
-    //    cmd.Parameters.AddWithValue("@InstId", instituteId);
-    //    DataTable dt = dl.GetDataTable(cmd);
-    //    return dt.Rows.Count > 0 ? Convert.ToInt32(dt.Rows[0]["SessionId"]) : 0;
-    //}
-
     public void ToggleSubjectStatus(int subjectId)
     {
         SqlCommand cmd = new SqlCommand("UPDATE Subjects SET IsActive = CASE WHEN IsActive = 1 THEN 0 ELSE 1 END WHERE SubjectId=@SubId");
@@ -152,4 +144,37 @@ FROM (
 
         return dl.GetDataTable(cmd);
     }
+    public DataTable GetTeacherSubjects(int teacherUserId, int instituteId, int sessionId, int isActive)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+            SELECT DISTINCT
+                S.SubjectId, S.SubjectName, S.SubjectCode, S.IsActive,
+                ST.StreamName, C.CourseName, SL.LevelName, Sem.SemesterName,
+                LSS.IsMandatory,
+                ISNULL((SELECT COUNT(*) FROM AssignStudentSubject ASS 
+                        WHERE ASS.SubjectId = S.SubjectId AND ASS.SessionId = @SessId), 0) AS StudentCount
+            FROM SubjectFaculty SF
+            INNER JOIN Subjects S ON SF.SubjectId = S.SubjectId
+            LEFT JOIN LevelSemesterSubjects LSS ON S.SubjectId = LSS.SubjectId
+                AND LSS.InstituteId = @InstId
+                AND LSS.SessionId = @SessId
+            LEFT JOIN Streams ST ON LSS.StreamId = ST.StreamId
+            LEFT JOIN Courses C ON LSS.CourseId = C.CourseId
+            LEFT JOIN StudyLevels SL ON LSS.LevelId = SL.LevelId
+            LEFT JOIN Semesters Sem ON LSS.SemesterId = Sem.SemesterId
+            WHERE SF.TeacherId = @TeacherId
+              AND SF.InstituteId = @InstId
+              AND SF.SessionId = @SessId
+              AND ISNULL(SF.IsActive, 1) = 1
+              AND S.IsActive = @IsActive
+        ");
+
+        cmd.Parameters.AddWithValue("@TeacherId", teacherUserId);
+        cmd.Parameters.AddWithValue("@InstId", instituteId);
+        cmd.Parameters.AddWithValue("@SessId", sessionId);
+        cmd.Parameters.AddWithValue("@IsActive", isActive);
+
+        return dl.GetDataTable(cmd);
+    }
 }
+

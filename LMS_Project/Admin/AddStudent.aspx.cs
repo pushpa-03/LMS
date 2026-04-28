@@ -301,6 +301,7 @@ namespace LearningManagementSystem.Admin
 
                 bl.UpdateStudent(
                     userId,
+                    SessionId,
                     txtEmailEdit.Text.Trim(),
                     txtFullNameEdit.Text.Trim(),
                     txtContactEdit.Text.Trim(),
@@ -535,7 +536,13 @@ namespace LearningManagementSystem.Admin
             }
             else if (e.CommandName == "DeleteRow")
             {
-                bl.DeleteStudent(userId);
+                try { 
+                bl.DeleteStudent(userId,SessionId);
+                    }
+                catch (Exception ex)
+{
+                    ShowMsg(ex.Message, false);
+                }
                 ReloadEverything(); // 🔥 FIX
             }
         }

@@ -13,6 +13,7 @@
 
 <link href="../assets/css/bootstrap.min.css" rel="stylesheet" />
 <link href="../assets/icons/fontawesome/css/all.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
@@ -410,11 +411,30 @@ body {
 
         <li class="sidebar-section-label">Main</li>
 
-        <li>
-            <a href="Dashboard.aspx" class="sidebar-link">
+        <li class="submenu">
+           <%-- <a href="Dashboard.aspx" class="sidebar-link">
                 <i class="fas fa-home sidebar-icon"></i>
                 <span>Dashboard</span>
+            </a>--%>
+
+            <a href="#" class="sidebar-link submenu-parent">
+                <i class="fas fa-layer-group sidebar-icon"></i>
+                <span>Dashboards</span>
+                <i class="fas fa-chevron-right right-icon"></i>
             </a>
+            <ul class="sidebar-submenu">                
+                <li><a href="OverviewDashboard.aspx" class="sidebar-link">OverviewDashboard</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/MonthlyAnalyticsDashboard.aspx" class="sidebar-link">Monthly Analytics Dashboard</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/Streamwisedashboard.aspx" class="sidebar-link">Streamwise Dashboard</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/CourseWiseDashboard.aspx" class="sidebar-link">Coursewise Dashboard</a></li>
+                <%--<li><a href="Dashboard.aspx" class="sidebar-link">Dashboard1</a></li>
+                <li><a href="AdminAcademicAnalytics.aspx" class="sidebar-link">Dashboard2</a></li>
+                <li><a href="EngagementAnalytics.aspx" class="sidebar-link">Dashboard3</a></li>
+                <li><a href="AdminControlPanel.aspx" class="sidebar-link">Dashboard4</a></li>
+                <li><a href="AttendanceDashboard.aspx" class="sidebar-link">AttendanceDashboard</a></li>
+                --%>
+                
+            </ul>
         </li>
 
         <li class="sidebar-section-label">Management</li>
@@ -575,11 +595,12 @@ body {
         <asp:DropDownList ID="ddlGlobalSession" runat="server"
             CssClass="form-select form-select-sm"
             AutoPostBack="true"
+            OnSelectedIndexChanged="ddlGlobalSession_SelectedIndexChanged"
             Style="width:150px;">
         </asp:DropDownList>
 
         <asp:Label ID="lblGlobalSession" runat="server"
-            CssClass="admin-badge ms-2" />
+        CssClass="admin-badge ms-2" />
     </div>
 
     <!-- RIGHT -->

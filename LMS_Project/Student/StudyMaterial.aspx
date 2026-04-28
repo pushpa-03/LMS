@@ -902,6 +902,16 @@ function loadVideo(videoId, title, desc, instructor, path, el) {
             .add_endRequest(Sys_Application_Load);
     }
 
+    let counted = false;
+
+    player.addEventListener("timeupdate", function () {
+        if (!counted && player.currentTime > 10) {
+            increaseView();
+            counted = true;
+        }
+    });
+
 </script>
+
 
 </asp:Content>

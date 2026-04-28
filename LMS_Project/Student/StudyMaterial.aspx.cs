@@ -172,7 +172,11 @@ namespace LMS_Project.Student
         {
             VideoPlayerBL bl = new VideoPlayerBL();
             int userId = Convert.ToInt32(HttpContext.Current.Session["UserId"]);
-            bl.SaveComment(videoId,SessionId, userId, comment);
+            int societyId = Convert.ToInt32(HttpContext.Current.Session["SocietyId"]);
+            int instituteId = Convert.ToInt32(HttpContext.Current.Session["InstituteId"]);
+
+
+            bl.SaveComment(videoId,SessionId, userId, comment, societyId, instituteId);
         }
 
         [WebMethod]
@@ -182,11 +186,26 @@ namespace LMS_Project.Student
             return bl.GetComments(videoId,SessionId);
         }
 
+        //[WebMethod]
+        //public static void AddView(int videoId, int SessionId)
+        //{
+        //    VideoPlayerBL bl = new VideoPlayerBL();
+        //    bl.IncreaseViewCount(videoId,SessionId); 
+        //}
+
         [WebMethod]
-        public static void AddView(int videoId, int SessionId)
+        public static void AddView(int videoId)
         {
+            if (HttpContext.Current.Session["UserId"] == null)
+                return;
+
             VideoPlayerBL bl = new VideoPlayerBL();
-            bl.IncreaseViewCount(videoId,SessionId); 
+
+            int userId = Convert.ToInt32(HttpContext.Current.Session["UserId"]);
+            int sessionId = Convert.ToInt32(HttpContext.Current.Session["SessionId"]);
+            int instituteId = Convert.ToInt32(HttpContext.Current.Session["InstituteId"]);
+
+            bl.IncreaseViewCount(videoId, sessionId, userId, instituteId);
         }
 
         [WebMethod]

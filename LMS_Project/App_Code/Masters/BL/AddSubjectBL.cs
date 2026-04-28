@@ -14,14 +14,14 @@ namespace LearningManagementSystem.BL
         public DataTable GetSubjects(int instituteId, int sessionId, string status, string search)
         {
             string query = @"
-    SELECT
-        SubjectId,
-        SubjectCode,
-        SubjectName,
-        Duration,
-        IsActive
-    FROM Subjects
-    WHERE InstituteId=@I AND SessionId=@SessionId";
+            SELECT
+                SubjectId,
+                SubjectCode,
+                SubjectName,
+                Duration,
+                IsActive
+            FROM Subjects
+            WHERE InstituteId=@I AND SessionId=@SessionId";
 
             SqlCommand cmd = new SqlCommand();
             cmd.Parameters.AddWithValue("@I", instituteId);

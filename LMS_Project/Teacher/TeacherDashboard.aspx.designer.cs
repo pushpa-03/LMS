@@ -87,22 +87,67 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.Label lblTotalVideos;
 
         /// <summary>
-        /// pnlSubjects control.
+        /// ddlFilterSession control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlSubjects;
+        protected global::System.Web.UI.WebControls.DropDownList ddlFilterSession;
 
         /// <summary>
-        /// rptSubjects control.
+        /// ddlFilterSection control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptSubjects;
+        protected global::System.Web.UI.WebControls.DropDownList ddlFilterSection;
+
+        /// <summary>
+        /// ddlFilterStream control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlFilterStream;
+
+        /// <summary>
+        /// pnlSubjectsList control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlSubjectsList;
+
+        /// <summary>
+        /// rptSubjectsList control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptSubjectsList;
+
+        /// <summary>
+        /// pnlSubjectsChart control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlSubjectsChart;
+
+        /// <summary>
+        /// hfChartData control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfChartData;
 
         /// <summary>
         /// pnlNoSubjects control.
@@ -112,6 +157,33 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Panel pnlNoSubjects;
+
+        /// <summary>
+        /// ddlStudentSession control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlStudentSession;
+
+        /// <summary>
+        /// ddlStudentSection control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlStudentSection;
+
+        /// <summary>
+        /// ddlStudentStream control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlStudentStream;
 
         /// <summary>
         /// pnlStudents control.
@@ -141,6 +213,15 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.Panel pnlNoStudents;
 
         /// <summary>
+        /// ddlAsgSubject control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlAsgSubject;
+
+        /// <summary>
         /// pnlAssignments control.
         /// </summary>
         /// <remarks>
@@ -159,6 +240,24 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.Repeater rptAssignments;
 
         /// <summary>
+        /// pnlAsgChart control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlAsgChart;
+
+        /// <summary>
+        /// hfAsgChartData control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfAsgChartData;
+
+        /// <summary>
         /// pnlNoAssignments control.
         /// </summary>
         /// <remarks>
@@ -166,5 +265,32 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Panel pnlNoAssignments;
+
+        /// <summary>
+        /// pnlAsgSummary control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlAsgSummary;
+
+        /// <summary>
+        /// rptAsgSummary control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptAsgSummary;
+
+        /// <summary>
+        /// pnlNoAsgSummary control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlNoAsgSummary;
     }
 }

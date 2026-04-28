@@ -20,16 +20,46 @@ public class VideoPlayerBL
         return dl.GetDataTable(cmd);
     }
 
-    public void IncreaseViewCount(int videoId,int sessionId)
+    //public void IncreaseViewCount(int videoId,int sessionId)
+    //{
+    //    SqlCommand cmd = new SqlCommand(@"
+    //    UPDATE Videos
+    //    SET ViewCount = ISNULL(ViewCount,0) + 1
+    //    WHERE VideoId=@VideoId AND SessionId = @SessionId
+    //    ");
+
+    //    cmd.Parameters.AddWithValue("@VideoId", videoId);
+    //    cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
+    //    dl.ExecuteCMD(cmd);
+    //}
+
+    public void IncreaseViewCount(int videoId, int sessionId, int userId, int instituteId)
     {
         SqlCommand cmd = new SqlCommand(@"
-        UPDATE Videos
-        SET ViewCount = ISNULL(ViewCount,0) + 1
-        WHERE VideoId=@VideoId AND SessionId = @SessionId
-        ");
+
+    -- 1. Insert into VideoViews (MAIN tracking table)
+    IF NOT EXISTS (
+    SELECT 1 FROM VideoViews
+    WHERE VideoId=@VideoId 
+      AND UserId=@UserId
+      AND SessionId=@SessionId
+)
+BEGIN
+    INSERT INTO VideoViews(VideoId, UserId, InstituteId, SessionId, ViewedOn)
+    VALUES(@VideoId, @UserId, @InstituteId, @SessionId, GETDATE());
+END
+
+    -- 2. Optional counter (for fast display)
+    UPDATE Videos
+    SET ViewCount = ISNULL(ViewCount,0) + 1
+    WHERE VideoId=@VideoId AND SessionId = @SessionId
+    ");
 
         cmd.Parameters.AddWithValue("@VideoId", videoId);
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@InstituteId", instituteId);
 
         dl.ExecuteCMD(cmd);
     }
@@ -109,19 +139,22 @@ public class VideoPlayerBL
         return dl.GetDataTable(cmd);
     }
 
-    public void SaveComment(int videoId,int sessionId, int userId, string comment)
+    public void SaveComment(int vid, int sessionId, int userId, string msg, int societyId, int instituteId)
     {
-        SqlCommand cmd = new SqlCommand(@"
-        INSERT INTO VideoComments(VideoId,SessioId,UserId,Comment)
-        VALUES(@V,@SessionId,@U,@C)
-        ");
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = @"INSERT INTO VideoComments
+        (SocietyId, InstituteId, VideoId, UserId, Comment, SessionId)
+        VALUES
+        (@SocietyId, @InstituteId, @VideoId, @UserId, @Comment, @SessionId)";
 
-        cmd.Parameters.AddWithValue("@V", videoId);
+        cmd.Parameters.AddWithValue("@SocietyId", societyId);
+        cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+        cmd.Parameters.AddWithValue("@VideoId", vid);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Comment", msg);
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
-        cmd.Parameters.AddWithValue("@U", userId);
-        cmd.Parameters.AddWithValue("@C", comment);
 
-        dl.ExecuteCMD(cmd);
+        new DataLayer().ExecuteCMD(cmd);
     }
 
     public DataTable GetVideoStats(int videoId, int sessionId)

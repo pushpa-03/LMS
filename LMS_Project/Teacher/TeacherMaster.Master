@@ -254,6 +254,7 @@ body {
             </a>
         </li>
 
+        
         <li>
             <a href="MyStudents.aspx" class="sidebar-link">
                 <i class="fas fa-users sidebar-icon"></i>
@@ -261,10 +262,17 @@ body {
             </a>
         </li>
 
-        <li>
-            <a href="CourseVideos.aspx" class="sidebar-link">
+         <li>
+            <a href="Subjects_T_Side.aspx" class="sidebar-link">
                 <i class="fas fa-video sidebar-icon"></i>
                 <span>Course Videos</span>
+            </a>
+        </li>
+
+        <li>
+            <a href="TeacherAttendance.aspx" class="sidebar-link">
+                <i class="fas fa-clipboard-check sidebar-icon"></i>
+                <span>Attendance</span>
             </a>
         </li>
 

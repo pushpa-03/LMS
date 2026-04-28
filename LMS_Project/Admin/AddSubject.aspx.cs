@@ -29,6 +29,8 @@ namespace LearningManagementSystem.Admin
             DataTable dt = bl.GetSubjects(InstituteId, SessionId, status, search);
 
             if (SessionId == 0)
+
+
             {
                 gvSubjects.DataSource = null;
                 gvSubjects.DataBind();

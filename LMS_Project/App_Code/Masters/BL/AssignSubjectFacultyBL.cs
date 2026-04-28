@@ -23,7 +23,7 @@ public class SubjectFacultyBL
         SqlCommand cmd = new SqlCommand(
         @"SELECT SectionId, SectionName
       FROM Sections
-      WHERE InstituteId=@I AND IsActive=1");
+      WHERE InstituteId=@I AND IsActive=1 and SessionId = SessionId");
 
         cmd.Parameters.AddWithValue("@I", instituteId);
 

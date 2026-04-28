@@ -8,6 +8,18 @@
 
 <style>
 
+.toast-msg {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #323232;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display:none;
+    z-index:9999;
+}
+    
 /* ── Welcome Banner ── */
 .welcome-banner {
     background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);
@@ -163,6 +175,10 @@
 
 
 <asp:Content ID="cBody" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
+<asp:UpdatePanel ID="UpdatePanel1" runat="server">
+<ContentTemplate>
+
+<div id="toastMsg" class="toast-msg"></div>
 
 <!-- ═════ WELCOME ═════ -->
 <div class="welcome-banner">
@@ -174,6 +190,48 @@
     <asp:Label ID="lblSelectedSession" runat="server"
         CssClass="meta-pill" />
 </div>
+
+<div class="panel-card mb-3">
+    <div class="row g-2 align-items-center">
+
+        <div class="col-md-2">
+            <asp:TextBox ID="txtFromDate" runat="server" CssClass="form-control" TextMode="Date" />
+        </div>
+
+        <div class="col-md-2">
+            <asp:TextBox ID="txtToDate" runat="server" CssClass="form-control" TextMode="Date" />
+        </div>
+
+
+        <div class="col-md-2">
+            <asp:DropDownList ID="ddlCourse" runat="server"
+            CssClass="form-select"
+            AutoPostBack="true"
+            OnSelectedIndexChanged="FilterChanged" />
+        </div>
+
+        <div class="col-md-2">
+            <asp:DropDownList ID="ddlSubject" runat="server"
+            CssClass="form-select"
+            AutoPostBack="true"
+            OnSelectedIndexChanged="FilterChanged" />
+        </div>
+
+        <div class="col-md-2">
+            <asp:Button ID="btnFilter" runat="server" Text="Apply"
+                CssClass="btn btn-primary w-100"
+                OnClick="btnFilter_Click" />
+        </div>
+
+        <div class="col-md-2">
+            <asp:Button ID="btnReset" runat="server" Text="Reset"
+                CssClass="btn btn-outline-secondary w-100"
+                OnClick="btnReset_Click" />
+        </div>
+
+    </div>
+</div>
+
 
 <!-- ═════ STATS ═════ -->
 <div class="row g-3 mb-4">
@@ -243,31 +301,101 @@
         </div>
     </div>
 
-    <!-- SYSTEM ACTIVITY -->
+  
+
     <div class="col-md-6">
-        <div class="panel-card">
-            <div class="section-header">
-                <h6><i class="fas fa-chart-line me-2"></i>System Activity</h6>
-            </div>
+    <div class="panel-card">
+        <div class="section-header">
+            <h6><i class="fas fa-chart-line me-2"></i>System Activity</h6>
+        </div>
 
-            <div class="activity-row">
-                <div class="activity-icon"><i class="fas fa-user-plus"></i></div>
-                <div>New student registered</div>
-            </div>
-
-            <div class="activity-row">
-                <div class="activity-icon"><i class="fas fa-book"></i></div>
-                <div>Subject assigned to teacher</div>
-            </div>
-
-            <div class="activity-row">
-                <div class="activity-icon"><i class="fas fa-layer-group"></i></div>
-                <div>Course updated</div>
-            </div>
+        <asp:Repeater ID="rptActivity" runat="server">
+            <ItemTemplate>
+                <div class="activity-row">
+                    <div class="activity-icon">
+                        <i class='<%# Eval("Icon") %>'></i>
+                    </div>
+                    <div>
+                        <%# Eval("Message") %>
+                        <div class="text-muted small">
+                            <%# Eval("TimeAgo") %>
+                        </div>
+                    </div>
+                </div>
+            </ItemTemplate>
+        </asp:Repeater>
 
         </div>
     </div>
 
 </div>
 
+<div class="row g-3 mt-2">
+
+    <div class="col-md-6">
+        <div class="panel-card">
+            <h6>📈 Enrollment Trend</h6>
+            <canvas id="enrollmentChart" height="180"></canvas>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="panel-card">
+            <h6>🎯 Course Popularity</h6>
+            <canvas id="courseChart" height="180"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    let enrollmentChartInstance;
+    let courseChartInstance;
+
+    function loadCharts(enrollLabels, enrollData, courseLabels, courseData) {
+
+        if (enrollmentChartInstance) enrollmentChartInstance.destroy();
+        if (courseChartInstance) courseChartInstance.destroy();
+
+        enrollmentChartInstance = new Chart(document.getElementById("enrollmentChart"), {
+            type: 'line',
+            data: {
+                labels: enrollLabels,
+                datasets: [{ data: enrollData, tension: 0.4, fill: true }]
+            },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        courseChartInstance = new Chart(document.getElementById("courseChart"), {
+            type: 'doughnut',
+            data: {
+                labels: courseLabels,
+                datasets: [{ data: courseData }]
+            }
+        });
+    }
+
+    function showToast(msg) {
+        let t = document.getElementById("toastMsg");
+        t.innerText = msg;
+        t.style.display = "block";
+
+        setTimeout(() => {
+            t.style.display = "none";
+        }, 5000);
+    }
+
+    setInterval(function () {
+        __doPostBack('<%= UpdatePanel1.UniqueID %>', '');
+    }, 15000);
+
+    
+
+
+</script>
+
+</ContentTemplate>
+</asp:UpdatePanel>
 </asp:Content>

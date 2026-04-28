@@ -305,7 +305,7 @@
 
     <script>
         function openInstituteDashboard(id) {
-            var url = '<%= ResolveUrl("~/Admin/Dashboard.aspx") %>?InstituteId=' + id;
+            var url = '<%= ResolveUrl("~/Admin/OverviewDashboard.aspx") %>?InstituteId=' + id;
             window.location.href = url;
         }
 

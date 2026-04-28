@@ -30,6 +30,113 @@ public class StudentBL
     // ============================================
     // ✅ Insert Student
     // ============================================
+    //public bool InsertStudent(
+    //int societyId,
+    //int instituteId,
+    //int sessionId,
+    //string username,
+    //string email,
+    //string fullName,
+    //string gender,
+    //DateTime dob,
+    //string contact,
+    //int? streamId,
+    //int? levelId,
+    //int? semesterid,
+    //int? courseId,
+    //int? sectionId,
+    //string rollNo)
+    //{
+
+    //    if (sessionId == 0)
+    //        throw new Exception("No Current Academic Session Found.");
+
+    //    // 1️⃣ Insert User
+    //    SqlCommand userCmd = new SqlCommand(@"
+    //        INSERT INTO Users
+    //        (Username, Email, PasswordHash, RoleId, SocietyId, InstituteId, SessionId, IsActive, IsFirstLogin)
+    //        VALUES
+    //        (@U, @E, HASHBYTES('SHA2_256','Student@123'),
+    //         (SELECT RoleId FROM Roles WHERE RoleName='Student'),
+    //         @S, @I, @SessionId, 1, 1);
+    //        SELECT SCOPE_IDENTITY();");
+
+    //    userCmd.Parameters.AddWithValue("@U", username);
+    //    userCmd.Parameters.AddWithValue("@E", email);
+    //    userCmd.Parameters.AddWithValue("@S", societyId);
+    //    userCmd.Parameters.AddWithValue("@I", instituteId);
+    //    userCmd.Parameters.AddWithValue("@SessionId", sessionId);
+
+    //    dl.IntializeConnection();
+    //    userCmd.Connection = new SqlConnection(
+    //        System.Configuration.ConfigurationManager
+    //        .ConnectionStrings["DefaultConnection"].ConnectionString);
+
+    //    userCmd.Connection.Open();
+    //    int newUserId = Convert.ToInt32(userCmd.ExecuteScalar());
+    //    userCmd.Connection.Close();
+
+    //    List<SqlCommand> cmds = new List<SqlCommand>();
+
+    //    // 2️⃣ Insert Profile
+    //    SqlCommand profileCmd = new SqlCommand(@"
+    //    INSERT INTO UserProfile
+    //    (SocietyId, InstituteId, SessionId, UserId, FullName, Gender, DOB, ContactNo,
+    //     EmergencyContactName, EmergencyContactNo, Address, JoinedDate)
+    //    VALUES
+    //    (@S, @I, @Sess, @Id, @FN, @G, @DOB, @C,
+    //     'N/A','0000000000','N/A',GETDATE())");
+
+    //    profileCmd.Parameters.AddWithValue("@S", societyId);
+    //    profileCmd.Parameters.AddWithValue("@I", instituteId);
+    //    profileCmd.Parameters.AddWithValue("@Sess", sessionId); // ✅ FIX
+    //    profileCmd.Parameters.AddWithValue("@Id", newUserId);
+    //    profileCmd.Parameters.AddWithValue("@FN", fullName);
+    //    profileCmd.Parameters.AddWithValue("@G", gender);
+    //    profileCmd.Parameters.AddWithValue("@DOB", dob);
+    //    profileCmd.Parameters.AddWithValue("@C", contact);
+
+    //    cmds.Add(profileCmd);
+
+    //    // 3️⃣ Insert Academic Details
+    //    SqlCommand acadCmd = new SqlCommand(@"
+    //        INSERT INTO StudentAcademicDetails
+    //        (UserId, SocietyId, InstituteId, SessionId,
+    //         StreamId, CourseId, LevelId,SemesterId,SectionId, RollNumber)
+    //        VALUES
+    //        (@Id, @S, @I, @Sess,
+    //         @Stream, @Course, @Level,@Semester, @Section, @Roll)");
+
+    //    acadCmd.Parameters.AddWithValue("@Id", newUserId);
+    //    acadCmd.Parameters.AddWithValue("@S", societyId);
+    //    acadCmd.Parameters.AddWithValue("@I", instituteId);
+    //    acadCmd.Parameters.AddWithValue("@Sess", sessionId);
+    //    acadCmd.Parameters.AddWithValue("@Stream", (object)streamId ?? DBNull.Value);
+    //    acadCmd.Parameters.AddWithValue("@Course", (object)courseId ?? DBNull.Value);
+    //    acadCmd.Parameters.AddWithValue("@Level", (object)levelId ?? DBNull.Value);
+    //    acadCmd.Parameters.AddWithValue("@Semester", (object)semesterid ?? DBNull.Value);
+    //    acadCmd.Parameters.AddWithValue("@Section", (object)sectionId ?? DBNull.Value);
+    //    acadCmd.Parameters.AddWithValue("@Roll", rollNo);
+
+    //    cmds.Add(acadCmd);
+
+    //    SqlCommand logCmd = new SqlCommand(@"
+    //    INSERT INTO UserActivityLog
+    //    (InstituteId, SessionId, UserId, ActivityType, ActionTime)
+    //    VALUES
+    //    (@I, @Sess, @UserId, 'StudentAdded', GETDATE())
+    //    ");
+
+    //    logCmd.Parameters.AddWithValue("@I", instituteId);
+    //    logCmd.Parameters.AddWithValue("@Sess", sessionId);
+    //    logCmd.Parameters.AddWithValue("@UserId", newUserId);
+
+    //    cmds.Add(logCmd);
+
+
+    //    return dl.ExecuteTransaction(cmds);
+    //}
+
     public bool InsertStudent(
     int societyId,
     int instituteId,
@@ -47,78 +154,117 @@ public class StudentBL
     int? sectionId,
     string rollNo)
     {
+        try
+        {
+            if (sessionId == 0)
+                throw new Exception("No Current Academic Session Found.");
 
-        if (sessionId == 0)
-            throw new Exception("No Current Academic Session Found.");
+            List<SqlCommand> cmds = new List<SqlCommand>();
 
-        // 1️⃣ Insert User
-        SqlCommand userCmd = new SqlCommand(@"
-            INSERT INTO Users
-            (Username, Email, PasswordHash, RoleId, SocietyId, InstituteId, IsActive, IsFirstLogin)
-            VALUES
-            (@U, @E, HASHBYTES('SHA2_256','Student@123'),
-             (SELECT RoleId FROM Roles WHERE RoleName='Student'),
-             @S, @I, 1, 1);
-            SELECT SCOPE_IDENTITY();");
+            // ================= USER =================
+            int newUserId = 0;
 
-        userCmd.Parameters.AddWithValue("@U", username);
-        userCmd.Parameters.AddWithValue("@E", email);
-        userCmd.Parameters.AddWithValue("@S", societyId);
-        userCmd.Parameters.AddWithValue("@I", instituteId);
+            try
+            {
+                dl.IntializeConnection();
 
-        dl.IntializeConnection();
-        userCmd.Connection = new SqlConnection(
-            System.Configuration.ConfigurationManager
-            .ConnectionStrings["DefaultConnection"].ConnectionString);
+                using (SqlConnection con = new SqlConnection(
+                    System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString))
+                {
+                    con.Open();
 
-        userCmd.Connection.Open();
-        int newUserId = Convert.ToInt32(userCmd.ExecuteScalar());
-        userCmd.Connection.Close();
+                    SqlCommand userCmd = new SqlCommand(@"
+                    INSERT INTO Users
+                    (Username, Email, PasswordHash, RoleId, SocietyId, InstituteId, SessionId, IsActive, IsFirstLogin)
+                    VALUES
+                    (@U, @E, HASHBYTES('SHA2_256','Student@123'),
+                     (SELECT RoleId FROM Roles WHERE RoleName='Student'),
+                     @S, @I, @SessionId, 1, 1);
 
-        List<SqlCommand> cmds = new List<SqlCommand>();
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);
+                    ", con);
 
-        // 2️⃣ Insert Profile
-        SqlCommand profileCmd = new SqlCommand(@"
-            INSERT INTO UserProfile
-            (SocietyId, InstituteId, UserId, FullName, Gender, DOB, ContactNo,
-             EmergencyContactName, EmergencyContactNo, Address, JoinedDate)
-            VALUES
-            (@S, @I, @Id, @FN, @G, @DOB, @C,
-             'N/A','0000000000','N/A',GETDATE())");
+                    userCmd.Parameters.AddWithValue("@U", username);
+                    userCmd.Parameters.AddWithValue("@E", email);
+                    userCmd.Parameters.AddWithValue("@S", societyId);
+                    userCmd.Parameters.AddWithValue("@I", instituteId);
+                    userCmd.Parameters.AddWithValue("@SessionId", sessionId);
 
-        profileCmd.Parameters.AddWithValue("@S", societyId);
-        profileCmd.Parameters.AddWithValue("@I", instituteId);
-        profileCmd.Parameters.AddWithValue("@Id", newUserId);
-        profileCmd.Parameters.AddWithValue("@FN", fullName);
-        profileCmd.Parameters.AddWithValue("@G", gender);
-        profileCmd.Parameters.AddWithValue("@DOB", dob);
-        profileCmd.Parameters.AddWithValue("@C", contact);
+                    object result = userCmd.ExecuteScalar();
 
-        cmds.Add(profileCmd);
+                    if (result == null)
+                        throw new Exception("User creation failed.");
 
-        // 3️⃣ Insert Academic Details
-        SqlCommand acadCmd = new SqlCommand(@"
-            INSERT INTO StudentAcademicDetails
-            (UserId, SocietyId, InstituteId, SessionId,
-             StreamId, CourseId, LevelId,SemesterId,SectionId, RollNumber)
-            VALUES
-            (@Id, @S, @I, @Sess,
-             @Stream, @Course, @Level,@Semester, @Section, @Roll)");
+                    newUserId = Convert.ToInt32(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("User Insert Failed: " + ex.Message);
+            }
 
-        acadCmd.Parameters.AddWithValue("@Id", newUserId);
-        acadCmd.Parameters.AddWithValue("@S", societyId);
-        acadCmd.Parameters.AddWithValue("@I", instituteId);
-        acadCmd.Parameters.AddWithValue("@Sess", sessionId);
-        acadCmd.Parameters.AddWithValue("@Stream", (object)streamId ?? DBNull.Value);
-        acadCmd.Parameters.AddWithValue("@Course", (object)courseId ?? DBNull.Value);
-        acadCmd.Parameters.AddWithValue("@Level", (object)levelId ?? DBNull.Value);
-        acadCmd.Parameters.AddWithValue("@Semester", (object)semesterid ?? DBNull.Value);
-        acadCmd.Parameters.AddWithValue("@Section", (object)sectionId ?? DBNull.Value);
-        acadCmd.Parameters.AddWithValue("@Roll", rollNo);
+            // ================= PROFILE =================
+            SqlCommand profileCmd = new SqlCommand(@"
+        INSERT INTO UserProfile
+        (SocietyId, InstituteId, SessionId, UserId, FullName, Gender, DOB, ContactNo,
+         EmergencyContactName, EmergencyContactNo, Address, JoinedDate)
+        VALUES
+        (@S, @I, @Sess, @Id, @FN, @G, @DOB, @C,
+         'N/A','0000000000','N/A',GETDATE())");
 
-        cmds.Add(acadCmd);
+            profileCmd.Parameters.AddWithValue("@S", societyId);
+            profileCmd.Parameters.AddWithValue("@I", instituteId);
+            profileCmd.Parameters.AddWithValue("@Sess", sessionId);
+            profileCmd.Parameters.AddWithValue("@Id", newUserId);
+            profileCmd.Parameters.AddWithValue("@FN", fullName);
+            profileCmd.Parameters.AddWithValue("@G", gender);
+            profileCmd.Parameters.AddWithValue("@DOB", dob);
+            profileCmd.Parameters.AddWithValue("@C", contact);
 
-        return dl.ExecuteTransaction(cmds);
+            cmds.Add(profileCmd);
+
+            // ================= ACADEMIC =================
+            SqlCommand acadCmd = new SqlCommand(@"
+        INSERT INTO StudentAcademicDetails
+        (UserId, SocietyId, InstituteId, SessionId,
+         StreamId, CourseId, LevelId, SemesterId, SectionId, RollNumber)
+        VALUES
+        (@Id, @S, @I, @Sess,
+         @Stream, @Course, @Level, @Semester, @Section, @Roll)");
+
+            acadCmd.Parameters.AddWithValue("@Id", newUserId);
+            acadCmd.Parameters.AddWithValue("@S", societyId);
+            acadCmd.Parameters.AddWithValue("@I", instituteId);
+            acadCmd.Parameters.AddWithValue("@Sess", sessionId);
+            acadCmd.Parameters.AddWithValue("@Stream", (object)streamId ?? DBNull.Value);
+            acadCmd.Parameters.AddWithValue("@Course", (object)courseId ?? DBNull.Value);
+            acadCmd.Parameters.AddWithValue("@Level", (object)levelId ?? DBNull.Value);
+            acadCmd.Parameters.AddWithValue("@Semester", (object)semesterid ?? DBNull.Value);
+            acadCmd.Parameters.AddWithValue("@Section", (object)sectionId ?? DBNull.Value);
+            acadCmd.Parameters.AddWithValue("@Roll", rollNo);
+
+            cmds.Add(acadCmd);
+
+            // ================= LOG =================
+            SqlCommand logCmd = new SqlCommand(@"
+                INSERT INTO UserActivityLog
+                (UserId, SocietyId, InstituteId, SessionId, ActivityType, ActionTime)
+                VALUES
+                (@UserId, @S, @I, @Sess, 'StudentAdded', GETDATE())");
+
+            logCmd.Parameters.AddWithValue("@UserId", newUserId);
+            logCmd.Parameters.AddWithValue("@S", societyId);
+            logCmd.Parameters.AddWithValue("@I", instituteId);
+            logCmd.Parameters.AddWithValue("@Sess", sessionId);
+
+            cmds.Add(logCmd);
+
+            return dl.ExecuteTransaction(cmds);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Insert Student Failed: " + ex.Message);
+        }
     }
 
     // ============================================
@@ -210,17 +356,15 @@ public class StudentBL
     // ============================================
     // ✅ Update Student
     // ============================================
-    public void UpdateStudent(int userId, string email, string fullName, string contact,
+    public void UpdateStudent(int userId,int SessionId, string email, string fullName, string contact,
     string rollNo, int? streamId, int? courseId, int? levelId, int? semesterId, int? sectionId)
     {
         SqlCommand cmd = new SqlCommand(@"
-        UPDATE Users 
-        SET Email=@Email
-        WHERE UserId=@UserId And SessionId=@SessionId;;
+        UPDATE Users SET Email=@Email WHERE UserId=@UserId and SessionId=@SessionId;
 
         UPDATE UserProfile
         SET FullName=@FullName, ContactNo=@Contact
-        WHERE UserId=@UserId And SessionId=@SessionId;;
+        WHERE UserId=@UserId And SessionId=@SessionId;
 
         UPDATE StudentAcademicDetails
         SET RollNumber=@RollNo,
@@ -242,6 +386,7 @@ public class StudentBL
         cmd.Parameters.AddWithValue("@Semester", (object)semesterId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Section", (object)sectionId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
 
         dl.ExecuteCMD(cmd);
@@ -312,21 +457,47 @@ public class StudentBL
         return Convert.ToInt32(dt.Rows[0][0]) > 0;
     }
 
-    public void DeleteStudent(int userId)
+    //public void DeleteStudent(int userId)
+    //{
+    //    List<SqlCommand> cmds = new List<SqlCommand>();
+
+    //    SqlCommand cmd1 = new SqlCommand(
+    //        "DELETE FROM StudentAcademicDetails WHERE UserId=@Id AND SessionId=@SessionId");
+    //    cmd1.Parameters.AddWithValue("@Id", userId);
+
+    //    SqlCommand cmd2 = new SqlCommand(
+    //        "DELETE FROM UserProfile WHERE UserId=@Id AND SessionId=@SessionId");
+    //    cmd2.Parameters.AddWithValue("@Id", userId);
+
+    //    SqlCommand cmd3 = new SqlCommand(
+    //        "DELETE FROM Users WHERE UserId=@Id AND SessionId=@SessionId");
+    //    cmd3.Parameters.AddWithValue("@Id", userId);
+
+    //    cmds.Add(cmd1);
+    //    cmds.Add(cmd2);
+    //    cmds.Add(cmd3);
+
+    //    dl.ExecuteTransaction(cmds);
+    //}
+
+    public void DeleteStudent(int userId, int sessionId)
     {
         List<SqlCommand> cmds = new List<SqlCommand>();
 
         SqlCommand cmd1 = new SqlCommand(
             "DELETE FROM StudentAcademicDetails WHERE UserId=@Id AND SessionId=@SessionId");
         cmd1.Parameters.AddWithValue("@Id", userId);
+        cmd1.Parameters.AddWithValue("@SessionId", sessionId);
 
         SqlCommand cmd2 = new SqlCommand(
             "DELETE FROM UserProfile WHERE UserId=@Id AND SessionId=@SessionId");
         cmd2.Parameters.AddWithValue("@Id", userId);
+        cmd2.Parameters.AddWithValue("@SessionId", sessionId);
 
         SqlCommand cmd3 = new SqlCommand(
             "DELETE FROM Users WHERE UserId=@Id AND SessionId=@SessionId");
         cmd3.Parameters.AddWithValue("@Id", userId);
+        cmd3.Parameters.AddWithValue("@SessionId", sessionId);
 
         cmds.Add(cmd1);
         cmds.Add(cmd2);
