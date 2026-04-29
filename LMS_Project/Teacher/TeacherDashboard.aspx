@@ -369,7 +369,7 @@ background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);    b
                     </a>
                 </div>
                 <div class="qa-item">
-    <a href="Subjects_T_Side.aspx" class="quick-action qa-lime">
+    <a href="Subjects.aspx" class="quick-action qa-lime">
         <i class="fas fa-video"></i>
         Course Videos
     </a>
@@ -396,174 +396,211 @@ background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);    b
 
     <%-- LEFT: Subjects (col-md-8) --%>
     <div class="col-md-8">
-        <div class="panel-card">
-            <div class="section-header">
-                <h6><i class="fas fa-book-open me-2"></i>My Subjects</h6>
-                <a href="TeacherCourses.aspx">View all &rarr;</a>
-            </div>
-
-            <%-- Toolbar --%>
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-
-                <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" id="btnList" onclick="setView('list')"
-                            class="btn btn-primary" title="List View">
-                        <i class="fas fa-list"></i>
-                    </button>
-                    <button type="button" id="btnChart" onclick="setView('chart')"
-                            class="btn btn-outline-primary" title="Chart View">
-                        <i class="fas fa-chart-bar"></i>
-                    </button>
-                </div>
-
-                <asp:DropDownList ID="ddlFilterSession" runat="server"
-                    CssClass="form-select form-select-sm"
-                    Style="width:auto; min-width:130px;"
-                    AutoPostBack="true"
-                    OnSelectedIndexChanged="ddlFilterSession_SelectedIndexChanged">
-                </asp:DropDownList>
-
-                <asp:DropDownList ID="ddlFilterSection" runat="server"
-                    CssClass="form-select form-select-sm"
-                    Style="width:auto; min-width:120px;"
-                    AutoPostBack="true"
-                    OnSelectedIndexChanged="ddlFilterSection_SelectedIndexChanged">
-                </asp:DropDownList>
-
-                <asp:DropDownList ID="ddlFilterStream" runat="server"
-                    CssClass="form-select form-select-sm"
-                    Style="width:auto; min-width:130px;"
-                    AutoPostBack="true"
-                    OnSelectedIndexChanged="ddlFilterStream_SelectedIndexChanged">
-                </asp:DropDownList>
-
-            </div>
-
-            <%-- LIST VIEW (default) --%>
-            <asp:Panel ID="pnlSubjectsList" runat="server">
-                <div class="table-responsive">
-                    <table class="table table-hover table-sm align-middle" style="font-size:13px;">
-                        <thead style="background:#e3f2fd; color:#1565c0;">
-                            <tr>
-                                <th>#</th>
-                                <th>Code</th>
-                                <th>Subject</th>
-                                <th>Stream</th>
-                                <th>Course</th>
-                                <th>Section</th>
-                                <th>Students</th>
-                                <th>Duration</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <asp:Repeater ID="rptSubjectsList" runat="server">
-                                <ItemTemplate>
-                                    <tr>
-                                        <td><%# Container.ItemIndex + 1 %></td>
-                                        <td><span class="badge" style="background:#1976d2;font-size:11px;">
-                                            <%# Eval("SubjectCode") %></span></td>
-                                        <td><strong><%# Eval("SubjectName") %></strong></td>
-                                        <td><%# Eval("StreamName") %></td>
-                                        <td><%# Eval("CourseName") %></td>
-                                        <td><%# Eval("SectionName") %></td>
-                                        <td>
-                                            <span class="badge-active">
-                                                <i class="fas fa-users me-1" style="font-size:9px;"></i>
-                                                <%# Eval("StudentCount") %>
-                                            </span>
-                                        </td>
-                                        <td><%# Eval("Duration") %></td>
-                                        <td>
-                                            <a href='CourseVideos.aspx?SubjectId=<%# Eval("SubjectId") %>'
-                                               class="btn-view" style="padding:3px 10px;">
-                                                <i class="fas fa-play-circle me-1"></i>Manage
-                                            </a>
-                                        </td>
-                                    </tr>
-                                </ItemTemplate>
-                            </asp:Repeater>
-                        </tbody>
-                    </table>
-                </div>
-            </asp:Panel>
-
-            <%-- CHART VIEW --%>
-            <asp:Panel ID="pnlSubjectsChart" runat="server" Visible="false">
-                <div style="position:relative; height:280px;">
-                    <canvas id="subjectChart"></canvas>
-                </div>
-                <asp:HiddenField ID="hfChartData" runat="server" />
-            </asp:Panel>
-
-            <%-- EMPTY STATE --%>
-            <asp:Panel ID="pnlNoSubjects" runat="server" Visible="false">
-                <div class="empty-state">
-                    <i class="fas fa-book-open"></i>
-                    <p>No subjects assigned yet.<br />Contact your admin.</p>
-                </div>
-            </asp:Panel>
-
+    <div class="panel-card">
+        <div class="section-header">
+            <h6><i class="fas fa-book-open me-2"></i>My Subjects</h6>
+            <a href="TeacherCourses.aspx">View all &rarr;</a>
         </div>
+
+        <%-- KPI Mini Cards --%>
+        <asp:Panel ID="pnlSubjectKPIs" runat="server">
+            <div class="row g-2 mb-3">
+                <div class="col-6 col-md-3">
+                    <div style="background:#e3f2fd;border-radius:10px;padding:10px 12px;">
+                        <div style="font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.5px;">Total Subjects</div>
+                        <div style="font-size:22px;font-weight:800;color:#1565c0;">
+                            <asp:Label ID="lblKpiTotalSubjects" runat="server" Text="0" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:#e8f5e9;border-radius:10px;padding:10px 12px;">
+                        <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:.5px;">Total Students</div>
+                        <div style="font-size:22px;font-weight:800;color:#2e7d32;">
+                            <asp:Label ID="lblKpiTotalStudents" runat="server" Text="0" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:#fff3e0;border-radius:10px;padding:10px 12px;">
+                        <div style="font-size:10px;font-weight:700;color:#ef6c00;text-transform:uppercase;letter-spacing:.5px;">Avg / Subject</div>
+                        <div style="font-size:22px;font-weight:800;color:#ef6c00;">
+                            <asp:Label ID="lblKpiAvgStudents" runat="server" Text="0" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:#ede7f6;border-radius:10px;padding:10px 12px;">
+                        <div style="font-size:10px;font-weight:700;color:#5e35b1;text-transform:uppercase;letter-spacing:.5px;">Most Enrolled</div>
+                        <div style="font-size:15px;font-weight:800;color:#5e35b1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            <asp:Label ID="lblKpiTopSubject" runat="server" Text="-" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </asp:Panel>
+
+        <%-- Chart --%>
+        <asp:Panel ID="pnlSubjectsChart" runat="server">
+            <div style="font-size:11px;font-weight:700;color:#78909c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
+                Students per Subject &nbsp;<span style="font-size:10px;color:#90a4ae;font-weight:400;">(click any bar to manage)</span>
+            </div>
+            <div style="position:relative;height:260px;">
+                <canvas id="subjectChart"
+                        role="img"
+                        aria-label="Bar chart showing number of students per subject"></canvas>
+            </div>
+            <asp:HiddenField ID="hfChartData" runat="server" />
+        </asp:Panel>
+
+        <%-- Top subjects table --%>
+        <asp:Panel ID="pnlSubjectTable" runat="server">
+            <div style="font-size:11px;font-weight:700;color:#78909c;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;">
+                Subject Breakdown
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle" style="font-size:12px;">
+                    <thead style="background:#e3f2fd;color:#1565c0;">
+                        <tr>
+                            <th>#</th>
+                            <th>Subject</th>
+                            <th>Code</th>
+                            <th>Students</th>
+                            <th>Enrolment</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <asp:Repeater ID="rptSubjectTable" runat="server">
+                            <ItemTemplate>
+                                <tr>
+                                    <td style="color:#90a4ae;"><%# Container.ItemIndex + 1 %></td>
+                                    <td><strong><%# Eval("SubjectName") %></strong></td>
+                                    <td>
+                                        <span class="badge" style="background:#e3f2fd;color:#1565c0;font-size:10px;">
+                                            <%# Eval("SubjectCode") %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span style="font-weight:700;color:#263238;"><%# Eval("StudentCount") %></span>
+                                    </td>
+                                    <td style="min-width:100px;">
+                                        <div class="progress" style="height:6px;border-radius:10px;">
+                                            <div class="progress-bar"
+                                                 role="progressbar"
+                                                 style="width:<%# Eval("EnrolmentPercent") %>%;background:#1565c0;border-radius:10px;"
+                                                 aria-valuenow='<%# Eval("EnrolmentPercent") %>'
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <div style="font-size:10px;color:#90a4ae;margin-top:2px;">
+                                            <%# Eval("EnrolmentPercent") %>% of total
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href='CourseVideos.aspx?SubjectId=<%# Eval("SubjectId") %>'
+                                           class="btn-view" style="padding:3px 10px;font-size:11px;">
+                                            <i class="fas fa-play-circle me-1"></i>Manage
+                                        </a>
+                                    </td>
+                                </tr>
+                            </ItemTemplate>
+                        </asp:Repeater>
+                    </tbody>
+                </table>
+            </div>
+        </asp:Panel>
+
+        <%-- Empty state --%>
+        <asp:Panel ID="pnlNoSubjects" runat="server" Visible="false">
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p>No subjects assigned yet.<br />Contact your admin.</p>
+            </div>
+        </asp:Panel>
+
     </div>
+</div>
 
     <%-- RIGHT: Recent Students (col-md-4) --%>
     <div class="col-md-4">
     <div class="panel-card">
         <div class="section-header">
-            <h6><i class="fas fa-users me-2"></i>Recent Students</h6>
+            <h6><i class="fas fa-users me-2"></i>Student Analytics</h6>
             <a href="MyStudents.aspx">View all &rarr;</a>
         </div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
 
-        <%-- Student Filters --%>
-        <div class="d-flex flex-column gap-2 mb-3">
-            <asp:DropDownList ID="ddlStudentSession" runat="server"
-                CssClass="form-select form-select-sm"
-                AutoPostBack="true"
-                OnSelectedIndexChanged="ddlStudentSession_SelectedIndexChanged">
-            </asp:DropDownList>
+    <asp:DropDownList ID="ddlStudentSession" runat="server"
+        CssClass="form-select form-select-sm"
+        Style="width:auto; min-width:120px;"
+        AutoPostBack="true"
+        OnSelectedIndexChanged="ddlStudentSession_SelectedIndexChanged">
+    </asp:DropDownList>
 
-            <div class="d-flex gap-2">
-                <asp:DropDownList ID="ddlStudentSection" runat="server"
-                    CssClass="form-select form-select-sm"
-                    AutoPostBack="true"
-                    OnSelectedIndexChanged="ddlStudentSection_SelectedIndexChanged">
-                </asp:DropDownList>
+    <asp:DropDownList ID="ddlStudentSection" runat="server"
+        CssClass="form-select form-select-sm"
+        Style="width:auto; min-width:120px;"
+        AutoPostBack="true"
+        OnSelectedIndexChanged="ddlStudentSection_SelectedIndexChanged">
+    </asp:DropDownList>
 
-                <asp:DropDownList ID="ddlStudentStream" runat="server"
-                    CssClass="form-select form-select-sm"
-                    AutoPostBack="true"
-                    OnSelectedIndexChanged="ddlStudentStream_SelectedIndexChanged">
-                </asp:DropDownList>
+    <asp:DropDownList ID="ddlStudentStream" runat="server"
+        CssClass="form-select form-select-sm"
+        Style="width:auto; min-width:120px;"
+        AutoPostBack="true"
+        OnSelectedIndexChanged="ddlStudentStream_SelectedIndexChanged">
+    </asp:DropDownList>
+
+</div>
+        <%-- KPI mini cards --%>
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div style="background:#e3f2fd;border-radius:10px;padding:10px 12px;">
+                    <div style="font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.5px;">Total Students</div>
+                    <div style="font-size:22px;font-weight:800;color:#1565c0;">
+                        <asp:Label ID="lblAnalyticStudents" runat="server" Text="0" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div style="background:#e8f5e9;border-radius:10px;padding:10px 12px;">
+                    <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:.5px;">Divisions</div>
+                    <div style="font-size:22px;font-weight:800;color:#2e7d32;">
+                        <asp:Label ID="lblAnalyticDivisions" runat="server" Text="0" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div style="background:#fff3e0;border-radius:10px;padding:10px 12px;">
+                    <div style="font-size:10px;font-weight:700;color:#ef6c00;text-transform:uppercase;letter-spacing:.5px;">Subjects</div>
+                    <div style="font-size:22px;font-weight:800;color:#ef6c00;">
+                        <asp:Label ID="lblAnalyticSubjects" runat="server" Text="0" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div style="background:#ede7f6;border-radius:10px;padding:10px 12px;">
+                    <div style="font-size:10px;font-weight:700;color:#5e35b1;text-transform:uppercase;letter-spacing:.5px;">Avg / Subject</div>
+                    <div style="font-size:22px;font-weight:800;color:#5e35b1;">
+                        <asp:Label ID="lblAnalyticAvg" runat="server" Text="0" />
+                    </div>
+                </div>
             </div>
         </div>
 
+        <%-- Division chart --%>
         <asp:Panel ID="pnlStudents" runat="server">
-            <asp:Repeater ID="rptStudents" runat="server">
-                <ItemTemplate>
-                    <div class="student-row">
-                        <div class="s-avatar">
-                            <%# Eval("StudentName").ToString().Length > 0
-                                ? Eval("StudentName").ToString().Substring(0,1).ToUpper()
-                                : "S" %>
-                        </div>
-                        <div>
-                            <div class="s-name"><%# Eval("StudentName") %></div>
-                            <div class="s-sub"><%# Eval("CourseName") %></div>
-                        </div>
-                        <div class="s-right">
-                            <div class="mb-1">
-                                <span class="badge-active">
-                                    <i class="fas fa-circle me-1" style="font-size:7px;"></i>Active
-                                </span>
-                            </div>
-                            <div style="font-size:10px; color:#90a4ae;">
-                                <%# Eval("SectionName") %>
-                            </div>
-                        </div>
-                    </div>
-                </ItemTemplate>
-            </asp:Repeater>
+            <div style="font-size:11px;font-weight:700;color:#78909c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+                Students by Division
+            </div>
+            <asp:HiddenField ID="hfDivisionData" runat="server" />
+            <div style="position:relative; height:200px;">
+                <canvas id="divisionChart" 
+                    role="img" 
+                    aria-label="Bar chart showing number of students per division">
+                </canvas>
+            </div>
         </asp:Panel>
 
         <asp:Panel ID="pnlNoStudents" runat="server" Visible="false">
@@ -576,7 +613,6 @@ background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);    b
     </div>
 </div>
 
-<%-- ══ RECENT ASSIGNMENTS ══ --%>
 <%-- ══ RECENT ASSIGNMENTS ══ --%>
 <div class="row g-3">
     <div class="col-md-8">
@@ -707,55 +743,224 @@ background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);    b
         </div>
     </div>
 </div>
+<%-- ══ STUDENT PERFORMANCE ══ --%>
+<div class="row g-3 mt-2">
+    <div class="col-12">
+        <div class="panel-card">
+            <div class="section-header">
+                <h6><i class="fas fa-chart-line me-2"></i>Student Performance</h6>
+                <a href="MyStudents.aspx">View all &rarr;</a>
+            </div>
+
+            <%-- KPI Row --%>
+            <asp:Panel ID="pnlPerfKPIs" runat="server">
+                <div class="row g-2 mb-4">
+                    <div class="col-6 col-md-3">
+                        <div style="background:#e3f2fd;border-radius:10px;padding:10px 14px;">
+                            <div style="font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.5px;">Avg Marks</div>
+                            <div style="font-size:26px;font-weight:800;color:#1565c0;">
+                                <asp:Label ID="lblPerfAvgMarks" runat="server" Text="0" />
+                            </div>
+                            <div style="font-size:10px;color:#90a4ae;">across all subjects</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div style="background:#e8f5e9;border-radius:10px;padding:10px 14px;">
+                            <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:.5px;">Highest Score</div>
+                            <div style="font-size:26px;font-weight:800;color:#2e7d32;">
+                                <asp:Label ID="lblPerfHighest" runat="server" Text="0" />
+                            </div>
+                            <div style="font-size:10px;color:#90a4ae;">best submission</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div style="background:#fff3e0;border-radius:10px;padding:10px 14px;">
+                            <div style="font-size:10px;font-weight:700;color:#ef6c00;text-transform:uppercase;letter-spacing:.5px;">Lowest Score</div>
+                            <div style="font-size:26px;font-weight:800;color:#ef6c00;">
+                                <asp:Label ID="lblPerfLowest" runat="server" Text="0" />
+                            </div>
+                            <div style="font-size:10px;color:#90a4ae;">needs attention</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div style="background:#ede7f6;border-radius:10px;padding:10px 14px;">
+                            <div style="font-size:10px;font-weight:700;color:#5e35b1;text-transform:uppercase;letter-spacing:.5px;">Submissions</div>
+                            <div style="font-size:26px;font-weight:800;color:#5e35b1;">
+                                <asp:Label ID="lblPerfSubmissions" runat="server" Text="0" />
+                            </div>
+                            <div style="font-size:10px;color:#90a4ae;">total graded</div>
+                        </div>
+                    </div>
+                </div>
+            </asp:Panel>
+
+            <%-- Three columns side by side --%>
+            <div class="row g-3">
+
+                <%-- TOP 5 STUDENTS --%>
+                <div class="col-md-4">
+                    <div style="background:#f8fbff;border-radius:12px;padding:16px;height:100%;">
+                        <div style="font-size:11px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">
+                            <i class="fas fa-trophy me-1" style="color:#f9a825;"></i> Top 5 Students
+                        </div>
+                        <asp:Panel ID="pnlTopStudents" runat="server">
+                            <asp:Repeater ID="rptTopStudents" runat="server">
+                                <ItemTemplate>
+                                    <div onclick='openStudentModal(<%# Eval("StudentId") %>, "<%# Eval("StudentName") %>", "<%# Eval("SubjectName") %>")'
+                                         style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #e3f2fd;cursor:pointer;border-radius:8px;transition:background .15s;"
+                                         onmouseover="this.style.background='#f0f7ff';this.style.paddingLeft='6px'"
+                                         onmouseout="this.style.background='';this.style.paddingLeft='0'">
+                                        <div style="width:26px;height:26px;border-radius:50%;background:<%# GetRankColor(Container.ItemIndex) %>;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;">
+                                            <%# Container.ItemIndex + 1 %>
+                                        </div>
+                                        <div style="flex:1;min-width:0;">
+                                            <div style="font-size:12px;font-weight:700;color:#263238;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                                <%# Eval("StudentName") %>
+                                            </div>
+                                            <div style="font-size:10px;color:#90a4ae;">
+                                                <%# Eval("SubjectName") %>
+                                            </div>
+                                        </div>
+                                        <div style="text-align:right;flex-shrink:0;">
+                                            <div style="font-size:13px;font-weight:800;color:#1565c0;">
+                                                <%# Eval("MarksObtained") %><span style="font-size:10px;color:#90a4ae;">/<%# Eval("MaxMarks") %></span>
+                                            </div>
+                                            <div style="font-size:10px;color:#2e7d32;font-weight:600;">
+                                                <%# Eval("Percentage") %>%
+                                            </div>
+                                        </div>
+                                        <div style="flex-shrink:0;color:#90a4ae;font-size:11px;">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </div>
+                                    </div>
+                                </ItemTemplate>
+                            </asp:Repeater>
+                        </asp:Panel>
+                        <asp:Panel ID="pnlNoTopStudents" runat="server" Visible="false">
+                            <div class="empty-state">
+                                <i class="fas fa-user-graduate" style="font-size:28px;color:#90caf9;display:block;margin-bottom:6px;"></i>
+                                <p style="font-size:12px;color:#90a4ae;margin:0;">No graded submissions yet.</p>
+                            </div>
+                        </asp:Panel>
+                    </div>
+                </div>
+
+                <%-- LOW PERFORMERS --%>
+                <div class="col-md-4">
+                    <div style="background:#fff8f5;border-radius:12px;padding:16px;height:100%;">
+                        <div style="font-size:11px;font-weight:700;color:#ef6c00;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">
+                            <i class="fas fa-exclamation-triangle me-1" style="color:#ef6c00;"></i> Needs Attention
+                        </div>
+                        <asp:Panel ID="pnlLowStudents" runat="server">
+                            <asp:Repeater ID="rptLowStudents" runat="server">
+                                <ItemTemplate>
+                                    <div onclick='openStudentModal(<%# Eval("StudentId") %>, "<%# Eval("StudentName") %>", "<%# Eval("SubjectName") %>")'
+                                         style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #ffe0cc;cursor:pointer;border-radius:8px;transition:background .15s;"
+                                         onmouseover="this.style.background='#fff3ee';this.style.paddingLeft='6px'"
+                                         onmouseout="this.style.background='';this.style.paddingLeft='0'">
+                                        <div style="width:26px;height:26px;border-radius:50%;background:#ffccbc;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                            <i class="fas fa-user" style="font-size:11px;color:#bf360c;"></i>
+                                        </div>
+                                        <div style="flex:1;min-width:0;">
+                                            <div style="font-size:12px;font-weight:700;color:#263238;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                                <%# Eval("StudentName") %>
+                                            </div>
+                                            <div style="font-size:10px;color:#90a4ae;">
+                                                <%# Eval("SubjectName") %>
+                                            </div>
+                                        </div>
+                                        <div style="text-align:right;flex-shrink:0;">
+                                            <div style="font-size:13px;font-weight:800;color:#ef6c00;">
+                                                <%# Eval("MarksObtained") %><span style="font-size:10px;color:#90a4ae;">/<%# Eval("MaxMarks") %></span>
+                                            </div>
+                                            <div style="font-size:10px;color:#c62828;font-weight:600;">
+                                                <%# Eval("Percentage") %>%
+                                            </div>
+                                        </div>
+                                        <div style="flex-shrink:0;color:#90a4ae;font-size:11px;">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </div>
+                                    </div>
+                                </ItemTemplate>
+                            </asp:Repeater>
+                        </asp:Panel>
+                        <asp:Panel ID="pnlNoLowStudents" runat="server" Visible="false">
+                            <div class="empty-state">
+                                <i class="fas fa-check-circle" style="font-size:28px;color:#a5d6a7;display:block;margin-bottom:6px;"></i>
+                                <p style="font-size:12px;color:#90a4ae;margin:0;">All students performing well!</p>
+                            </div>
+                        </asp:Panel>
+                    </div>
+                </div>
+
+                <%-- AVG MARKS PER SUBJECT + PIE --%>
+                <div class="col-md-4">
+                    <div style="background:#f5f5f5;border-radius:12px;padding:16px;height:100%;">
+                        <div style="font-size:11px;font-weight:700;color:#5e35b1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">
+                            <i class="fas fa-chart-pie me-1"></i> Avg Marks per Subject
+                        </div>
+
+                        <asp:Panel ID="pnlAvgMarksChart" runat="server">
+                            <div style="position:relative;height:180px;margin-bottom:12px;">
+                                <canvas id="avgMarksChart"
+                                        role="img"
+                                        aria-label="Pie chart showing average marks per subject"></canvas>
+                            </div>
+                            <asp:HiddenField ID="hfAvgMarksData" runat="server" />
+
+                            <asp:Repeater ID="rptAvgMarks" runat="server">
+                                <ItemTemplate>
+                                    <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #ede7f6;font-size:11px;">
+                                        <div style="display:flex;align-items:center;gap:6px;">
+                                            <div style="width:10px;height:10px;border-radius:50%;background:<%# Eval("Color") %>;flex-shrink:0;"></div>
+                                            <span style="color:#263238;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">
+                                                <%# Eval("SubjectName") %>
+                                            </span>
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <span style="font-weight:800;color:#5e35b1;"><%# Eval("AvgMarks") %></span>
+                                            <span style="color:#90a4ae;"> / <%# Eval("MaxMarks") %></span>
+                                        </div>
+                                    </div>
+                                </ItemTemplate>
+                            </asp:Repeater>
+                        </asp:Panel>
+
+                        <asp:Panel ID="pnlNoAvgMarks" runat="server" Visible="false">
+                            <div class="empty-state">
+                                <i class="fas fa-chart-pie" style="font-size:28px;color:#ce93d8;display:block;margin-bottom:6px;"></i>
+                                <p style="font-size:12px;color:#90a4ae;margin:0;">No marks data available yet.</p>
+                            </div>
+                        </asp:Panel>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <%-- Chart.js (only loaded once, safe to add here) --%>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    var currentView = 'list';
-
-    function setView(v) {
-        currentView = v;
-
-        // Toggle button styles
-        ['btnList', 'btnChart'].forEach(function (id) {
-            var el = document.getElementById(id);
-            if (!el) return;
-            el.className = el.className.replace('btn-primary', 'btn-outline-primary');
-        });
-        var activeEl = document.getElementById(v === 'list' ? 'btnList' : 'btnChart');
-        if (activeEl)
-            activeEl.className = activeEl.className.replace('btn-outline-primary', 'btn-primary');
-
-        var list = document.getElementById('<%= pnlSubjectsList.ClientID %>');
-        var chart = document.getElementById('<%= pnlSubjectsChart.ClientID %>');
-
-        if (list)  list.style.display  = (v === 'list')  ? '' : 'none';
-        if (chart) chart.style.display = (v === 'chart') ? '' : 'none';
-
-        if (v === 'chart') renderChart();
-    }
-
+    // ── Subject Chart ────────────────────────────────────────────
     var chartInstance = null;
 
-    function renderChart() {
+    function renderSubjectChart() {
         var hf = document.getElementById('<%= hfChartData.ClientID %>');
         if (!hf || !hf.value) return;
-
         var data;
         try { data = JSON.parse(hf.value); } catch (e) { return; }
-
         var ctx = document.getElementById('subjectChart');
         if (!ctx) return;
-
         if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
         var labels = data.map(function (d) { return d.SubjectName; });
         var counts = data.map(function (d) { return d.StudentCount; });
-        var colors = [
-            '#1565c0', '#0288d1', '#1976d2', '#ef6c00', '#5e35b1',
-            '#388e3c', '#c62828', '#00838f', '#4527a0', '#2e7d32'
-        ];
+        var subIds = data.map(function (d) { return d.SubjectId; });
+        var colors = ['#1565c0', '#0288d1', '#1976d2', '#ef6c00', '#5e35b1',
+            '#388e3c', '#c62828', '#00838f', '#4527a0', '#2e7d32'];
 
         chartInstance = new Chart(ctx, {
             type: 'bar',
@@ -775,20 +980,22 @@ background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);    b
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function (ctx) { return ' ' + ctx.parsed.y + ' students'; }
-                        }
-                    }
+                    tooltip: { callbacks: { label: function (c) { return ' ' + c.parsed.y + ' students'; } } }
                 },
                 scales: {
                     y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#e3f2fd' } },
                     x: { ticks: { font: { size: 11 }, maxRotation: 30 }, grid: { display: false } }
+                },
+                onClick: function (evt, elements) {
+                    if (elements.length > 0)
+                        window.location.href = 'CourseVideos.aspx?SubjectId=' + subIds[elements[0].index];
                 }
             }
         });
+        ctx.style.cursor = 'pointer';
     }
-    /* ── Assignment view switcher ── */
+
+    // ── Assignment View Switcher ──────────────────────────────────
     function setAsgView(v) {
         ['btnAsgList', 'btnAsgChart'].forEach(function (id) {
             var el = document.getElementById(id);
@@ -796,90 +1003,281 @@ background: linear-gradient(135deg, #1565c0 0%, #1976d2 60%, #42a5f5 100%);    b
             el.className = el.className.replace('btn-primary', 'btn-outline-primary');
         });
         var activeEl = document.getElementById(v === 'list' ? 'btnAsgList' : 'btnAsgChart');
-        if (activeEl)
-            activeEl.className = activeEl.className.replace('btn-outline-primary', 'btn-primary');
+        if (activeEl) activeEl.className = activeEl.className.replace('btn-outline-primary', 'btn-primary');
 
         var list = document.getElementById('<%= pnlAssignments.ClientID %>');
-    var chart = document.getElementById('<%= pnlAsgChart.ClientID %>');
+        var chart = document.getElementById('<%= pnlAsgChart.ClientID %>');
+        if (list)  list.style.display  = (v === 'list')  ? '' : 'none';
+        if (chart) chart.style.display = (v === 'chart') ? '' : 'none';
+        if (v === 'chart') renderAsgChart();
+    }
 
-    if (list)  list.style.display  = (v === 'list')  ? '' : 'none';
-    if (chart) chart.style.display = (v === 'chart') ? '' : 'none';
+    var asgChartInstance = null;
 
-    if (v === 'chart') renderAsgChart();
-}
-
-var asgChartInstance = null;
-
-function renderAsgChart() {
-    var hf = document.getElementById('<%= hfAsgChartData.ClientID %>');
+    function renderAsgChart() {
+        var hf = document.getElementById('<%= hfAsgChartData.ClientID %>');
         if (!hf || !hf.value) return;
-
         var data;
         try { data = JSON.parse(hf.value); } catch (e) { return; }
-
         var ctx = document.getElementById('asgChart');
         if (!ctx) return;
-
         if (asgChartInstance) { asgChartInstance.destroy(); asgChartInstance = null; }
-
-        var labels = data.map(function (d) { return d.Title; });
-        var submitted = data.map(function (d) { return d.SubmissionCount; });
-        var pending = data.map(function (d) { return d.Pending; });
 
         asgChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: data.map(function (d) { return d.Title; }),
                 datasets: [
-                    {
-                        label: 'Submitted',
-                        data: submitted,
-                        backgroundColor: '#1565c0cc',
-                        borderColor: '#1565c0',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    },
-                    {
-                        label: 'Pending',
-                        data: pending,
-                        backgroundColor: '#ef6c00cc',
-                        borderColor: '#ef6c00',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }
+                    { label: 'Submitted', data: data.map(function (d) { return d.SubmissionCount; }),
+                      backgroundColor: '#1565c0cc', borderColor: '#1565c0', borderWidth: 2, borderRadius: 6 },
+                    { label: 'Pending',   data: data.map(function (d) { return d.Pending; }),
+                      backgroundColor: '#ef6c00cc', borderColor: '#ef6c00', borderWidth: 2, borderRadius: 6 }
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: { font: { size: 11 } }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (ctx) {
-                                return ' ' + ctx.dataset.label + ': ' + ctx.parsed.y + ' students';
-                            }
-                        }
-                    }
+                    legend: { display: true, position: 'top', labels: { font: { size: 11 } } },
+                    tooltip: { callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + c.parsed.y + ' students'; } } }
                 },
                 scales: {
-                    x: {
-                        stacked: false,
-                        ticks: { font: { size: 10 }, maxRotation: 30 },
-                        grid: { display: false }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1, font: { size: 11 } },
-                        grid: { color: '#e3f2fd' }
-                    }
+                    x: { ticks: { font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#e3f2fd' } }
                 }
             }
         });
     }
+
+    // ── Division Chart ────────────────────────────────────────────
+    function renderDivisionChart() {
+        var hf = document.getElementById('<%= hfDivisionData.ClientID %>');
+        if (!hf || !hf.value) return;
+        var data;
+        try { data = JSON.parse(hf.value); } catch (e) { return; }
+        var ctx = document.getElementById('divisionChart');
+        if (!ctx) return;
+
+        var colors = ['#1565c0','#2e7d32','#ef6c00','#5e35b1','#0288d1','#c62828'];
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(function (d) { return d.Division; }),
+                datasets: [{
+                    label: 'Students',
+                    data: data.map(function (d) { return d.StudentCount; }),
+                    backgroundColor: data.map(function (_, i) { return colors[i % colors.length] + 'cc'; }),
+                    borderColor:     data.map(function (_, i) { return colors[i % colors.length]; }),
+                    borderWidth: 2, borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: function (c) { return ' ' + c.parsed.y + ' students'; } } } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#e3f2fd' } },
+                    x: { ticks: { font: { size: 10 }, maxRotation: 30 }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // ── Avg Marks Pie Chart ───────────────────────────────────────
+    function renderAvgMarksChart() {
+        var hf = document.getElementById('<%= hfAvgMarksData.ClientID %>');
+        if (!hf || !hf.value) return;
+        var data;
+        try { data = JSON.parse(hf.value); } catch (e) { return; }
+        var ctx = document.getElementById('avgMarksChart');
+        if (!ctx) return;
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.map(function (d) { return d.SubjectName; }),
+                datasets: [{
+                    data: data.map(function (d) { return d.AvgMarks; }),
+                    backgroundColor: data.map(function (d) { return d.Color + 'cc'; }),
+                    borderColor: data.map(function (d) { return d.Color; }),
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function (c) { return ' ' + c.label + ': ' + c.parsed + ' avg marks'; } } }
+                }
+            }
+        });
+    }
+
+    // ── Student Marks Modal ───────────────────────────────────────
+    var studentMarksChartInstance = null;
+
+    function openStudentModal(studentId, studentName, subjectName) {
+        // Set header info
+        document.getElementById('modalStudentName').textContent = studentName;
+        document.getElementById('modalStudentMeta').textContent = subjectName;
+
+        // Reset UI
+        document.getElementById('modalLoader').style.display = 'block';
+        document.getElementById('modalKpiRow').style.display = 'none';
+        document.getElementById('studentMarksChart').style.display = 'none';
+        document.getElementById('modalAsgTable').style.display = 'none';
+        document.getElementById('modalEmpty').style.display = 'none';
+
+        // Show modal
+        var modal = new bootstrap.Modal(document.getElementById('studentMarksModal'));
+        modal.show();
+
+        // Fetch data
+        fetch('GetStudentMarks.ashx?studentId=' + studentId)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                document.getElementById('modalLoader').style.display = 'none';
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    document.getElementById('modalEmpty').style.display = 'block';
+                    return;
+                }
+
+                // ── KPIs ──
+                var total = data.length;
+                var sumMarks = data.reduce(function (s, d) { return s + d.MarksObtained; }, 0);
+                var avg = Math.round(sumMarks / total);
+                var highest = Math.max.apply(null, data.map(function (d) { return d.MarksObtained; }));
+                var lowest = Math.min.apply(null, data.map(function (d) { return d.MarksObtained; }));
+
+                document.getElementById('modalTotalAsg').textContent = total;
+                document.getElementById('modalAvgMarks').textContent = avg;
+                document.getElementById('modalHighest').textContent = highest;
+                document.getElementById('modalLowest').textContent = lowest;
+                document.getElementById('modalKpiRow').style.display = '';
+
+                // ── Chart ──
+                var canvas = document.getElementById('studentMarksChart');
+                canvas.style.display = '';
+
+                if (studentMarksChartInstance) {
+                    studentMarksChartInstance.destroy();
+                    studentMarksChartInstance = null;
+                }
+
+                var labels = data.map(function (d) { return d.AssignmentTitle; });
+                var obtained = data.map(function (d) { return d.MarksObtained; });
+                var maxMarks = data.map(function (d) { return d.MaxMarks; });
+                var pcts = data.map(function (d) { return d.Percentage; });
+
+                // Color bar by performance
+                var barColors = pcts.map(function (p) {
+                    if (p >= 80) return '#2e7d32cc';
+                    if (p >= 60) return '#1565c0cc';
+                    if (p >= 50) return '#ef6c00cc';
+                    return '#c62828cc';
+                });
+                var borderColors = pcts.map(function (p) {
+                    if (p >= 80) return '#2e7d32';
+                    if (p >= 60) return '#1565c0';
+                    if (p >= 50) return '#ef6c00';
+                    return '#c62828';
+                });
+
+                studentMarksChartInstance = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Marks Obtained',
+                                data: obtained,
+                                backgroundColor: barColors,
+                                borderColor: borderColors,
+                                borderWidth: 2,
+                                borderRadius: 8,
+                                order: 1
+                            },
+                            {
+                                label: 'Max Marks',
+                                data: maxMarks,
+                                type: 'line',
+                                borderColor: '#90a4ae',
+                                borderWidth: 2,
+                                borderDash: [6, 3],
+                                pointRadius: 4,
+                                pointBackgroundColor: '#90a4ae',
+                                fill: false,
+                                tension: 0.3,
+                                order: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { font: { size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (c) {
+                                        if (c.datasetIndex === 0)
+                                            return ' Marks: ' + c.parsed.y + ' (' + pcts[c.dataIndex] + '%)';
+                                        return ' Max: ' + c.parsed.y;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, font: { size: 11 } },
+                                grid: { color: '#e3f2fd' }
+                            },
+                            x: {
+                                ticks: { font: { size: 10 }, maxRotation: 35 },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+
+                // ── Table ──
+                var tbody = document.getElementById('modalAsgTableBody');
+                tbody.innerHTML = '';
+                data.forEach(function (d, i) {
+                    var gradeColor = d.Percentage >= 80 ? '#2e7d32'
+                        : d.Percentage >= 60 ? '#1565c0'
+                            : d.Percentage >= 50 ? '#ef6c00'
+                                : '#c62828';
+                    tbody.innerHTML +=
+                        '<tr>' +
+                        '<td style="color:#90a4ae;">' + (i + 1) + '</td>' +
+                        '<td><strong>' + d.AssignmentTitle + '</strong></td>' +
+                        '<td style="color:#78909c;">' + d.SubjectName + '</td>' +
+                        '<td><strong style="color:#263238;">' + d.MarksObtained + '</strong></td>' +
+                        '<td style="color:#90a4ae;">' + d.MaxMarks + '</td>' +
+                        '<td><strong style="color:' + gradeColor + ';">' + d.Percentage + '%</strong></td>' +
+                        '<td><span style="background:' + gradeColor + '22;color:' + gradeColor + ';padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;">' + d.Grade + '</span></td>' +
+                        '<td style="color:#90a4ae;">' + d.SubmittedOn + '</td>' +
+                        '</tr>';
+                });
+                document.getElementById('modalAsgTable').style.display = '';
+            })
+            .catch(function () {
+                document.getElementById('modalLoader').style.display = 'none';
+                document.getElementById('modalEmpty').style.display = 'block';
+            });
+    }
+
+    // ── Init ─────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        renderDivisionChart();
+        renderSubjectChart();
+        renderAvgMarksChart();
+    });
 </script>
 </asp:Content>

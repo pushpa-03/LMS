@@ -33,6 +33,15 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.HiddenField hfChapterId;
 
         /// <summary>
+        /// litSubjectName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litSubjectName;
+
+        /// <summary>
         /// lblMsg control.
         /// </summary>
         /// <remarks>
@@ -42,13 +51,22 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.Label lblMsg;
 
         /// <summary>
-        /// litSubjectName control.
+        /// hfToastMsg control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litSubjectName;
+        protected global::System.Web.UI.WebControls.HiddenField hfToastMsg;
+
+        /// <summary>
+        /// hfToastType control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfToastType;
 
         /// <summary>
         /// litSubjectCode control.
@@ -150,6 +168,15 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.Repeater rptChapters;
 
         /// <summary>
+        /// phNoChapters control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.PlaceHolder phNoChapters;
+
+        /// <summary>
         /// rptAssignments control.
         /// </summary>
         /// <remarks>
@@ -186,13 +213,13 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.TextBox txtContentTitle;
 
         /// <summary>
-        /// txtInstructor control.
+        /// hfInstructorId control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtInstructor;
+        protected global::System.Web.UI.WebControls.HiddenField hfInstructorId;
 
         /// <summary>
         /// txtVideoDesc control.
@@ -220,6 +247,15 @@ namespace LearningManagementSystem.Admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnUploadSave;
+
+        /// <summary>
+        /// litChapterModalTitle control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litChapterModalTitle;
 
         /// <summary>
         /// txtChapterName control.

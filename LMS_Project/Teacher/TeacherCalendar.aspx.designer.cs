@@ -60,6 +60,15 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.Label lblTableMonthYear;
 
         /// <summary>
+        /// lblEventCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblEventCount;
+
+        /// <summary>
         /// gvEvents control.
         /// </summary>
         /// <remarks>
@@ -94,6 +103,15 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList ddlSubject;
+
+        /// <summary>
+        /// rfvSubject control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvSubject;
 
         /// <summary>
         /// ddlEventType control.
@@ -139,6 +157,15 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvEnd;
+
+        /// <summary>
+        /// cvDates control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CompareValidator cvDates;
 
         /// <summary>
         /// chkAllDay control.
@@ -204,6 +231,15 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.DropDownList ddlEditSubject;
 
         /// <summary>
+        /// rfvEditSubject control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvEditSubject;
+
+        /// <summary>
         /// ddlEditEventType control.
         /// </summary>
         /// <remarks>
@@ -249,6 +285,15 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvEditEnd;
 
         /// <summary>
+        /// cvEditDates control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CompareValidator cvEditDates;
+
+        /// <summary>
         /// chkEditAllDay control.
         /// </summary>
         /// <remarks>
@@ -283,5 +328,23 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.HiddenField hfReopenModal;
+
+        /// <summary>
+        /// vsAddForm control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.ValidationSummary vsAddForm;
+
+        /// <summary>
+        /// vsEditForm control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.ValidationSummary vsEditForm;
     }
 }

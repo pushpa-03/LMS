@@ -8,15 +8,13 @@ using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin.Dashboards
 {
-    public partial class StreamWiseDashboard : Page
+    public partial class StreamWiseDashboard : BasePage
     {
         StreamWiseDashboardBL bl = new StreamWiseDashboardBL();
-        int InstituteId, SessionId, SelectedStreamId;
+        int SelectedStreamId;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            InstituteId = Convert.ToInt32(Session["InstituteId"]);
-            SessionId = Convert.ToInt32(Session["SessionId"]);
 
             if (!IsPostBack)
             {

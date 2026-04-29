@@ -12,6 +12,7 @@ namespace LMS_Project.Teacher
         private int SocietyId => Convert.ToInt32(Session["SocietyId"]);
         private int InstituteId => Convert.ToInt32(Session["InstituteId"]);
         private int UserId => Convert.ToInt32(Session["UserId"]);
+        // ← SessionId removed, DB handles it now
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -37,7 +38,6 @@ namespace LMS_Project.Teacher
 
         protected void btnSubmit_Click(object sender, EventArgs e)
         {
-
             string q = txtQuestion.Text.Trim();
             if (string.IsNullOrEmpty(q))
             {
@@ -51,6 +51,7 @@ namespace LMS_Project.Teacher
                 InstituteId = InstituteId,
                 UserId = UserId,
                 Question = q
+                // ← No SessionId, DB handles it
             });
 
             if (ok)

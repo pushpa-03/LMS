@@ -222,7 +222,7 @@
                             <span class="pill pill-lime">
                                 <i class="fas fa-calendar me-1"></i><%# Eval("SessionName") %>
                             </span>
-                            <a href='CourseVideos.aspx?SubjectId=<%# Eval("SubjectId") %>'
+                            <a href='Subjects_T_Side.aspx?SubjectId=<%# Eval("SubjectId") %>'
                                class="btn-manage">
                                 <i class="fas fa-play-circle me-1"></i>Manage
                             </a>

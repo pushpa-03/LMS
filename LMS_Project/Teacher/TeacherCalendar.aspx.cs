@@ -6,7 +6,7 @@ using System.Web.UI.WebControls;
 
 namespace LMS_Project.Teacher
 {
-    public partial class TeacherCalendar : System.Web.UI.Page
+    public partial class TeacherCalendar : BasePage
     {
         CalendarBL bl = new CalendarBL();
 
@@ -14,6 +14,19 @@ namespace LMS_Project.Teacher
         {
             if (!IsPostBack)
             {
+                // TEMPORARY: Set default session values for testing
+                // IMPORTANT: Remove these 3 lines after your login page is properly set up
+                if (Session["UserId"] == null) Session["UserId"] = UserId;  // Change to a valid teacher ID from your database
+                if (Session["InstituteId"] == null) Session["InstituteId"] = InstituteId;  // Change to a valid institute ID
+                if (Session["SessionId"] == null) Session["SessionId"] = SessionId;  // Change to a valid session ID
+
+                // Check if user is logged in
+                if (Session["UserId"] == null || Session["InstituteId"] == null || Session["SessionId"] == null)
+                {
+                    ShowMsg(lblMessage, "Session data missing. Please login again.", false);
+                    return;
+                }
+
                 ViewState["CurrentDate"] = DateTime.Today;
                 txtStartDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
                 txtEndDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
@@ -25,62 +38,116 @@ namespace LMS_Project.Teacher
         // Populate subject dropdowns from teacher's assigned subjects
         void LoadSubjectDropdowns()
         {
-            if (Session["UserId"] == null) return;
+            if (Session["UserId"] == null || Session["InstituteId"] == null)
+            {
+                ShowMsg(lblMessage, "Cannot load subjects: Session data missing.", false);
+                return;
+            }
 
-            int teacherUserId = Convert.ToInt32(Session["UserId"]);
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+            try
+            {
+                int teacherUserId = UserId;
+                int instituteId = InstituteId;
 
-            DataTable subjects = bl.GetTeacherSubjects(teacherUserId, instituteId);
+                DataTable subjects = bl.GetTeacherSubjects(teacherUserId, instituteId);
 
-            // Add dropdown
-            ddlSubject.Items.Clear();
-            ddlSubject.Items.Add(new ListItem("-- Select Subject --", ""));
-            foreach (DataRow row in subjects.Rows)
-                ddlSubject.Items.Add(new ListItem(
-                    row["SubjectName"].ToString(),
-                    row["SubjectId"].ToString()
-                ));
+                // Add dropdown
+                ddlSubject.Items.Clear();
+                ddlSubject.Items.Add(new ListItem("-- Select Subject --", ""));
+                if (subjects != null)
+                {
+                    foreach (DataRow row in subjects.Rows)
+                    {
+                        ddlSubject.Items.Add(new ListItem(
+                            row["SubjectName"].ToString(),
+                            row["SubjectId"].ToString()
+                        ));
+                    }
+                }
 
-            // Edit dropdown
-            ddlEditSubject.Items.Clear();
-            ddlEditSubject.Items.Add(new ListItem("-- Select Subject --", ""));
-            foreach (DataRow row in subjects.Rows)
-                ddlEditSubject.Items.Add(new ListItem(
-                    row["SubjectName"].ToString(),
-                    row["SubjectId"].ToString()
-                ));
+                // Edit dropdown
+                ddlEditSubject.Items.Clear();
+                ddlEditSubject.Items.Add(new ListItem("-- Select Subject --", ""));
+                if (subjects != null)
+                {
+                    foreach (DataRow row in subjects.Rows)
+                    {
+                        ddlEditSubject.Items.Add(new ListItem(
+                            row["SubjectName"].ToString(),
+                            row["SubjectId"].ToString()
+                        ));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMsg(lblMessage, $"Error loading subjects: {ex.Message}", false);
+            }
         }
 
         void BindAll()
         {
-            DateTime dt = (DateTime)ViewState["CurrentDate"];
+            try
+            {
+                if (ViewState["CurrentDate"] == null)
+                {
+                    ViewState["CurrentDate"] = DateTime.Today;
+                }
 
-            calEvents.VisibleDate = dt;
-            lblMonthYear.Text = dt.ToString("MMMM yyyy");
-            lblTableMonthYear.Text = dt.ToString("MMMM yyyy");
+                DateTime dt = (DateTime)ViewState["CurrentDate"];
 
-            if (Session["UserId"] == null || Session["InstituteId"] == null) return;
+                calEvents.VisibleDate = dt;
+                lblMonthYear.Text = dt.ToString("MMMM yyyy");
+                lblTableMonthYear.Text = dt.ToString("MMMM yyyy");
 
-            int teacherUserId = Convert.ToInt32(Session["UserId"]);
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
+                if (Session["UserId"] == null || Session["InstituteId"] == null)
+                {
+                    ShowMsg(lblMessage, "Cannot load events: Session data missing.", false);
+                    return;
+                }
 
-            DataTable events = bl.GetEventsByMonthForTeacher(dt.Year, dt.Month, instituteId, teacherUserId);
-            gvEvents.DataSource = events;
-            gvEvents.DataBind();
+                int teacherUserId = UserId;
+                int instituteId = InstituteId;
+
+                DataTable events = bl.GetEventsByMonthForTeacher(dt.Year, dt.Month, instituteId, teacherUserId);
+
+                if (events != null && events.Rows.Count > 0)
+                {
+                    gvEvents.DataSource = events;
+                    gvEvents.DataBind();
+                    lblEventCount.Text = $"({events.Rows.Count} event{(events.Rows.Count != 1 ? "s" : "")})";
+                }
+                else
+                {
+                    gvEvents.DataSource = null;
+                    gvEvents.DataBind();
+                    lblEventCount.Text = "(0 events)";
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMsg(lblMessage, $"Error loading events: {ex.Message}", false);
+            }
         }
 
         protected void btnPrev_Click(object sender, EventArgs e)
         {
-            ViewState["CurrentDate"] = ((DateTime)ViewState["CurrentDate"]).AddMonths(-1);
-            hfReopenModal.Value = "";
-            BindAll();
+            if (ViewState["CurrentDate"] != null)
+            {
+                ViewState["CurrentDate"] = ((DateTime)ViewState["CurrentDate"]).AddMonths(-1);
+                hfReopenModal.Value = "";
+                BindAll();
+            }
         }
 
         protected void btnNext_Click(object sender, EventArgs e)
         {
-            ViewState["CurrentDate"] = ((DateTime)ViewState["CurrentDate"]).AddMonths(1);
-            hfReopenModal.Value = "";
-            BindAll();
+            if (ViewState["CurrentDate"] != null)
+            {
+                ViewState["CurrentDate"] = ((DateTime)ViewState["CurrentDate"]).AddMonths(1);
+                hfReopenModal.Value = "";
+                BindAll();
+            }
         }
 
         protected void calEvents_DayRender(object sender, DayRenderEventArgs e)
@@ -93,26 +160,35 @@ namespace LMS_Project.Teacher
 
             if (Session["UserId"] == null || Session["InstituteId"] == null) return;
 
-            int teacherUserId = Convert.ToInt32(Session["UserId"]);
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-
-            // Use teacher-specific query so only relevant events show
-            DataTable dt = bl.GetEventsForTeacher(e.Day.Date, instituteId, teacherUserId);
-
-            foreach (DataRow row in dt.Rows)
+            try
             {
-                string title = System.Web.HttpUtility.HtmlEncode(row["Title"].ToString());
-                string type = row["EventType"].ToString();
+                int teacherUserId = UserId;
+                int instituteId = InstituteId;
 
-                string css = "event-general";
-                if (type == "Holiday") css = "event-holiday";
-                else if (type == "Exam") css = "event-exam";
-                else if (type == "Assignment") css = "event-assignment";
+                DataTable dt = bl.GetEventsForTeacher(e.Day.Date, instituteId, teacherUserId);
 
-                e.Cell.Controls.Add(new Literal
+                if (dt != null && dt.Rows.Count > 0)
                 {
-                    Text = $"<span class='event-dot {css}' title='{title}'>{title}</span>"
-                });
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        string title = System.Web.HttpUtility.HtmlEncode(row["Title"].ToString());
+                        string type = row["EventType"].ToString();
+
+                        string css = "event-general";
+                        if (type == "Holiday") css = "event-holiday";
+                        else if (type == "Exam") css = "event-exam";
+                        else if (type == "Assignment") css = "event-assignment";
+
+                        e.Cell.Controls.Add(new Literal
+                        {
+                            Text = $"<span class='event-dot {css}' title='{title}'>{title}</span>"
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in DayRender: {ex.Message}");
             }
         }
 
@@ -121,6 +197,12 @@ namespace LMS_Project.Teacher
             hfReopenModal.Value = "addEventModal";
             if (!Page.IsValid) return;
 
+            if (Session["UserId"] == null || Session["InstituteId"] == null || Session["SessionId"] == null)
+            {
+                ShowMsg(lblMessage, "Session expired. Please login again.", false);
+                return;
+            }
+
             DateTime startDate, endDate;
             if (!DateTime.TryParse(txtStartDate.Text, out startDate) ||
                 !DateTime.TryParse(txtEndDate.Text, out endDate))
@@ -128,77 +210,111 @@ namespace LMS_Project.Teacher
                 ShowMsg(lblMessage, "Invalid date format.", false);
                 return;
             }
+
             if (endDate < startDate)
             {
                 ShowMsg(lblMessage, "End date cannot be before start date.", false);
                 return;
             }
 
-            // SubjectId is required for teachers
             if (string.IsNullOrEmpty(ddlSubject.SelectedValue))
             {
                 ShowMsg(lblMessage, "Please select a subject.", false);
                 return;
             }
 
-            CalendarGC obj = new CalendarGC
+            try
             {
-                InstituteId = Session["InstituteId"] != null ? (int?)Convert.ToInt32(Session["InstituteId"]) : null,
-                UserId = Session["UserId"] != null ? (int?)Convert.ToInt32(Session["UserId"]) : null,
-                SocietyId = null,
-                SubjectId = Convert.ToInt32(ddlSubject.SelectedValue),  // ✅ tag with subject
-                Title = txtTitle.Text.Trim(),
-                EventType = ddlEventType.SelectedValue,
-                StartTime = startDate,
-                EndTime = endDate,
-                IsAllDay = chkAllDay.Checked
-            };
+                CalendarGC obj = new CalendarGC
+                {
+                    InstituteId = InstituteId,
+                    UserId = UserId,
+                    SessionId = SessionId,
+                    SocietyId = SocietyId,
+                    SubjectId = Convert.ToInt32(ddlSubject.SelectedValue),
+                    Title = txtTitle.Text.Trim(),
+                    EventType = ddlEventType.SelectedValue,
+                    StartTime = startDate,
+                    EndTime = endDate,
+                    IsAllDay = chkAllDay.Checked
+                };
 
-            bl.AddEvent(obj);
+                bl.AddEvent(obj);
 
-            txtTitle.Text = "";
-            txtStartDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
-            txtEndDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
-            chkAllDay.Checked = false;
-            ddlSubject.SelectedIndex = 0;
+                txtTitle.Text = "";
+                txtStartDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
+                txtEndDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
+                chkAllDay.Checked = false;
+                ddlSubject.SelectedIndex = 0;
 
-            ShowMsg(lblMessage, "✅ Event saved successfully!", true);
-            ViewState["CurrentDate"] = startDate;
-            hfReopenModal.Value = "";
-            BindAll();
+                ShowMsg(lblMessage, "✅ Event saved successfully!", true);
+                ViewState["CurrentDate"] = startDate;
+                hfReopenModal.Value = "";
+                BindAll();
+
+                ScriptManager.RegisterStartupScript(this, GetType(), "hideModal",
+                    "var modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal')); if(modal) modal.hide();", true);
+            }
+            catch (Exception ex)
+            {
+                ShowMsg(lblMessage, $"Error saving event: {ex.Message}", false);
+            }
         }
 
         protected void gvEvents_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            int eventId = Convert.ToInt32(e.CommandArgument);
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-
-            if (e.CommandName == "EditEvent")
+            try
             {
-                DateTime groupStart, groupEnd;
-                bl.GetEventGroupRange(eventId, instituteId, out groupStart, out groupEnd);
+                int eventId = Convert.ToInt32(e.CommandArgument);
+                int instituteId = InstituteId;
 
-                CalendarGC ev = bl.GetEventById(eventId);
+                if (e.CommandName == "EditEvent")
+                {
+                    DateTime groupStart, groupEnd;
+                    bl.GetEventGroupRange(eventId, instituteId, out groupStart, out groupEnd);
 
-                hfEditEventId.Value = eventId.ToString();
-                txtEditTitle.Text = ev.Title;
-                ddlEditEventType.SelectedValue = ev.EventType;
-                txtEditStartDate.Text = groupStart.ToString("yyyy-MM-dd");
-                txtEditEndDate.Text = groupEnd.ToString("yyyy-MM-dd");
-                chkEditAllDay.Checked = ev.IsAllDay;
+                    CalendarGC ev = bl.GetEventById(eventId);
 
-                // Pre-select the subject
-                if (ev.SubjectId.HasValue)
-                    ddlEditSubject.SelectedValue = ev.SubjectId.Value.ToString();
+                    if (ev != null)
+                    {
+                        hfEditEventId.Value = eventId.ToString();
+                        txtEditTitle.Text = ev.Title;
+                        ddlEditEventType.SelectedValue = ev.EventType;
+                        txtEditStartDate.Text = groupStart.ToString("yyyy-MM-dd");
+                        txtEditEndDate.Text = groupEnd.ToString("yyyy-MM-dd");
+                        chkEditAllDay.Checked = ev.IsAllDay;
 
-                hfReopenModal.Value = "editEventModal";
-                BindAll();
+                        if (ev.SubjectId.HasValue && ev.SubjectId.Value > 0)
+                        {
+                            if (ddlEditSubject.Items.FindByValue(ev.SubjectId.Value.ToString()) != null)
+                            {
+                                ddlEditSubject.SelectedValue = ev.SubjectId.Value.ToString();
+                            }
+                        }
+                        else
+                        {
+                            ddlEditSubject.SelectedIndex = 0;
+                        }
+
+                        hfReopenModal.Value = "editEventModal";
+                        BindAll();
+                    }
+                    else
+                    {
+                        ShowMsg(lblMessage, "Event not found.", false);
+                    }
+                }
+                else if (e.CommandName == "DeleteEvent")
+                {
+                    bl.DeleteEventGroup(eventId, instituteId);
+                    hfReopenModal.Value = "";
+                    BindAll();
+                    ShowMsg(lblMessage, "Event deleted successfully!", true);
+                }
             }
-            else if (e.CommandName == "DeleteEvent")
+            catch (Exception ex)
             {
-                bl.DeleteEventGroup(eventId, instituteId);
-                hfReopenModal.Value = "";
-                BindAll();
+                ShowMsg(lblMessage, $"Error: {ex.Message}", false);
             }
         }
 
@@ -207,6 +323,12 @@ namespace LMS_Project.Teacher
             hfReopenModal.Value = "editEventModal";
             if (!Page.IsValid) return;
 
+            if (Session["UserId"] == null || Session["InstituteId"] == null || Session["SessionId"] == null)
+            {
+                ShowMsg(lblEditMessage, "Session expired. Please login again.", false);
+                return;
+            }
+
             DateTime startDate, endDate;
             if (!DateTime.TryParse(txtEditStartDate.Text, out startDate) ||
                 !DateTime.TryParse(txtEditEndDate.Text, out endDate))
@@ -214,37 +336,54 @@ namespace LMS_Project.Teacher
                 ShowMsg(lblEditMessage, "Invalid date format.", false);
                 return;
             }
+
             if (endDate < startDate)
             {
                 ShowMsg(lblEditMessage, "End date cannot be before start date.", false);
                 return;
             }
 
-            int eventId = Convert.ToInt32(hfEditEventId.Value);
-            int instituteId = Convert.ToInt32(Session["InstituteId"]);
-
-            bl.DeleteEventGroup(eventId, instituteId);
-
-            CalendarGC obj = new CalendarGC
+            if (string.IsNullOrEmpty(ddlEditSubject.SelectedValue))
             {
-                InstituteId = instituteId,
-                UserId = Session["UserId"] != null ? (int?)Convert.ToInt32(Session["UserId"]) : null,
-                SocietyId = null,
-                SubjectId = !string.IsNullOrEmpty(ddlEditSubject.SelectedValue)
-                                ? (int?)Convert.ToInt32(ddlEditSubject.SelectedValue)
-                                : null,
-                Title = txtEditTitle.Text.Trim(),
-                EventType = ddlEditEventType.SelectedValue,
-                StartTime = startDate,
-                EndTime = endDate,
-                IsAllDay = chkEditAllDay.Checked
-            };
+                ShowMsg(lblEditMessage, "Please select a subject.", false);
+                return;
+            }
 
-            bl.AddEvent(obj);
+            try
+            {
+                int eventId = Convert.ToInt32(hfEditEventId.Value);
+                int instituteId = InstituteId;
 
-            hfReopenModal.Value = "";
-            ViewState["CurrentDate"] = startDate;
-            BindAll();
+                bl.DeleteEventGroup(eventId, instituteId);
+
+                CalendarGC obj = new CalendarGC
+                {
+                    InstituteId = instituteId,
+                    UserId = UserId,
+                    SessionId = SessionId,
+                    SocietyId = SocietyId,
+                    SubjectId = Convert.ToInt32(ddlEditSubject.SelectedValue),
+                    Title = txtEditTitle.Text.Trim(),
+                    EventType = ddlEditEventType.SelectedValue,
+                    StartTime = startDate,
+                    EndTime = endDate,
+                    IsAllDay = chkEditAllDay.Checked
+                };
+
+                bl.AddEvent(obj);
+
+                hfReopenModal.Value = "";
+                ViewState["CurrentDate"] = startDate;
+                BindAll();
+                ShowMsg(lblMessage, "✅ Event updated successfully!", true);
+
+                ScriptManager.RegisterStartupScript(this, GetType(), "hideEditModal",
+                    "var modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal')); if(modal) modal.hide();", true);
+            }
+            catch (Exception ex)
+            {
+                ShowMsg(lblEditMessage, $"Error updating event: {ex.Message}", false);
+            }
         }
 
         void ShowMsg(System.Web.UI.WebControls.Label lbl, string msg, bool success)

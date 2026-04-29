@@ -1,0 +1,11 @@
+﻿fastapi
+uvicorn
+openai-whisper
+requests
+faiss-cpu
+sentence-transformers
+python-docx
+PyPDF2
+numpy
+scipy
+torch

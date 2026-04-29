@@ -165,13 +165,13 @@ namespace LearningManagementSystem.BL
             SqlCommand cmd = new SqlCommand(@"
         SELECT
             S.SubjectId,
-            ISNULL(S.SubjectCode, '')   AS SubjectCode,
+            ISNULL(S.SubjectCode, '')    AS SubjectCode,
             S.SubjectName,
-            ISNULL(S.Duration, '')      AS Duration,
-            ISNULL(SEC.SectionName, '') AS SectionName,
-            ISNULL(ST.StreamName,   '') AS StreamName,
-            ISNULL(CO.CourseName,   '') AS CourseName,
+            ISNULL(S.Duration, '')       AS Duration,
+            ISNULL(SEC.SectionName, '')  AS SectionName,
             ASY.SessionName,
+            ''                           AS StreamName,
+            ''                           AS CourseName,
             (
                 SELECT COUNT(DISTINCT ass.UserId)
                 FROM   AssignStudentSubject ass
@@ -179,27 +179,21 @@ namespace LearningManagementSystem.BL
                   AND  ass.SessionId   = SF.SessionId
                   AND  ass.InstituteId = SF.InstituteId
             ) AS StudentCount
-        FROM   SubjectFaculty        SF
-        JOIN   Subjects              S   ON S.SubjectId   = SF.SubjectId
-        JOIN   AcademicSessions      ASY ON ASY.SessionId = SF.SessionId
-        LEFT JOIN Sections           SEC ON SEC.SectionId = SF.SectionId
-        LEFT JOIN LevelSemesterSubjects LSS ON LSS.SubjectId = SF.SubjectId
-                                           AND LSS.SessionId = SF.SessionId
-        LEFT JOIN Streams            ST  ON ST.StreamId   = LSS.StreamId
-        LEFT JOIN Courses            CO  ON CO.CourseId   = LSS.CourseId
+        FROM   SubjectFaculty       SF
+        INNER JOIN Subjects         S   ON S.SubjectId   = SF.SubjectId
+        LEFT  JOIN Sections         SEC ON SEC.SectionId = SF.SectionId
+        INNER JOIN AcademicSessions ASY ON ASY.SessionId = SF.SessionId
         WHERE  SF.TeacherId   = @TeacherId
           AND  SF.InstituteId = @InstituteId
           AND  SF.SessionId   = @SessionId
           AND  ISNULL(SF.IsActive, 1) = 1
-          AND (@SectionId = 0 OR SF.SectionId  = @SectionId)
-          AND (@StreamId  = 0 OR LSS.StreamId  = @StreamId)
+          AND (@SectionId = 0 OR SF.SectionId = @SectionId)
         ORDER BY S.SubjectName");
 
             cmd.Parameters.AddWithValue("@TeacherId", teacherId);
             cmd.Parameters.AddWithValue("@InstituteId", instituteId);
-            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId == 0 ? 1 : sessionId);
             cmd.Parameters.AddWithValue("@SectionId", sectionId);
-            cmd.Parameters.AddWithValue("@StreamId", streamId);
             return dl.GetDataTable(cmd);
         }
 
@@ -209,6 +203,7 @@ namespace LearningManagementSystem.BL
             foreach (DataRow row in dt.Rows)
                 list.Add(new
                 {
+                    SubjectId = Convert.ToInt32(row["SubjectId"]),
                     SubjectName = row["SubjectName"].ToString(),
                     StudentCount = Convert.ToInt32(row["StudentCount"])
                 });
@@ -371,6 +366,271 @@ namespace LearningManagementSystem.BL
                 );
             }
             return result;
+        }
+
+        public DataTable GetStudentsByDivision(int teacherId, int instituteId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        SELECT 
+            ISNULL(sec.SectionName, 'Unassigned') AS Division,
+            COUNT(DISTINCT ass.UserId)             AS StudentCount
+        FROM   SubjectFaculty            SF
+        JOIN   AssignStudentSubject      ass 
+               ON  ass.SubjectId   = SF.SubjectId
+               AND ass.SessionId   = SF.SessionId
+        LEFT JOIN StudentAcademicDetails sad 
+               ON  sad.UserId      = ass.UserId
+        LEFT JOIN Sections               sec 
+               ON  sec.SectionId   = sad.SectionId
+        WHERE  SF.TeacherId   = @TeacherId
+          AND  SF.InstituteId = @InstituteId
+          AND  SF.SessionId   = @SessionId
+          AND  ISNULL(SF.IsActive, 1) = 1
+        GROUP BY sec.SectionName
+        ORDER BY StudentCount DESC
+    ");
+
+            cmd.Parameters.AddWithValue("@TeacherId", teacherId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            return dl.GetDataTable(cmd);
+        }
+
+        public DataTable GetStudentAnalytics(int teacherId, int instituteId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        SELECT
+            COUNT(DISTINCT ass.UserId) AS TotalStudents,
+            COUNT(DISTINCT SF.SubjectId) AS TotalSubjects,
+            COUNT(DISTINCT sad.SectionId) AS TotalDivisions,
+            ISNULL(
+                CAST(ROUND(
+                    CAST(COUNT(DISTINCT ass.UserId) AS FLOAT) / 
+                    NULLIF(COUNT(DISTINCT SF.SubjectId), 0)
+                , 1) AS VARCHAR), '0'
+            ) AS AvgStudentsPerSubject
+        FROM   SubjectFaculty            SF
+        JOIN   AssignStudentSubject      ass 
+               ON  ass.SubjectId   = SF.SubjectId
+               AND ass.SessionId   = SF.SessionId
+        LEFT JOIN StudentAcademicDetails sad 
+               ON  sad.UserId      = ass.UserId
+        WHERE  SF.TeacherId   = @TeacherId
+          AND  SF.InstituteId = @InstituteId
+          AND  SF.SessionId   = @SessionId
+          AND  ISNULL(SF.IsActive, 1) = 1
+    ");
+
+            cmd.Parameters.AddWithValue("@TeacherId", teacherId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            return dl.GetDataTable(cmd);
+        }
+
+        public string GetDivisionChartJson(DataTable dt)
+        {
+            var list = new List<object>();
+            foreach (DataRow row in dt.Rows)
+                list.Add(new
+                {
+                    Division = row["Division"].ToString(),
+                    StudentCount = Convert.ToInt32(row["StudentCount"])
+                });
+            return new JavaScriptSerializer().Serialize(list);
+        }
+        // ════════════════════════════════════════════════════════════
+        // STUDENT PERFORMANCE — KPI SUMMARY
+        // ════════════════════════════════════════════════════════════
+        public DataTable GetPerformanceKPIs(int teacherId, int instituteId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        SELECT
+            ISNULL(CAST(ROUND(AVG(CAST(asub.MarksObtained AS FLOAT)), 1) AS VARCHAR), '0') AS AvgMarks,
+            ISNULL(MAX(asub.MarksObtained), 0)   AS HighestMarks,
+            ISNULL(MIN(asub.MarksObtained), 0)   AS LowestMarks,
+            COUNT(asub.SubmissionId)              AS TotalGraded
+        FROM   AssignmentSubmissions asub
+        JOIN   Assignments           a    ON a.AssignmentId  = asub.AssignmentId
+        JOIN   SubjectFaculty        SF   ON SF.SubjectId    = a.SubjectId
+        WHERE  SF.TeacherId    = @TeacherId
+          AND  SF.InstituteId  = @InstituteId
+          AND  SF.SessionId    = @SessionId
+          AND  ISNULL(SF.IsActive, 1) = 1
+          AND  asub.MarksObtained IS NOT NULL");
+
+            cmd.Parameters.AddWithValue("@TeacherId", teacherId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            return dl.GetDataTable(cmd);
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // TOP 5 STUDENTS
+        // ════════════════════════════════════════════════════════════
+        public DataTable GetTopStudents(int teacherId, int instituteId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        SELECT TOP 5
+            asub.StudentId,
+            up.FullName                                           AS StudentName,
+            sub.SubjectName,
+            asub.MarksObtained,
+            a.MaxMarks,
+            ISNULL(
+                CAST(ROUND(
+                    CAST(asub.MarksObtained AS FLOAT) /
+                    NULLIF(a.MaxMarks, 0) * 100, 0)
+                AS INT), 0)                                       AS Percentage
+        FROM   AssignmentSubmissions asub
+        JOIN   Assignments           a    ON a.AssignmentId  = asub.AssignmentId
+        JOIN   Subjects              sub  ON sub.SubjectId   = a.SubjectId
+        JOIN   SubjectFaculty        SF   ON SF.SubjectId    = a.SubjectId
+        JOIN   UserProfile           up   ON up.UserId       = asub.StudentId
+        WHERE  SF.TeacherId    = @TeacherId
+          AND  SF.InstituteId  = @InstituteId
+          AND  SF.SessionId    = @SessionId
+          AND  ISNULL(SF.IsActive, 1) = 1
+          AND  asub.MarksObtained IS NOT NULL
+          AND  a.MaxMarks > 0
+        ORDER BY
+            CAST(asub.MarksObtained AS FLOAT) / NULLIF(a.MaxMarks, 0) DESC");
+
+            cmd.Parameters.AddWithValue("@TeacherId", teacherId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            return dl.GetDataTable(cmd);
+        }
+
+        public DataTable GetLowPerformers(int teacherId, int instituteId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        SELECT TOP 5
+            asub.StudentId,
+            up.FullName                                           AS StudentName,
+            sub.SubjectName,
+            asub.MarksObtained,
+            a.MaxMarks,
+            ISNULL(
+                CAST(ROUND(
+                    CAST(asub.MarksObtained AS FLOAT) /
+                    NULLIF(a.MaxMarks, 0) * 100, 0)
+                AS INT), 0)                                       AS Percentage
+        FROM   AssignmentSubmissions asub
+        JOIN   Assignments           a    ON a.AssignmentId  = asub.AssignmentId
+        JOIN   Subjects              sub  ON sub.SubjectId   = a.SubjectId
+        JOIN   SubjectFaculty        SF   ON SF.SubjectId    = a.SubjectId
+        JOIN   UserProfile           up   ON up.UserId       = asub.StudentId
+        WHERE  SF.TeacherId    = @TeacherId
+          AND  SF.InstituteId  = @InstituteId
+          AND  SF.SessionId    = @SessionId
+          AND  ISNULL(SF.IsActive, 1) = 1
+          AND  asub.MarksObtained IS NOT NULL
+          AND  a.MaxMarks > 0
+          AND  (CAST(asub.MarksObtained AS FLOAT) / NULLIF(a.MaxMarks, 0) * 100) < 50
+        ORDER BY
+            CAST(asub.MarksObtained AS FLOAT) / NULLIF(a.MaxMarks, 0) ASC");
+
+            cmd.Parameters.AddWithValue("@TeacherId", teacherId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            return dl.GetDataTable(cmd);
+        }
+
+
+        // ════════════════════════════════════════════════════════════
+        // AVG MARKS PER SUBJECT
+        // ════════════════════════════════════════════════════════════
+        public DataTable GetAvgMarksPerSubject(int teacherId, int instituteId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        SELECT
+            sub.SubjectName,
+            ISNULL(a.MaxMarks, 0)                                AS MaxMarks,
+            CAST(ROUND(AVG(CAST(asub.MarksObtained AS FLOAT)), 1)
+                 AS DECIMAL(5,1))                                AS AvgMarks
+        FROM   AssignmentSubmissions asub
+        JOIN   Assignments           a    ON a.AssignmentId  = asub.AssignmentId
+        JOIN   Subjects              sub  ON sub.SubjectId   = a.SubjectId
+        JOIN   SubjectFaculty        SF   ON SF.SubjectId    = a.SubjectId
+        WHERE  SF.TeacherId    = @TeacherId
+          AND  SF.InstituteId  = @InstituteId
+          AND  SF.SessionId    = @SessionId
+          AND  ISNULL(SF.IsActive, 1) = 1
+          AND  asub.MarksObtained IS NOT NULL
+        GROUP BY sub.SubjectName, a.MaxMarks
+        ORDER BY AvgMarks DESC");
+
+            cmd.Parameters.AddWithValue("@TeacherId", teacherId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
+            DataTable dt = dl.GetDataTable(cmd);
+
+            // Assign a color to each row for the pie legend
+            string[] colors = {
+        "#1565c0","#0288d1","#5e35b1","#2e7d32",
+        "#ef6c00","#c62828","#00838f","#4527a0"
+    };
+            dt.Columns.Add("Color", typeof(string));
+            int i = 0;
+            foreach (DataRow row in dt.Rows)
+            {
+                row["Color"] = colors[i % colors.Length];
+                i++;
+            }
+
+            return dt;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // AVG MARKS CHART JSON (for pie chart)
+        // ════════════════════════════════════════════════════════════
+        public string GetAvgMarksChartJson(DataTable dt)
+        {
+            var list = new List<object>();
+            foreach (DataRow row in dt.Rows)
+                list.Add(new
+                {
+                    SubjectName = row["SubjectName"].ToString(),
+                    AvgMarks = Convert.ToDouble(row["AvgMarks"]),
+                    MaxMarks = Convert.ToInt32(row["MaxMarks"]),
+                    Color = row["Color"].ToString()
+                });
+
+            return new JavaScriptSerializer().Serialize(list);
+        }
+        public DataTable GetStudentMarksDetail(int studentId, int teacherId, int instituteId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+        SELECT
+            asub.SubmissionId,
+            a.Title                                               AS AssignmentTitle,
+            sub.SubjectName,
+            asub.MarksObtained,
+            a.MaxMarks,
+            ISNULL(
+                CAST(ROUND(
+                    CAST(asub.MarksObtained AS FLOAT) /
+                    NULLIF(a.MaxMarks, 0) * 100, 0)
+                AS INT), 0)                                       AS Percentage,
+            CONVERT(VARCHAR(11), asub.SubmittedOn, 106)          AS SubmittedOn
+        FROM   AssignmentSubmissions asub
+        JOIN   Assignments           a    ON a.AssignmentId  = asub.AssignmentId
+        JOIN   Subjects              sub  ON sub.SubjectId   = a.SubjectId
+        JOIN   SubjectFaculty        SF   ON SF.SubjectId    = a.SubjectId
+        WHERE  asub.StudentId  = @StudentId
+          AND  SF.TeacherId    = @TeacherId
+          AND  SF.InstituteId  = @InstituteId
+          AND  SF.SessionId    = @SessionId
+          AND  ISNULL(SF.IsActive, 1) = 1
+          AND  asub.MarksObtained IS NOT NULL
+        ORDER BY asub.SubmittedOn ASC");
+
+            cmd.Parameters.AddWithValue("@StudentId", studentId);
+            cmd.Parameters.AddWithValue("@TeacherId", teacherId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            return dl.GetDataTable(cmd);
         }
     }
 }

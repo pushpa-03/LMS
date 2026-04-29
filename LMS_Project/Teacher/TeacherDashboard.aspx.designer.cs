@@ -87,49 +87,49 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.Label lblTotalVideos;
 
         /// <summary>
-        /// ddlFilterSession control.
+        /// pnlSubjectKPIs control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlFilterSession;
+        protected global::System.Web.UI.WebControls.Panel pnlSubjectKPIs;
 
         /// <summary>
-        /// ddlFilterSection control.
+        /// lblKpiTotalSubjects control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlFilterSection;
+        protected global::System.Web.UI.WebControls.Label lblKpiTotalSubjects;
 
         /// <summary>
-        /// ddlFilterStream control.
+        /// lblKpiTotalStudents control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlFilterStream;
+        protected global::System.Web.UI.WebControls.Label lblKpiTotalStudents;
 
         /// <summary>
-        /// pnlSubjectsList control.
+        /// lblKpiAvgStudents control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlSubjectsList;
+        protected global::System.Web.UI.WebControls.Label lblKpiAvgStudents;
 
         /// <summary>
-        /// rptSubjectsList control.
+        /// lblKpiTopSubject control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptSubjectsList;
+        protected global::System.Web.UI.WebControls.Label lblKpiTopSubject;
 
         /// <summary>
         /// pnlSubjectsChart control.
@@ -148,6 +148,24 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.HiddenField hfChartData;
+
+        /// <summary>
+        /// pnlSubjectTable control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlSubjectTable;
+
+        /// <summary>
+        /// rptSubjectTable control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptSubjectTable;
 
         /// <summary>
         /// pnlNoSubjects control.
@@ -186,6 +204,42 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.DropDownList ddlStudentStream;
 
         /// <summary>
+        /// lblAnalyticStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblAnalyticStudents;
+
+        /// <summary>
+        /// lblAnalyticDivisions control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblAnalyticDivisions;
+
+        /// <summary>
+        /// lblAnalyticSubjects control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblAnalyticSubjects;
+
+        /// <summary>
+        /// lblAnalyticAvg control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblAnalyticAvg;
+
+        /// <summary>
         /// pnlStudents control.
         /// </summary>
         /// <remarks>
@@ -195,13 +249,13 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.Panel pnlStudents;
 
         /// <summary>
-        /// rptStudents control.
+        /// hfDivisionData control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptStudents;
+        protected global::System.Web.UI.WebControls.HiddenField hfDivisionData;
 
         /// <summary>
         /// pnlNoStudents control.
@@ -292,5 +346,140 @@ namespace LMS_Project.Teacher
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Panel pnlNoAsgSummary;
+
+        /// <summary>
+        /// pnlPerfKPIs control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlPerfKPIs;
+
+        /// <summary>
+        /// lblPerfAvgMarks control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblPerfAvgMarks;
+
+        /// <summary>
+        /// lblPerfHighest control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblPerfHighest;
+
+        /// <summary>
+        /// lblPerfLowest control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblPerfLowest;
+
+        /// <summary>
+        /// lblPerfSubmissions control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblPerfSubmissions;
+
+        /// <summary>
+        /// pnlTopStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlTopStudents;
+
+        /// <summary>
+        /// rptTopStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptTopStudents;
+
+        /// <summary>
+        /// pnlNoTopStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlNoTopStudents;
+
+        /// <summary>
+        /// pnlLowStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlLowStudents;
+
+        /// <summary>
+        /// rptLowStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptLowStudents;
+
+        /// <summary>
+        /// pnlNoLowStudents control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlNoLowStudents;
+
+        /// <summary>
+        /// pnlAvgMarksChart control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlAvgMarksChart;
+
+        /// <summary>
+        /// hfAvgMarksData control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfAvgMarksData;
+
+        /// <summary>
+        /// rptAvgMarks control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptAvgMarks;
+
+        /// <summary>
+        /// pnlNoAvgMarks control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlNoAvgMarks;
     }
 }

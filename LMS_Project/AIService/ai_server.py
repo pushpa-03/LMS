@@ -251,4 +251,3 @@ def material_ask(data: dict):
         return get_full_response(prompt)
     except Exception as e:
         return f"Error: {str(e)}"
-

@@ -7,24 +7,31 @@
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
 
-        <div class="toast-container position-fixed top-0 end-0 p-3">
-            <div id="liveToast" class="toast align-items-center text-white bg-success border-0">
-                <div class="d-flex">
+        <div class="toast-container position-fixed top-3 end-0 p-3" style="z-index:9999;">
+            <div id="liveToast" class="toast text-white border-0"
+                 role="alert"
+                 aria-live="assertive"
+                 aria-atomic="true">
+
+                <div class="d-flex bg-body-primary">
                     <div class="toast-body" id="toastMsg"></div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                        data-bs-dismiss="toast"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white me-2 m-auto"
+                            data-bs-dismiss="toast"></button>
                 </div>
+
             </div>
         </div>
+
     <asp:HiddenField ID="hfCourseId" runat="server" />
 
     <asp:Label ID="lblMsg" runat="server"
     Visible="false"
     CssClass="alert d-block mb-3"
     EnableViewState="false" />
-
-    <!-- HEADER -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    
+    <!-- ================= HEADER ================= -->
+   <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
         <div>
             <h3 class="fw-bold mb-1">Courses Management</h3>
             <small class="text-muted">Admin Panel to manage courses</small>
@@ -37,12 +44,8 @@
             </small>
         </div>
 
-        <div class="d-flex gap-2">
-            <%--<button class="btn btn-sm btn-outline-dark rounded-pill px-3"
-                data-bs-toggle="collapse"
-                data-bs-target="#stream_<%# Eval("StreamId") %>">
-                👁 View
-            </button>--%>
+        <div class="d-flex gap-2 w-md-auto">
+           
 
             <div class="dropdown">
                 <button class="btn btn-outline-dark rounded-pill dropdown-toggle"
@@ -134,6 +137,65 @@
         </div>
     </div>
 
+     <%--course mapping to next session--%>
+    <div class="card shadow-sm border-0 mb-4 p-3">
+
+        <h5 class="fw-bold mb-3">🔁 Course Session Mapping</h5>
+
+        <div class="row g-3">
+
+            <!-- FROM SESSION -->
+            <div class="col-md-4">
+                <asp:DropDownList ID="ddlFromSession" runat="server"
+                    CssClass="form-select" AutoPostBack="true"
+                    OnSelectedIndexChanged="ddlFromSession_SelectedIndexChanged" />
+            </div>
+
+            <!-- TO SESSION -->
+            <div class="col-md-4">
+                <asp:DropDownList ID="ddlToSession" runat="server"
+                    CssClass="form-select" />
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="col-md-4 d-flex gap-2">
+                <asp:Button ID="btnCopyAll" runat="server"
+                    Text="Copy All"
+                    CssClass="btn btn-success w-100"
+                    OnClick="btnCopyAll_Click" />
+
+                <asp:Button ID="btnCopySelected" runat="server"
+                    Text="Copy Selected"
+                    CssClass="btn btn-primary w-100"
+                    OnClick="btnCopySelected_Click" />
+            </div>
+
+        </div>
+
+    </div>
+
+    <asp:GridView ID="gvMappingCourses" runat="server"
+    CssClass="table table-bordered"
+    AutoGenerateColumns="false">
+
+    <Columns>
+
+        <asp:TemplateField>
+            <ItemTemplate>
+                <asp:CheckBox ID="chkSelect" runat="server" />
+                <asp:HiddenField ID="hfCourseId" runat="server"
+                    Value='<%# Eval("CourseId") %>' />
+            </ItemTemplate>
+        </asp:TemplateField>
+
+        <asp:BoundField DataField="CourseName" HeaderText="Course" />
+        <asp:BoundField DataField="CourseCode" HeaderText="Code" />
+
+    </Columns>
+
+</asp:GridView>
+
+
     <!-- TABLE -->
     <div class="card border-0 shadow rounded-4">
 
@@ -177,6 +239,7 @@
                                         AutoGenerateColumns="false"
                                         GridLines="None"
                                         OnRowCommand="gvCourses_RowCommand"
+                                        OnRowDataBound="gvCourses_RowDataBound"
                                         AllowPaging="true"
                                         PageSize="5"
                                         OnPageIndexChanging="gvCourses_PageIndexChanging">
@@ -264,6 +327,7 @@
 
         </div>
     </div>
+
 
     <!-- ADD MODAL -->
     <div class="modal fade" id="CreateModal">
@@ -471,6 +535,49 @@
         .btn:hover {
             transform: translateY(-2px);
         }
+
+        @media (max-width: 768px) {
+
+    .stream-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .stream-title {
+        font-size: 16px;
+    }
+
+    .course-table td {
+        font-size: 13px;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    .modal-dialog {
+        margin: 10px;
+    }
+
+    .toast {
+        width: 100%;
+    }
+}
     </style>
+
+    <script>
+
+        document.body.classList.add("loading");
+
+        return confirm("Are you sure you want to copy courses?");
+
+        if (fromSession == toSession) {
+            ShowMsg("Source and destination session cannot be same.", false);
+            return;
+        }
+
+    </script>
 
 </asp:Content>

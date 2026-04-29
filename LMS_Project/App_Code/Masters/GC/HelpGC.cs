@@ -7,8 +7,7 @@ namespace LearningManagementSystem.GC
         public int HelpId { get; set; }
         public int SocietyId { get; set; }
         public int InstituteId { get; set; }
-
-        public int SessionId { get; set; }
+        public int SessionId { get; set; }   // ← THIS WAS MISSING
         public int UserId { get; set; }
         public string Username { get; set; }
         public string RoleName { get; set; }
@@ -25,6 +24,7 @@ namespace LearningManagementSystem.GC
         public int HelpId { get; set; }
         public int SocietyId { get; set; }
         public int InstituteId { get; set; }
+        public int SessionId { get; set; }
         public int AdminId { get; set; }
         public string Reply { get; set; }
         public DateTime RepliedOn { get; set; }

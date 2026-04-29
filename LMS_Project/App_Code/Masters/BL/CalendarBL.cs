@@ -151,13 +151,14 @@ public class CalendarBL
             SqlCommand cmd = new SqlCommand();
             cmd.CommandText = @"
                 INSERT INTO CalendarEvents
-                (UserId, SocietyId, InstituteId, SubjectId, Title, EventType, StartTime, EndTime, IsAllDay)
+                (UserId, SocietyId, InstituteId, SessionId, SubjectId, Title, EventType, StartTime, EndTime, IsAllDay)
                 VALUES
-                (@uid, @sid, @iid, @subjectId, @title, @type, @start, @end, @allday)";
+                (@uid, @sid, @iid, @sessionId, @subjectId, @title, @type, @start, @end, @allday)";
 
             cmd.Parameters.AddWithValue("@uid", obj.UserId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@sid", obj.SocietyId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@iid", obj.InstituteId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@sessionId", obj.SessionId);
             cmd.Parameters.AddWithValue("@subjectId", obj.SubjectId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@title", obj.Title);
             cmd.Parameters.AddWithValue("@type", obj.EventType);
@@ -234,6 +235,8 @@ public class CalendarBL
         groupStart = Convert.ToDateTime(dt.Rows[0]["GroupStart"]);
         groupEnd = Convert.ToDateTime(dt.Rows[0]["GroupEnd"]);
     }
+
+    // ── GET MONTHLY EVENTS FOR STUDENT (their enrolled subjects + institute-wide) ──
     public DataTable GetEventsByMonthForStudent(int year, int month, int instituteId, int studentId)
     {
         SqlCommand cmd = new SqlCommand();

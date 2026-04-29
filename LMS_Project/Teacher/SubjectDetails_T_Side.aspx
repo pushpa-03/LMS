@@ -1,8 +1,9 @@
 ﻿<%@ Page Title="Subject Details" Language="C#" MasterPageFile="~/Teacher/TeacherMaster.master" AutoEventWireup="true" CodeBehind="SubjectDetails_T_Side.aspx.cs" Inherits="LMS_Project.Teacher.SubjectDetails_T_Side" %>
 
 <asp:Content ID="bodyContent" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
+
     <asp:HiddenField ID="hfSubjectId" runat="server" />
-<asp:HiddenField ID="hfChapterId" runat="server" />
+    <asp:HiddenField ID="hfChapterId" runat="server" />
 <asp:Label ID="lblMsg" runat="server" CssClass="alert d-block mt-3" Visible="false"></asp:Label>
 
     <div class="d-flex align-items-center mb-4">

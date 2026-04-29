@@ -1,9 +1,10 @@
-﻿using LMS.BL;
+﻿using LearningManagementSystem.BL;
+using LMS.BL;
 using LMS.GC;
 using System;
 using System.Data;
 using System.Web.UI;
-using LearningManagementSystem.BL;
+using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
@@ -25,6 +26,11 @@ namespace LearningManagementSystem.Admin
         {
             get { return ViewState["Filter"] != null ? ViewState["Filter"].ToString() : "1"; } // default ACTIVE
             set { ViewState["Filter"] = value; }
+        }
+
+        private bool IsSuperAdmin
+        {
+            get { return Session["RoleName"]?.ToString() == "SuperAdmin"; }
         }
 
         protected void Page_Load(object sender, EventArgs e)
@@ -93,9 +99,16 @@ namespace LearningManagementSystem.Admin
             lblInactive.Text = dt.Select("IsActive = false").Length.ToString();
         }
 
+
         // ================= SAVE =================
         protected void btnSave_Click(object sender, EventArgs e)
         {
+            if (IsSuperAdmin)
+            {
+                ShowMsg("SuperAdmin is restricted to view only.", false);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(txtStreamName.Text))
             {
                 ShowMsg("Stream name required.", false);
@@ -104,7 +117,7 @@ namespace LearningManagementSystem.Admin
 
             if (bl.IsStreamExists(CurrentInstituteId, txtStreamName.Text.Trim()))
             {
-                ShowMsg("Stream already exists.", false);
+                ShowMsg("Stream already exists (case-insensitive).", false);
                 return;
             }
 
@@ -112,7 +125,7 @@ namespace LearningManagementSystem.Admin
             {
                 SocietyId = CurrentSocietyId,
                 InstituteId = CurrentInstituteId,
-                SessionId = Convert.ToInt32(Session["CurrentSessionId"]), // ✅ NEW
+                SessionId = Convert.ToInt32(Session["CurrentSessionId"]),
                 StreamName = txtStreamName.Text.Trim()
             };
 
@@ -123,9 +136,16 @@ namespace LearningManagementSystem.Admin
             ShowMsg("Stream added successfully.", true);
         }
 
+
         // ================= GRID COMMAND =================
-        protected void gvStreams_RowCommand(object sender, System.Web.UI.WebControls.GridViewCommandEventArgs e)
+        protected void gvStreams_RowCommand(object sender, GridViewCommandEventArgs e)
         {
+            if (IsSuperAdmin)
+            {
+                ShowMsg("SuperAdmin cannot perform this action.", false);
+                return;
+            }
+
             int id = Convert.ToInt32(e.CommandArgument);
 
             if (e.CommandName == "EditRow")
@@ -139,34 +159,57 @@ namespace LearningManagementSystem.Admin
 
                     ScriptManager.RegisterStartupScript(
                         this, GetType(), "Edit",
-                        "var m=new bootstrap.Modal(document.getElementById('EditModal'));m.show();", true);
+                        "new bootstrap.Modal(document.getElementById('EditModal')).show();", true);
                 }
             }
             else if (e.CommandName == "Toggle")
             {
                 bl.ToggleStreamStatus(id, CurrentInstituteId);
                 LoadStreams();
+                ShowMsg("Status updated.", true);
             }
             else if (e.CommandName == "DeleteRow")
             {
                 bl.DeleteStream(id, CurrentInstituteId);
                 LoadStreams();
+                ShowMsg("Stream deleted.", true);
+            }
+        }
+
+        protected void gvStreams_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow && IsSuperAdmin)
+            {
+                foreach (Control ctrl in e.Row.Cells[1].Controls)
+                {
+                    if (ctrl is LinkButton btn)
+                    {
+                        btn.Enabled = false;
+                        btn.CssClass += " disabled";
+                    }
+                }
             }
         }
 
         // ================= UPDATE =================
         protected void btnUpdate_Click(object sender, EventArgs e)
         {
+            if (IsSuperAdmin)
+            {
+                ShowMsg("SuperAdmin cannot update data.", false);
+                return;
+            }
+
             if (string.IsNullOrEmpty(hfStreamId.Value))
             {
                 ShowMsg("Invalid update.", false);
                 return;
             }
 
-            if (bl.IsStreamExists(CurrentInstituteId, txtStreamNameEdit.Text.Trim(),
+            if (bl.IsStreamExists(CurrentInstituteId, txtStreamNameEdit.Text,
                                   Convert.ToInt32(hfStreamId.Value)))
             {
-                ShowMsg("Stream already exists.", false);
+                ShowMsg("Duplicate stream not allowed.", false);
                 return;
             }
 
@@ -180,9 +223,8 @@ namespace LearningManagementSystem.Admin
             bl.UpdateStream(model);
 
             LoadStreams();
-            ShowMsg("Stream updated successfully.", true);
+            ShowMsg("Stream updated.", true);
         }
-
         // ================= FILTER =================
         protected void Filter_Click(object sender, EventArgs e)
         {
@@ -207,21 +249,33 @@ namespace LearningManagementSystem.Admin
 
 
         // ================= MESSAGE =================
-        void ShowMsg(string msg, bool success)
+        private void ShowMsg(string msg, bool success)
         {
+            msg = msg.Replace("'", "\\'");
+
             string script = $@"
-        var toastEl = document.getElementById('liveToast');
-        var toastMsg = document.getElementById('toastMsg');
+                setTimeout(function() {{
 
-        toastMsg.innerText = '{msg}';
-        toastEl.classList.remove('bg-success','bg-danger');
-        toastEl.classList.add('{(success ? "bg-success" : "bg-danger")}');
+                    var toastEl = document.getElementById('liveToast');
+                    var toastMsg = document.getElementById('toastMsg');
 
-        var toast = new bootstrap.Toast(toastEl);
-        toast.show();
-    ";
+                    if (!toastEl || !toastMsg) return;
 
-            ScriptManager.RegisterStartupScript(this, GetType(), "toast", script, true);
+                    toastMsg.innerText = '{msg}';
+
+                    toastEl.classList.remove('bg-success','bg-danger');
+                    toastEl.classList.add('{(success ? "bg-success" : "bg-danger")}');
+
+                    var toast = bootstrap.Toast.getOrCreateInstance(toastEl, {{
+                        delay: 5000
+                    }});
+
+                    toast.show();
+
+                }}, 200);
+            ";
+
+            ScriptManager.RegisterStartupScript(this, GetType(), Guid.NewGuid().ToString(), script, true);
         }
     }
 }

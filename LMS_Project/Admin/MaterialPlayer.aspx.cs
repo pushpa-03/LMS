@@ -1,174 +1,5 @@
 ﻿//using System;
 //using System.Data;
-//using System.IO;
-//using System.Net.Http;
-//using System.Text;
-//using System.Web;
-//using System.Web.Services;
-//using Newtonsoft.Json; // Make sure you have Newtonsoft.Json installed via NuGet
-
-//namespace LMS_Project.Admin
-//{
-//    public partial class MaterialPlayer : System.Web.UI.Page
-//    {
-//        MaterialBL bl = new MaterialBL();
-//        int UserId => Convert.ToInt32(HttpContext.Current.Session["UserId"]);
-
-//        protected void Page_Load(object sender, EventArgs e)
-//        {
-//            if (!IsPostBack)
-//            {
-//                int materialId = Convert.ToInt32(Request.QueryString["MaterialId"]);
-
-
-//                LoadMaterial(materialId);
-//                LoadHistory(materialId);
-//            }
-//        }
-
-//        void LoadMaterial(int id)
-//        {
-//            DataTable dt = bl.GetMaterialById(id);
-
-//            if (dt.Rows.Count > 0)
-//            {
-//                lblTitle.Text = dt.Rows[0]["Title"].ToString();
-
-//                string path = dt.Rows[0]["FilePath"].ToString();
-//                string type = dt.Rows[0]["FileType"].ToString();
-
-//                // ✅ FIX HERE
-//                hfFilePath.Value = path;
-
-//                downloadLink.HRef = path;
-
-//                string viewer = "";
-
-//                if (type == ".pdf")
-//                    viewer = $"<iframe src='{path}' width='100%' height='400px'></iframe>";
-//                else
-//                    viewer = $"<iframe src='https://view.officeapps.live.com/op/embed.aspx?src={Request.Url.GetLeftPart(UriPartial.Authority) + path}' width='100%' height='400px'></iframe>";
-
-//                fileViewer.InnerHtml = viewer;
-//            }
-//        }
-
-//        void LoadHistory(int id)
-//        {
-//            rptHistory.DataSource = bl.GetHistory(id, UserId);
-//            rptHistory.DataBind();
-//        }
-
-//        // ---------------- AI CALLS ----------------
-
-//        [WebMethod]
-//        public static string GenerateQuiz(string materialId, string Path)
-//        {
-//            return SaveToHistory("material-quiz", materialId, Path, null);
-//        }
-
-//        [WebMethod]
-//        public static string GenerateNotes(string materialId, string filePath)
-//        {
-//            return SaveToHistory("material-notes", materialId, filePath, null);
-//        }
-
-//        [WebMethod]
-//        public static string AskDoubt(string materialId, string question, string filePath)
-//        {
-//            return SaveToHistory("material-ask", materialId, filePath, question);
-//        }
-
-//        [WebMethod]
-//        public static string SaveToHistory(string materialId, string type, string question, string response)
-//        {
-//            try
-//            {
-//                MaterialBL bl = new MaterialBL();
-//                int userId = Convert.ToInt32(HttpContext.Current.Session["UserId"]);
-
-//                bl.SaveAIHistory(new MaterialGC
-//                {
-//                    MaterialId = Convert.ToInt32(materialId),
-//                    UserId = userId,
-//                    Type = type,
-//                    Question = question,
-//                    Response = response
-//                });
-
-//                return "Saved";
-//            }
-//            catch (Exception ex)
-//            {
-//                return "Error: " + ex.Message;
-//            }
-//        }
-
-
-//        //[WebMethod]
-//        //public static string GenerateNotes(string materialId)
-//        //{
-//        //    MaterialBL bl = new MaterialBL();
-//        //    int userId = Convert.ToInt32(HttpContext.Current.Session["UserId"]);
-
-//        //    string filePath = HttpContext.Current.Request.Form["hfFilePath"];
-
-//        //    var client = new HttpClient();
-
-//        //    var res = client.PostAsync("http://127.0.0.1:8000/material-notes",
-//        //        new StringContent(
-//        //            $"{{\"file_path\":\"{filePath}\"}}",
-//        //            Encoding.UTF8, "application/json")).Result;
-
-//        //    string result = res.Content.ReadAsStringAsync().Result;
-
-//        //    bl.SaveAIHistory(new MaterialGC
-//        //    {
-//        //        MaterialId = Convert.ToInt32(materialId),
-//        //        UserId = userId,
-//        //        Type = "Notes",
-//        //        Question = "Generated Notes",
-//        //        Response = result
-//        //    });
-
-//        //    return result;
-//        //}
-
-//        //[WebMethod]
-//        //public static string AskDoubt(string materialId, string question)
-//        //{
-//        //    MaterialBL bl = new MaterialBL();
-//        //    int userId = Convert.ToInt32(HttpContext.Current.Session["UserId"]);
-
-//        //    string filePath = HttpContext.Current.Request.Form["hfFilePath"];
-
-//        //    var client = new HttpClient();
-
-//        //    var res = client.PostAsync("http://127.0.0.1:8000/material-ask",
-//        //        new StringContent(
-//        //            $"{{\"file_path\":\"{filePath}\",\"question\":\"{question}\"}}",
-//        //            Encoding.UTF8, "application/json")).Result;
-
-//        //    string answer = res.Content.ReadAsStringAsync().Result;
-
-//        //    bl.SaveAIHistory(new MaterialGC
-//        //    {
-//        //        MaterialId = Convert.ToInt32(materialId),
-//        //        UserId = userId,
-//        //        Type = "Doubt",
-//        //        Question = question,
-//        //        Response = answer
-//        //    });
-
-//        //    return answer;
-//        //}
-//    }
-//}
-
-//----------------------------------------------------------------------------------------------------------------------------------
-
-//using System;
-//using System.Data;
 //using System.Web;
 //using System.Web.Services;
 
@@ -177,12 +8,11 @@
 //    public partial class MaterialPlayer : System.Web.UI.Page
 //    {
 //        MaterialBL bl = new MaterialBL();
-//        // Securely get UserId from Session
 //        int UserId => Session["UserId"] != null ? Convert.ToInt32(Session["UserId"]) : 0;
 
 //        protected void Page_Load(object sender, EventArgs e)
 //        {
-//            if (UserId == 0) Response.Redirect("../Default.aspx"); // Admin security check
+//            if (UserId == 0) Response.Redirect("../Default.aspx");
 
 //            if (!IsPostBack)
 //            {
@@ -192,8 +22,6 @@
 //                    int materialId = Convert.ToInt32(mId);
 //                    LoadMaterial(materialId);
 //                    LoadHistory(materialId);
-
-//                    // Fix the Edit link - ensure the parameter name matches your AddMaterial page
 //                    lnkEdit.NavigateUrl = "AddMaterial.aspx?MaterialId=" + materialId;
 //                }
 //            }
@@ -211,31 +39,19 @@
 //                hfFilePath.Value = path;
 //                downloadLink.HRef = path;
 
-//                string viewer = "";
-//                // Handle different file types for the previewer
 //                if (type == ".pdf")
-//                {
-//                    viewer = $"<embed src='{path}' width='100%' height='100%' type='application/pdf'>";
-//                }
+//                    fileViewer.InnerHtml = $"<iframe src='{path}' width='100%' height='100%'></iframe>";
 //                else if (type == ".jpg" || type == ".png" || type == ".jpeg")
-//                {
-//                    viewer = $"<div class='text-center'><img src='{path}' class='img-fluid' style='max-height:550px;' /></div>";
-//                }
+//                    fileViewer.InnerHtml = $"<img src='{path}' class='img-fluid' style='max-height:550px;' />";
 //                else
-//                {
-//                    // For Word/Excel/PPT - using Office Online Viewer
-//                    string absolutePath = Request.Url.GetLeftPart(UriPartial.Authority) + path;
-//                    viewer = $"<iframe src='https://view.officeapps.live.com/op/embed.aspx?src={absolutePath}' width='100%' height='100%' frameborder='0'></iframe>";
-//                }
-
-//                fileViewer.InnerHtml = viewer;
+//                    fileViewer.InnerHtml = $"<iframe src='https://view.officeapps.live.com/op/embed.aspx?src={Request.Url.GetLeftPart(UriPartial.Authority) + path}' width='100%' height='100%'></iframe>";
 //            }
 //        }
 
 //        void LoadHistory(int id)
 //        {
-//            // Admin sees ALL history for this material to monitor AI quality
-//            rptHistory.DataSource = bl.GetHistory(id, 0); // Pass 0 to get all users or modify BL
+//            // Passing 0 usually indicates 'Get All' in your BL for Admins
+//            rptHistory.DataSource = bl.GetHistory(id, 0);
 //            rptHistory.DataBind();
 //        }
 
@@ -255,7 +71,6 @@
 //                    Question = question,
 //                    Response = response
 //                });
-
 //                return "Saved";
 //            }
 //            catch { return "Error"; }
@@ -263,84 +78,237 @@
 //    }
 //}
 
-//---------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Web;
 using System.Web.Services;
+using System.Web.UI.WebControls;
 
-namespace LMS_Project.Admin
+namespace LearningManagementSystem.Admin
 {
-    public partial class MaterialPlayer : System.Web.UI.Page
+    public partial class MaterialPlayer : BasePage
     {
-        MaterialBL bl = new MaterialBL();
-        int UserId => Session["UserId"] != null ? Convert.ToInt32(Session["UserId"]) : 0;
+        private readonly MaterialBL _bl = new MaterialBL();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (UserId == 0) Response.Redirect("../Default.aspx");
-
-            if (!IsPostBack)
+            try
             {
-                string mId = Request.QueryString["MaterialId"];
-                if (!string.IsNullOrEmpty(mId))
+                if (!int.TryParse(Request.QueryString["MaterialId"], out int materialId) || materialId <= 0)
                 {
-                    int materialId = Convert.ToInt32(mId);
+                    ShowMsg("Invalid or missing Material ID.", "warning");
+                    return;
+                }
+
+                if (!IsPostBack)
+                {
+                    hfMaterialId.Value = materialId.ToString();
                     LoadMaterial(materialId);
                     LoadHistory(materialId);
-                    lnkEdit.NavigateUrl = "AddMaterial.aspx?MaterialId=" + materialId;
+                    LogActivity(materialId);
                 }
             }
-        }
-
-        void LoadMaterial(int id)
-        {
-            DataTable dt = bl.GetMaterialById(id);
-            if (dt != null && dt.Rows.Count > 0)
+            catch (Exception ex)
             {
-                lblTitle.Text = dt.Rows[0]["Title"].ToString();
-                string path = dt.Rows[0]["FilePath"].ToString();
-                string type = dt.Rows[0]["FileType"].ToString().ToLower();
-
-                hfFilePath.Value = path;
-                downloadLink.HRef = path;
-
-                if (type == ".pdf")
-                    fileViewer.InnerHtml = $"<iframe src='{path}' width='100%' height='100%'></iframe>";
-                else if (type == ".jpg" || type == ".png" || type == ".jpeg")
-                    fileViewer.InnerHtml = $"<img src='{path}' class='img-fluid' style='max-height:550px;' />";
-                else
-                    fileViewer.InnerHtml = $"<iframe src='https://view.officeapps.live.com/op/embed.aspx?src={Request.Url.GetLeftPart(UriPartial.Authority) + path}' width='100%' height='100%'></iframe>";
+                ShowMsg("Error loading material: " + ex.Message, "danger");
             }
         }
 
-        void LoadHistory(int id)
+        // ── Load material & render viewer ─────────────────────────────────────
+        private void LoadMaterial(int materialId)
         {
-            // Passing 0 usually indicates 'Get All' in your BL for Admins
-            rptHistory.DataSource = bl.GetHistory(id, 0);
-            rptHistory.DataBind();
+            DataTable dt = _bl.GetMaterialById(materialId);
+
+            if (dt == null || dt.Rows.Count == 0)
+            {
+                ShowMsg("Material not found.", "warning");
+                return;
+            }
+
+            DataRow r = dt.Rows[0];
+
+            string title = r["Title"]?.ToString() ?? "Material";
+            string rawPath = r["FilePath"]?.ToString() ?? "";
+            string ext = (r["FileType"]?.ToString() ?? ".file").ToLower().Trim('.');
+            string chapter = r["ChapterName"]?.ToString() ?? "—";
+            string subject = r["SubjectName"]?.ToString() ?? "—";
+            string uploaded = r["UploadedOn"] != DBNull.Value
+                              ? Convert.ToDateTime(r["UploadedOn"]).ToString("dd MMM yyyy")
+                              : "—";
+
+            litTitle.Text = Server.HtmlEncode(title);
+            toolbarTitle.InnerText = title;
+            toolbarMeta.InnerHtml = $"<i class='fa fa-calendar me-1'></i>Uploaded: {uploaded}";
+            lnkDownload.HRef = rawPath;
+            hfFilePath.Value = rawPath;
+            hfFileType.Value = ext;
+
+            // File type badge
+            string badgeClass = GetBadgeClass(ext);
+            fileBadge.InnerText = "." + ext.ToUpper();
+            fileBadge.Attributes["class"] = "file-badge " + badgeClass;
+
+            // Render the viewer HTML
+            fileViewer.InnerHtml = BuildViewer(rawPath, ext, title);
+
+            // Info rows
+            var infoRows = new[]
+            {
+                new { Label = "Title",     Value = title   },
+                new { Label = "Chapter",   Value = chapter },
+                new { Label = "Subject",   Value = subject },
+                new { Label = "File Type", Value = "." + ext.ToUpper() },
+                new { Label = "Uploaded",  Value = uploaded }
+            };
+
+            var infoTable = new DataTable();
+            infoTable.Columns.Add("Label");
+            infoTable.Columns.Add("Value");
+            foreach (var row in infoRows)
+            {
+                DataRow nr = infoTable.NewRow();
+                nr["Label"] = row.Label;
+                nr["Value"] = row.Value;
+                infoTable.Rows.Add(nr);
+            }
+            rptInfo.DataSource = infoTable;
+            rptInfo.DataBind();
         }
 
-        [WebMethod]
-        public static string SaveToHistory(string materialId, string type, string question, string response)
+        // ── Build viewer HTML based on file type ──────────────────────────────
+        private string BuildViewer(string path, string ext, string title)
+        {
+            string safeTitle = Server.HtmlEncode(title);
+            string absUrl = GetAbsoluteUrl(path);
+
+            switch (ext)
+            {
+                case "pdf":
+                    return $"<iframe src='{absUrl}#toolbar=1&navpanes=1' width='100%' height='100%' title='{safeTitle}'></iframe>";
+
+                case "jpg":
+                case "jpeg":
+                case "png":
+                case "gif":
+                case "webp":
+                case "svg":
+                    return $"<img src='{absUrl}' alt='{safeTitle}' style='width:100%;height:100%;object-fit:contain;background:#f8f9fa' />";
+
+                case "mp4":
+                case "webm":
+                case "ogg":
+                case "mov":
+                    return $"<video src='{absUrl}' controls style='width:100%;height:100%;background:#000'></video>";
+
+                case "mp3":
+                case "wav":
+                case "ogg_audio":
+                    return $@"<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;background:#f8f9fa'>
+                                <i class='fa fa-music' style='font-size:4rem;color:var(--accent);opacity:.4'></i>
+                                <p style='font-weight:600;color:var(--ink)'>{safeTitle}</p>
+                                <audio src='{absUrl}' controls style='width:80%'></audio>
+                              </div>";
+
+                case "doc":
+                case "docx":
+                case "ppt":
+                case "pptx":
+                case "xls":
+                case "xlsx":
+                    // Office Online viewer
+                    string officeUrl = $"https://view.officeapps.live.com/op/embed.aspx?src={Uri.EscapeDataString(absUrl)}";
+                    return $"<iframe src='{officeUrl}' width='100%' height='100%' title='{safeTitle}' frameborder='0'></iframe>";
+
+                case "txt":
+                case "md":
+                case "csv":
+                    return $"<iframe src='{absUrl}' width='100%' height='100%' style='background:#fff;font-family:monospace'></iframe>";
+
+                default:
+                    return $@"<div class='unsupported-box'>
+                                <i class='fa fa-file-alt'></i>
+                                <h5>Preview not available</h5>
+                                <p style='font-size:.85rem'>File type <strong>.{ext.ToUpper()}</strong> cannot be previewed in browser.</p>
+                                <a href='{absUrl}' class='btn-action primary' target='_blank' style='display:inline-flex;align-items:center;gap:6px;margin-top:8px'>
+                                    <i class='fa fa-download'></i> Download to view
+                                </a>
+                              </div>";
+            }
+        }
+
+        private string GetAbsoluteUrl(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return "#";
+            string resolved = ResolveUrl(path.Replace("..", "~"));
+            return $"{Request.Url.GetLeftPart(UriPartial.Authority)}{resolved}";
+        }
+
+        private string GetBadgeClass(string ext)
+        {
+            switch (ext)
+            {
+                case "pdf": return "pdf";
+                case "doc": case "docx": return "doc";
+                case "ppt": case "pptx": return "ppt";
+                case "xls": case "xlsx": return "xls";
+                case "jpg": case "jpeg": case "png": case "gif": case "webp": return "img";
+                case "mp4": case "webm": case "mov": return "vid";
+                default: return "gen";
+            }
+        }
+
+        // ── Load AI history (all students for admin view) ─────────────────────
+        private void LoadHistory(int materialId)
         {
             try
             {
-                MaterialBL bl = new MaterialBL();
-                int userId = Convert.ToInt32(HttpContext.Current.Session["UserId"]);
-
-                bl.SaveAIHistory(new MaterialGC
-                {
-                    MaterialId = Convert.ToInt32(materialId),
-                    UserId = userId,
-                    Type = type,
-                    Question = question,
-                    Response = response
-                });
-                return "Saved";
+                DataTable dt = _bl.GetAllHistory(materialId);
+                rptHistory.DataSource = dt;
+                rptHistory.DataBind();
             }
-            catch { return "Error"; }
+            catch (Exception ex)
+            {
+                ShowMsg("Error loading history: " + ex.Message, "danger");
+            }
+        }
+
+        // ── Log admin activity ────────────────────────────────────────────────
+        private void LogActivity(int materialId)
+        {
+            try { _bl.LogActivity(UserId, SocietyId, InstituteId, SessionId, "MaterialView", materialId); }
+            catch { }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        //  AJAX WEB METHOD – called by JavaScript
+        // ═══════════════════════════════════════════════════════════════════════
+
+        [WebMethod(EnableSession = true)]
+        public static string SaveToHistory(int materialId, string type, string question, string response)
+        {
+            try
+            {
+                int userId = 0;
+                if (HttpContext.Current.Session["UserId"] != null)
+                    int.TryParse(HttpContext.Current.Session["UserId"].ToString(), out userId);
+
+                if (userId == 0) return "unauthorized";
+
+                new MaterialBL().SaveAIHistory(materialId, userId, type,
+                    question ?? "", response ?? "");
+                return "saved";
+            }
+            catch (Exception ex) { return "error:" + ex.Message; }
+        }
+
+        private void ShowMsg(string msg, string type)
+        {
+            lblMsg.Text = msg;
+            lblMsg.CssClass = $"alert alert-{type} alert-auto d-block mb-3";
+            lblMsg.Visible = true;
         }
     }
 }

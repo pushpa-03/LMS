@@ -15,14 +15,14 @@ public class MonthlyAnalyticsDashboardBL
             SELECT
                 -- New students this month
                 (SELECT COUNT(*) FROM Users u
-                 WHERE u.InstituteId = @InstituteId
+                 WHERE u.InstituteId = @InstituteId AND u.SessionID = SessionId
                    AND u.RoleId = (SELECT RoleId FROM Roles WHERE RoleName = 'Student')
                    AND MONTH(u.CreatedOn) = @Month AND YEAR(u.CreatedOn) = @Year
                 ) AS NewStudents,
 
                 -- New students prev month (for trend)
                 (SELECT COUNT(*) FROM Users u
-                 WHERE u.InstituteId = @InstituteId
+                 WHERE u.InstituteId = @InstituteId AND u.SessionID = SessionId
                    AND u.RoleId = (SELECT RoleId FROM Roles WHERE RoleName = 'Student')
                    AND MONTH(u.CreatedOn) = CASE WHEN @Month=1 THEN 12 ELSE @Month-1 END
                    AND YEAR(u.CreatedOn)  = CASE WHEN @Month=1 THEN @Year-1 ELSE @Year END
@@ -30,7 +30,7 @@ public class MonthlyAnalyticsDashboardBL
 
                 -- Total active students this session
                 (SELECT COUNT(*) FROM Users u
-                 WHERE u.InstituteId = @InstituteId AND u.IsActive = 1
+                 WHERE u.InstituteId = @InstituteId AND u.SessionID = SessionId AND u.IsActive = 1
                    AND u.RoleId = (SELECT RoleId FROM Roles WHERE RoleName = 'Student')
                 ) AS TotalActiveStudents,
 

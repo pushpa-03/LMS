@@ -134,12 +134,14 @@ namespace LMS_Project.Teacher
                 return;
             }
 
+            int subjectId = Convert.ToInt32(hfSubjectId.Value);
             bl.SaveChapter(
                 hfChapterId.Value,
                 SessionId,
-                hfSubjectId.Value,
+                subjectId.ToString(),
                 txtChapterName.Text.Trim(),
-                txtOrderNo.Text.Trim()
+                txtOrderNo.Text.Trim(),
+                SocietyId, InstituteId
             );
 
             hfChapterId.Value = "";
@@ -205,7 +207,7 @@ namespace LMS_Project.Teacher
                 fuContent.SaveAs(fullPath);
 
                 string dbPath = folderRelPath.Replace("~", "") + fileName;
-
+                int subjectId = Convert.ToInt32(hfSubjectId.Value);
 
                 if (ddlContentType.SelectedValue == "Video")
                 {
@@ -214,16 +216,17 @@ namespace LMS_Project.Teacher
                         ShowMsg("Invalid chapter selected", false);
                         return;
                     }
-
+                    int instructorId = 0;
                     int newVideoId = bl.InsertVideo(
                         SocietyId,
                         InstituteId,
                         SessionId,
                         chapterId,
+                        subjectId,
                         txtContentTitle.Text.Trim(),
                         txtVideoDesc.Text.Trim(),
                         dbPath,
-                        txtInstructor.Text.Trim(),
+                        instructorId,
                         UserId
                     );
 

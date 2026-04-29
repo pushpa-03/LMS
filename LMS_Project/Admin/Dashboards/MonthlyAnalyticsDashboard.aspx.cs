@@ -6,23 +6,14 @@ using System.Web.UI;
 
 namespace LearningManagementSystem.Admin.Dashboards
 {
-    public partial class MonthlyAnalyticsDashboard : System.Web.UI.Page
+    public partial class MonthlyAnalyticsDashboard : BasePage
     {
         MonthlyAnalyticsDashboardBL bl = new MonthlyAnalyticsDashboardBL();
 
-        int InstituteId;
-        int SessionId;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            //if (Session["InstituteId"] == null || Session["SessionId"] == null)
-            //{
-            //    Response.Redirect("~/Default.aspx");
-            //    return;
-            //}
 
-            InstituteId = Convert.ToInt32(Session["InstituteId"]);
-            SessionId = Convert.ToInt32(Session["SessionId"]);
             this.DataBind();
 
             if (!IsPostBack)

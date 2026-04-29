@@ -5,27 +5,31 @@
     CodeBehind="AddStream.aspx.cs"
     Inherits="LearningManagementSystem.Admin.AddStream" %>
 
+
 <asp:Content ID="c2" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div id="liveToast" class="toast align-items-center text-white bg-success border-0">
-            <div class="d-flex">
-                <div class="toast-body" id="toastMsg"></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+
+    <!-- 🔥 TOAST -->
+<div class="toast-container position-fixed top-3 end-0 p-3" style="z-index:9999;">
+    <div id="liveToast" class="toast text-white border-0"
+         role="alert"
+         aria-live="assertive"
+         aria-atomic="true">
+
+        <div class="d-flex bg-body-primary">
+            <div class="toast-body" id="toastMsg"></div>
+            <button type="button"
+                    class="btn-close btn-close-white me-2 m-auto"
                     data-bs-dismiss="toast"></button>
-            </div>
         </div>
+
     </div>
+</div>
 
     <asp:HiddenField ID="hfStreamId" runat="server" />
 
-    <!-- MESSAGE -->
-    <asp:Label ID="lblMsg" runat="server"
-        Visible="false"
-        CssClass="alert d-block mb-3"
-        EnableViewState="false" />
 
     <!-- ================= HEADER ================= -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+   <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
 
         <div>
             <h3 class="fw-bold mb-1">Streams Management</h3>
@@ -36,7 +40,7 @@
             </small>
         </div>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 w-md-auto">
 
             <!-- Filter -->
             <div>    
@@ -111,7 +115,7 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
         <!-- 🔍 SEARCH -->
-        <div class="input-group w-auto" style="min-width:250px;">
+        <div class="input-group w-100 w-md-auto" style="min-width:200px;">
             <span class="input-group-text bg-white"><i class="fa fa-search"></i></span>
            <input type="text" id="txtSearch" runat="server"
                    class="form-control"
@@ -134,7 +138,8 @@
                     AutoGenerateColumns="false"
                     GridLines="None"
                     OnRowCommand="gvStreams_RowCommand" 
-                    RowStyle-CssClass="stream-row">
+                    RowStyle-CssClass="stream-row"
+                    OnRowDataBound="gvStreams_RowDataBound">
 
                     <EmptyDataTemplate>
                         <div class="text-center p-5">
@@ -154,30 +159,30 @@
                             <ItemTemplate>
 
                                 <asp:LinkButton runat="server"
-                                    CssClass="btn btn-sm btn-light border me-1"
+                                    CssClass="btn btn-sm action-btn edit"
                                     CommandName="EditRow"
                                     ToolTip="Edit Stream"
                                     CommandArgument='<%# Eval("StreamId") %>'>
-                                    <i class="fa fa-pen text-primary"></i>
+                                    ✏
                                 </asp:LinkButton>
 
                                 <!-- Toggle active/inactive -->
                                 <asp:LinkButton runat="server"
-                                    CssClass="btn btn-sm btn-light border me-1"
+                                    CssClass="btn btn-sm action-btn toggle"
                                     CommandName="Toggle"
                                     ToolTip="Toggle Status"
                                     OnClientClick="return confirm('Change course status?');"
                                     CommandArgument='<%# Eval("StreamId") %>'>
-                                    <i class="fa fa-power-off text-warning"></i>
+                                    🔄
                                 </asp:LinkButton>
 
                                 <asp:LinkButton runat="server"
-                                    CssClass="btn btn-sm btn-light border"
+                                    CssClass="btn btn-sm action-btn delete"
                                     CommandName="DeleteRow"
                                     ToolTip="Delete Stream"
                                     CommandArgument='<%# Eval("StreamId") %>'
                                     OnClientClick="return confirm('Delete stream?');">
-                                    <i class="fa fa-trash text-danger"></i>
+                                    🗑
                                 </asp:LinkButton>
 
                             </ItemTemplate>
@@ -196,7 +201,7 @@
 
     <!-- ================= ADD MODAL ================= -->
     <div class="modal fade" id="CreateModal">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content rounded-4">
 
                 <div class="modal-header bg-primary text-white">
@@ -296,38 +301,64 @@
 .is-invalid {
     border: 2px solid red;
 }
+
+.modal {
+    z-index: 9999 !important;
+}
+
+.modal-backdrop {
+    z-index: 9990 !important;
+}
+
+/* center modal properly */
+.modal-dialog {
+    margin-top: 100px;
+}
+
+/* fix header overlap */
+body.modal-open {
+    padding-right: 0 !important;
+}
+
+/* 📱 Mobile optimization */
+@media (max-width: 768px) {
+
+    h3 {
+        font-size: 20px;
+    }
+
+    .btn {
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+
+    .table th, .table td {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    .card {
+        padding: 10px !important;
+    }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    .toast-container {
+        width: 100%;
+        right: 0;
+        left: 0;
+        padding: 10px;
+    }
+
+    .toast {
+        width: 100%;
+    }
+}
 </style>
 
-    <script>
-        let visible = Array.from(rows).some(r => r.style.display !== "none");
-
-        document.getElementById("noDataMsg").style.display = visible ? "none" : "block";
-
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const input = document.getElementById("<%= txtStreamName.ClientID %>");
-
-            input.addEventListener("blur", function () {
-
-            let value = input.value.trim().toLowerCase();
-            let exists = false;
-
-            document.querySelectorAll("#<%= gvStreams.ClientID %> tbody tr").forEach(row => {
-                if (row.innerText.toLowerCase().includes(value)) {
-                    exists = true;
-                }
-            });
-
-            if (exists) {
-                input.classList.add("is-invalid");
-            } else {
-                input.classList.remove("is-invalid");
-            }
-
-        });
-
-        });
-
+    <script>        
         function highlightRow(id) {
             let row = document.querySelector(`[data-id='${id}']`);
             if (row) {
@@ -335,7 +366,6 @@
                 setTimeout(() => row.style.background = "", 1500);
             }
         }
-
         function checkEmpty() {
             let rows = document.querySelectorAll("#<%= gvStreams.ClientID %> tbody tr");
             let visible = Array.from(rows).some(r => r.style.display !== "none");
@@ -348,23 +378,45 @@
                 emptyDiv.style.display = "none";
             }
         }
-
         document.addEventListener("DOMContentLoaded", function () {
 
-            const input = document.getElementById("<%= txtSearch.ClientID %>");
+            // 🔍 SEARCH
+            const searchInput = document.getElementById("<%= txtSearch.ClientID %>");
+            if (searchInput) {
+                searchInput.addEventListener("keyup", function () {
 
-            input.addEventListener("keyup", function () {
+                    let value = searchInput.value.toLowerCase();
+                    let rows = document.querySelectorAll("#<%= gvStreams.ClientID %> tbody tr");
 
-                let value = input.value.toLowerCase();
+            let visible = false;
 
-                let rows = document.querySelectorAll("#<%= gvStreams.ClientID %> tbody tr");
-
-                rows.forEach(row => {
-                    let text = row.innerText.toLowerCase();
-                    row.style.display = text.includes(value) ? "" : "none";
-                });
-
+            rows.forEach(row => {
+                let text = row.innerText.toLowerCase();
+                let match = text.includes(value);
+                row.style.display = match ? "" : "none";
+                if (match) visible = true;
             });
+
+            document.getElementById("noDataMsg").style.display = visible ? "none" : "block";
+        });
+    }
+
+    // 🔴 DUPLICATE CHECK
+    const input = document.getElementById("<%= txtStreamName.ClientID %>");
+    if (input) {
+        input.addEventListener("keyup", function () {
+
+            let value = input.value.trim().toLowerCase();
+            let exists = false;
+
+            document.querySelectorAll("#<%= gvStreams.ClientID %> tbody tr").forEach(row => {
+                let text = row.cells[0]?.innerText.toLowerCase();
+                if (text === value) exists = true;
+            });
+
+            input.classList.toggle("is-invalid", exists);
+        });
+            }
 
         });
     </script>

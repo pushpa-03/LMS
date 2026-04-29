@@ -69,8 +69,8 @@ namespace LearningManagementSystem.BL
                 FROM HelpRequests hr
                 INNER JOIN Users u ON u.UserId = hr.UserId
                 INNER JOIN Roles r ON r.RoleId = u.RoleId
-                WHERE hr.HelpId     = @HelpId
-                  AND hr.SocietyId  = @SocietyId
+                WHERE hr.HelpId      = @HelpId
+                  AND hr.SocietyId   = @SocietyId
                   AND hr.InstituteId = @InstituteId");
 
             cmd.Parameters.AddWithValue("@HelpId", helpId);
@@ -78,7 +78,6 @@ namespace LearningManagementSystem.BL
             cmd.Parameters.AddWithValue("@InstituteId", instituteId);
 
             DataTable dt = _dl.GetDataTable(cmd);
-
             if (dt.Rows.Count == 0) return null;
 
             DataRow dr = dt.Rows[0];
@@ -99,7 +98,7 @@ namespace LearningManagementSystem.BL
             var list = new List<HelpReplyGC>();
 
             SqlCommand cmd = new SqlCommand(@"
-                SELECT ReplyId, HelpId, AdminId, Reply, RepliedOn
+                SELECT ReplyId, HelpId, AdminId, Reply, RepliedOn, SessionId
                 FROM HelpReplies
                 WHERE HelpId      = @HelpId
                   AND SocietyId   = @SocietyId
@@ -119,6 +118,7 @@ namespace LearningManagementSystem.BL
                     ReplyId = Convert.ToInt32(dr["ReplyId"]),
                     HelpId = Convert.ToInt32(dr["HelpId"]),
                     AdminId = Convert.ToInt32(dr["AdminId"]),
+                    SessionId = Convert.ToInt32(dr["SessionId"]),
                     Reply = dr["Reply"].ToString(),
                     RepliedOn = Convert.ToDateTime(dr["RepliedOn"])
                 });
@@ -131,8 +131,13 @@ namespace LearningManagementSystem.BL
         public bool PostReply(HelpReplyGC gc)
         {
             SqlCommand cmd = new SqlCommand(@"
-                INSERT INTO HelpReplies (SocietyId, InstituteId, HelpId, AdminId, Reply, RepliedOn)
-                VALUES (@SocietyId, @InstituteId, @HelpId, @AdminId, @Reply, GETDATE())");
+        DECLARE @SessionId INT;
+        SELECT @SessionId = SessionId 
+        FROM AcademicSessions 
+        WHERE IsCurrent = 1;
+
+        INSERT INTO HelpReplies (SocietyId, InstituteId, SessionId, HelpId, AdminId, Reply, RepliedOn)
+        VALUES (@SocietyId, @InstituteId, @SessionId, @HelpId, @AdminId, @Reply, GETDATE())");
 
             cmd.Parameters.AddWithValue("@SocietyId", gc.SocietyId);
             cmd.Parameters.AddWithValue("@InstituteId", gc.InstituteId);
@@ -140,15 +145,8 @@ namespace LearningManagementSystem.BL
             cmd.Parameters.AddWithValue("@AdminId", gc.AdminId);
             cmd.Parameters.AddWithValue("@Reply", gc.Reply);
 
-            try
-            {
-                _dl.ExecuteCMD(cmd);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            try { _dl.ExecuteCMD(cmd); return true; }
+            catch { return false; }
         }
 
         // ─── COUNT UNANSWERED REQUESTS (for badge in header) ─────────────────────
@@ -179,7 +177,6 @@ namespace LearningManagementSystem.BL
         // ─── DELETE A HELP REQUEST ────────────────────────────────────────────────
         public bool DeleteHelpRequest(int helpId, int societyId, int instituteId)
         {
-            // DataLayer.ExecuteTransaction handles the two deletes in one transaction
             var commands = new List<SqlCommand>();
 
             SqlCommand del1 = new SqlCommand(@"
@@ -199,39 +196,34 @@ namespace LearningManagementSystem.BL
             commands.Add(del1);
             commands.Add(del2);
 
-            try
-            {
-                return _dl.ExecuteTransaction(commands);
-            }
-            catch
-            {
-                return false;
-            }
+            try { return _dl.ExecuteTransaction(commands); }
+            catch { return false; }
         }
-        // ─── GET ALL REQUESTS BY A SPECIFIC USER (for student/teacher view) ──────────
+
+        // ─── GET ALL REQUESTS BY A SPECIFIC USER (for student/teacher view) ──────
         public List<HelpRequestGC> GetRequestsByUser(int userId, int societyId, int instituteId)
         {
             var list = new List<HelpRequestGC>();
 
             SqlCommand cmd = new SqlCommand(@"
-        SELECT
-            hr.HelpId, hr.UserId, hr.Question, hr.AskedOn,
-            u.Username, r.RoleName,
-            rep.Reply     AS ReplyText,
-            rep.RepliedOn
-        FROM HelpRequests hr
-        INNER JOIN Users u ON u.UserId = hr.UserId
-        INNER JOIN Roles r ON r.RoleId = u.RoleId
-        LEFT JOIN (
-            SELECT HelpId, Reply, RepliedOn,
-                   ROW_NUMBER() OVER (PARTITION BY HelpId ORDER BY RepliedOn DESC) AS rn
-            FROM HelpReplies
-            WHERE SocietyId = @SocietyId AND InstituteId = @InstituteId
-        ) rep ON rep.HelpId = hr.HelpId AND rep.rn = 1
-        WHERE hr.UserId     = @UserId
-          AND hr.SocietyId  = @SocietyId
-          AND hr.InstituteId = @InstituteId
-        ORDER BY hr.AskedOn DESC");
+                SELECT
+                    hr.HelpId, hr.UserId, hr.Question, hr.AskedOn,
+                    u.Username, r.RoleName,
+                    rep.Reply     AS ReplyText,
+                    rep.RepliedOn
+                FROM HelpRequests hr
+                INNER JOIN Users u ON u.UserId = hr.UserId
+                INNER JOIN Roles r ON r.RoleId = u.RoleId
+                LEFT JOIN (
+                    SELECT HelpId, Reply, RepliedOn,
+                           ROW_NUMBER() OVER (PARTITION BY HelpId ORDER BY RepliedOn DESC) AS rn
+                    FROM HelpReplies
+                    WHERE SocietyId = @SocietyId AND InstituteId = @InstituteId
+                ) rep ON rep.HelpId = hr.HelpId AND rep.rn = 1
+                WHERE hr.UserId      = @UserId
+                  AND hr.SocietyId   = @SocietyId
+                  AND hr.InstituteId = @InstituteId
+                ORDER BY hr.AskedOn DESC");
 
             cmd.Parameters.AddWithValue("@UserId", userId);
             cmd.Parameters.AddWithValue("@SocietyId", societyId);
@@ -260,28 +252,25 @@ namespace LearningManagementSystem.BL
             return list;
         }
 
-        // ─── SUBMIT A QUESTION (from student/teacher) ────────────────────────────────
+        // ─── SUBMIT A QUESTION (from student/teacher) ─────────────────────────────
         public bool SubmitQuestion(HelpRequestGC gc)
         {
             SqlCommand cmd = new SqlCommand(@"
-        INSERT INTO HelpRequests (SocietyId, InstituteId, UserId, Question, AskedOn)
-        VALUES (@SocietyId, @InstituteId, @UserId, @Question, GETDATE())");
+        DECLARE @SessionId INT;
+        SELECT @SessionId = SessionId 
+        FROM AcademicSessions 
+        WHERE IsCurrent = 1;
+
+        INSERT INTO HelpRequests (SocietyId, InstituteId, SessionId, UserId, Question, AskedOn)
+        VALUES (@SocietyId, @InstituteId, @SessionId, @UserId, @Question, GETDATE())");
 
             cmd.Parameters.AddWithValue("@SocietyId", gc.SocietyId);
             cmd.Parameters.AddWithValue("@InstituteId", gc.InstituteId);
             cmd.Parameters.AddWithValue("@UserId", gc.UserId);
             cmd.Parameters.AddWithValue("@Question", gc.Question);
 
-            try
-            {
-                _dl.ExecuteCMD(cmd);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            try { _dl.ExecuteCMD(cmd); return true; }
+            catch { return false; }
         }
     }
-
 }

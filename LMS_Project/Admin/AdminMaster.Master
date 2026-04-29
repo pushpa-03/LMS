@@ -423,10 +423,14 @@ body {
                 <i class="fas fa-chevron-right right-icon"></i>
             </a>
             <ul class="sidebar-submenu">                
-                <li><a href="OverviewDashboard.aspx" class="sidebar-link">OverviewDashboard</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/OverviewDashboard.aspx" class="sidebar-link">OverviewDashboard</a></li>
                 <li><a runat="server" href="~/Admin/Dashboards/MonthlyAnalyticsDashboard.aspx" class="sidebar-link">Monthly Analytics Dashboard</a></li>
                 <li><a runat="server" href="~/Admin/Dashboards/Streamwisedashboard.aspx" class="sidebar-link">Streamwise Dashboard</a></li>
                 <li><a runat="server" href="~/Admin/Dashboards/CourseWiseDashboard.aspx" class="sidebar-link">Coursewise Dashboard</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/Studentmanagementdashboard.aspx" class="sidebar-link">Student Management Dashboard</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/TeacherManagementDashboard.aspx" class="sidebar-link">Teacher Management Dashboard</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/AttendanceAnalyticsDashboard.aspx" class="sidebar-link">Attendance Analytics Dashboard</a></li>
+                
                 <%--<li><a href="Dashboard.aspx" class="sidebar-link">Dashboard1</a></li>
                 <li><a href="AdminAcademicAnalytics.aspx" class="sidebar-link">Dashboard2</a></li>
                 <li><a href="EngagementAnalytics.aspx" class="sidebar-link">Dashboard3</a></li>
@@ -446,14 +450,14 @@ body {
                 <i class="fas fa-chevron-right right-icon"></i>
             </a>
             <ul class="sidebar-submenu">
-                <li><a href="AddStream.aspx" class="sidebar-link">Stream</a></li>
-                <li><a href="AddCourse.aspx" class="sidebar-link">Course</a></li>
-                <li><a href="AcademicSetup.aspx" class="sidebar-link">Academic Setup</a></li>
-                <li><a href="AcademicSession.aspx" class="sidebar-link">Academic Year</a></li>
-                <li><a href="AddSubject.aspx" class="sidebar-link">Subjects</a></li>
-                <li><a href="AddStudent.aspx" class="sidebar-link">Students</a></li>
-                <li><a href="AddTeacher.aspx" class="sidebar-link">Teachers</a></li>
-                <li><a href="ParentManagement.aspx" class="sidebar-link">Parents</a></li>
+                <li><a runat="server" href="~/Admin/AddStream.aspx" class="sidebar-link">Stream</a></li>
+                <li><a runat="server" href="~/Admin/AddCourse.aspx" class="sidebar-link">Course</a></li>
+                <li><a runat="server" href="~/Admin/AcademicSetup.aspx" class="sidebar-link">Academic Setup</a></li>
+                <li><a runat="server" href="~/Admin/AcademicSession.aspx" class="sidebar-link">Academic Year</a></li>
+                <li><a runat="server" href="~/Admin/AddSubject.aspx" class="sidebar-link">Subjects</a></li>
+                <li><a runat="server" href="~/Admin/AddStudent.aspx" class="sidebar-link">Students</a></li>
+                <li><a runat="server" href="~/Admin/AddTeacher.aspx" class="sidebar-link">Teachers</a></li>
+                <li><a runat="server" href="~/Admin/ParentManagement.aspx" class="sidebar-link">Parents</a></li>
             </ul>
         </li>
 
@@ -464,9 +468,9 @@ body {
                 <i class="fas fa-chevron-right right-icon"></i>
             </a>
             <ul class="sidebar-submenu">
-                <li><a href="AssignLevelSubject.aspx" class="sidebar-link">To Class</a></li>
-                <li><a href="AssignStudentSubject.aspx" class="sidebar-link">To Students</a></li>
-                <li><a href="AssignSubjectFaculty.aspx" class="sidebar-link">To Teachers</a></li>
+                <li><a runat="server" href="~/Admin/AssignLevelSubject.aspx" class="sidebar-link">To Class</a></li>
+                <li><a runat="server" href="~/Admin/AssignStudentSubject.aspx" class="sidebar-link">To Students</a></li>
+                <li><a runat="server" href="~/Admin/AssignSubjectFaculty.aspx" class="sidebar-link">To Teachers</a></li>
             </ul>
         </li>
 
@@ -479,19 +483,19 @@ body {
                 <i class="fas fa-chevron-right right-icon"></i>
             </a>
             <ul class="sidebar-submenu">
-                <li><a href="StreamList.aspx">Streams</a></li>
-                <li><a href="CourseList.aspx">Courses</a></li>
-                <li><a href="Subjects.aspx">Subjects</a></li>
-                <li><a href="StudentsList.aspx">Students</a></li>
-                <li><a href="TeacherList.aspx">Teachers</a></li>
-                <li><a href="ParentList.aspx">Parents</a></li>
+                <li><a runat="server" href="~/Admin/StreamList.aspx">Streams</a></li>
+                <li><a runat="server" href="~/Admin/CourseList.aspx">Courses</a></li>
+                <li><a runat="server" href="~/Admin/Subjects.aspx">Subjects</a></li>
+                <li><a runat="server" href="~/Admin/StudentsList.aspx">Students</a></li>
+                <li><a runat="server" href="~/Admin/TeacherList.aspx">Teachers</a></li>
+                <li><a runat="server" href="~/Admin/ParentList.aspx">Parents</a></li>
             </ul>
         </li>
 
         <li class="sidebar-section-label">System</li>
 
         <li>
-            <a href="../Default.aspx" class="sidebar-link">
+            <a runat="server" href="../Default.aspx" class="sidebar-link">
                 <i class="fas fa-sign-out-alt sidebar-icon"></i>
                 <span>Logout</span>
             </a>

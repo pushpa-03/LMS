@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace LMS_Project.Admin
+namespace LearningManagementSystem.Admin
 {
 
 
@@ -15,13 +15,13 @@ namespace LMS_Project.Admin
     {
 
         /// <summary>
-        /// form1 control.
+        /// hfMaterialId control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlForm form1;
+        protected global::System.Web.UI.WebControls.HiddenField hfMaterialId;
 
         /// <summary>
         /// hfFilePath control.
@@ -33,31 +33,67 @@ namespace LMS_Project.Admin
         protected global::System.Web.UI.WebControls.HiddenField hfFilePath;
 
         /// <summary>
-        /// lblTitle control.
+        /// hfFileType control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblTitle;
+        protected global::System.Web.UI.WebControls.HiddenField hfFileType;
 
         /// <summary>
-        /// lnkEdit control.
+        /// litTitle control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.HyperLink lnkEdit;
+        protected global::System.Web.UI.WebControls.Literal litTitle;
 
         /// <summary>
-        /// downloadLink control.
+        /// lnkDownload control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlAnchor downloadLink;
+        protected global::System.Web.UI.HtmlControls.HtmlAnchor lnkDownload;
+
+        /// <summary>
+        /// lblMsg control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblMsg;
+
+        /// <summary>
+        /// fileBadge control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl fileBadge;
+
+        /// <summary>
+        /// toolbarTitle control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl toolbarTitle;
+
+        /// <summary>
+        /// toolbarMeta control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl toolbarMeta;
 
         /// <summary>
         /// fileViewer control.
@@ -67,6 +103,15 @@ namespace LMS_Project.Admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl fileViewer;
+
+        /// <summary>
+        /// rptInfo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptInfo;
 
         /// <summary>
         /// rptHistory control.
