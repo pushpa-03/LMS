@@ -25,3 +25,11 @@ Uploads/
 *.docx
 *.pptx
 *.xlsx
+
+# Python virtual env
+venv/
+AIService/venv/
+
+# Python cache
+__pycache__/
+*.pyc
