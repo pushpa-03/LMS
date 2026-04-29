@@ -1,7 +1,27 @@
+# Build folders
 bin/
 obj/
+
+# Visual Studio
 .vs/
 *.user
 *.suo
+
+# Debug files
 *.pdb
+
+# NuGet
 packages/
+
+# Uploads (IMPORTANT)
+Uploads/
+
+# Large files
+*.mp4
+*.avi
+*.mov
+*.zip
+*.pdf
+*.docx
+*.pptx
+*.xlsx
