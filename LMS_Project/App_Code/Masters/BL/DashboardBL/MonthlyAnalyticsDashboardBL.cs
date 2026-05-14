@@ -145,21 +145,35 @@ public class MonthlyAnalyticsDashboardBL
     public DataTable GetWeeklyVideoViews(int instituteId, int sessionId, int month, int year)
     {
         SqlCommand cmd = new SqlCommand(@"
-            SELECT
-                'Week ' + CAST(DATEPART(WEEK, ViewedOn)
-                    - DATEPART(WEEK, DATEFROMPARTS(@Year, @Month, 1)) + 1 AS VARCHAR) AS WeekLabel,
-                COUNT(*) AS Views,
-                SUM(CASE WHEN IsCompleted=1 THEN 1 ELSE 0 END) AS Completed
-            FROM VideoViews
-            WHERE InstituteId = @InstituteId AND SessionId = @SessionId
-              AND MONTH(ViewedOn) = @Month AND YEAR(ViewedOn) = @Year
-            GROUP BY DATEPART(WEEK, ViewedOn)
-            ORDER BY DATEPART(WEEK, ViewedOn);
-        ");
+        SELECT
+            'Week ' + CAST(
+                DATEPART(WEEK, vv.ViewedOn) 
+                - DATEPART(WEEK, DATEFROMPARTS(@Year, @Month, 1)) + 1 
+            AS VARCHAR) AS WeekLabel,
+
+            COUNT(*) AS Views,
+
+            SUM(CASE WHEN vv.IsCompleted = 1 THEN 1 ELSE 0 END) AS Completed
+
+        FROM VideoViews vv
+        INNER JOIN Users u ON vv.UserId = u.UserId
+        INNER JOIN Roles r ON u.RoleId = r.RoleId
+
+        WHERE vv.InstituteId = @InstituteId
+          AND vv.SessionId = @SessionId
+          AND MONTH(vv.ViewedOn) = @Month
+          AND YEAR(vv.ViewedOn) = @Year
+          AND r.RoleName = 'Student'   -- ✅ FILTER ONLY STUDENTS
+
+        GROUP BY DATEPART(WEEK, vv.ViewedOn)
+        ORDER BY DATEPART(WEEK, vv.ViewedOn);
+    ");
+
         cmd.Parameters.AddWithValue("@InstituteId", instituteId);
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
         cmd.Parameters.AddWithValue("@Month", month);
         cmd.Parameters.AddWithValue("@Year", year);
+
         return dl.GetDataTable(cmd);
     }
 

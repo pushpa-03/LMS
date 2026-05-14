@@ -9,58 +9,76 @@ public class StudentDashboardBL
     // ============================================================
     // ✅ 1. Summary Counts (4 stat cards)
     // ============================================================
+    
+
     public DataTable GetDashboardCounts(int userId, int instituteId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
-        SELECT
 
-            -- Total enrolled subjects
-            (SELECT COUNT(*)
-             FROM AssignStudentSubject
-             WHERE UserId      = @UserId
-               AND InstituteId = @InstId
-               AND SessionId   = @SessId
-            ) AS TotalSubjects,
+    SELECT
 
-            -- Pending assignments (due date not passed, not yet submitted)
-            (SELECT COUNT(*)
-             FROM Assignments A
-             WHERE A.InstituteId = @InstId
-               AND A.IsActive    = 1
-               AND A.DueDate     >= GETDATE()
-               AND A.SubjectId IN (
-                    SELECT SubjectId FROM AssignStudentSubject
-                    WHERE UserId = @UserId AND SessionId = @SessId
-               )
-               AND A.AssignmentId NOT IN (
-                    SELECT AssignmentId FROM AssignmentSubmissions
+        -- Total enrolled subjects
+        (
+            SELECT COUNT(DISTINCT ASS.SubjectId)
+            FROM AssignStudentSubject ASS
+            WHERE ASS.UserId = @UserId
+              AND ASS.InstituteId = @InstId
+              AND ASS.SessionId = @SessId
+        ) AS TotalSubjects,
+
+        -- Pending assignments
+        (
+            SELECT COUNT(*)
+            FROM Assignments A
+            WHERE A.InstituteId = @InstId
+              AND A.IsActive = 1
+              AND A.DueDate >= GETDATE()
+              AND A.SubjectId IN
+              (
+                    SELECT DISTINCT SubjectId
+                    FROM AssignStudentSubject
+                    WHERE UserId = @UserId
+                      AND SessionId = @SessId
+              )
+              AND A.AssignmentId NOT IN
+              (
+                    SELECT AssignmentId
+                    FROM AssignmentSubmissions
                     WHERE StudentId = @UserId
-               )
-            ) AS PendingAssignments,
+              )
+        ) AS PendingAssignments,
 
-            -- Upcoming quizzes (enabled, not yet attempted)
-            (SELECT COUNT(*)
-             FROM Quizzes Q
-             WHERE Q.InstituteId = @InstId
-               AND Q.IsEnabled   = 1
-               AND Q.DueDate     >= GETDATE()
-               AND Q.SubjectId IN (
-                    SELECT SubjectId FROM AssignStudentSubject
-                    WHERE UserId = @UserId AND SessionId = @SessId
-               )
-               AND Q.QuizId NOT IN (
-                    SELECT QuizId FROM QuizResults
+        -- Upcoming quizzes
+        (
+            SELECT COUNT(*)
+            FROM Quizzes Q
+            WHERE Q.InstituteId = @InstId
+              AND Q.IsEnabled = 1
+              AND Q.DueDate >= GETDATE()
+              AND Q.SubjectId IN
+              (
+                    SELECT DISTINCT SubjectId
+                    FROM AssignStudentSubject
+                    WHERE UserId = @UserId
+                      AND SessionId = @SessId
+              )
+              AND Q.QuizId NOT IN
+              (
+                    SELECT QuizId
+                    FROM QuizResults
                     WHERE StudentId = @UserId
-               )
-            ) AS UpcomingQuizzes,
+              )
+        ) AS UpcomingQuizzes,
 
-            -- Unread notifications
-            (SELECT COUNT(*)
-             FROM Notifications
-             WHERE UserId      = @UserId
-               AND InstituteId = @InstId
-               AND IsRead      = 0
-            ) AS UnreadNotifications");
+        -- Unread notifications
+        (
+            SELECT COUNT(*)
+            FROM Notifications N
+            WHERE N.UserId = @UserId
+              AND N.InstituteId = @InstId
+              AND N.IsRead = 0
+        ) AS UnreadNotifications
+    ");
 
         cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@InstId", instituteId);
@@ -72,35 +90,66 @@ public class StudentDashboardBL
     // ============================================================
     // ✅ 2. Enrolled Subjects (recent 6 — subject cards)
     // ============================================================
+    
     public DataTable GetEnrolledSubjects(int userId, int instituteId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
-        SELECT TOP 6
-            S.SubjectId,
-            S.SubjectName,
-            S.SubjectCode,
-            S.Duration,
-            ST.StreamName,
-            C.CourseName,
-            -- Teacher name (from SubjectFaculty)
-            ISNULL(UP.FullName, 'Not Assigned') AS TeacherName
-        FROM AssignStudentSubject ASS
-        JOIN Subjects  S  ON ASS.SubjectId  = S.SubjectId
-        JOIN LevelSemesterSubjects  LS  ON ASS.SubjectId  = LS.SubjectId
-        LEFT JOIN Streams   ST ON LS.StreamId    = ST.StreamId
-        LEFT JOIN Courses   C  ON LS.CourseId    = C.CourseId
-        LEFT JOIN SubjectFaculty SF
-               ON SF.SubjectId   = S.SubjectId
-              AND SF.InstituteId = @InstId
-              AND SF.SessionId   = @SessId
-              AND SF.IsActive    = 1
-        LEFT JOIN Users     U  ON SF.TeacherId  = U.UserId
-        LEFT JOIN UserProfile UP ON U.UserId    = UP.UserId
-        WHERE ASS.UserId      = @UserId
-          AND ASS.InstituteId = @InstId
-          AND ASS.SessionId   = @SessId
-          AND S.IsActive      = 1
-        ORDER BY S.SubjectName");
+
+    SELECT DISTINCT TOP 4
+        S.SubjectId,
+        S.SubjectName,
+        S.SubjectCode,
+        S.Duration,
+
+        ST.StreamName,
+        C.CourseName,
+
+        ISNULL(UP.FullName, 'Not Assigned') AS TeacherName
+
+    FROM AssignStudentSubject ASS
+
+    INNER JOIN Subjects S
+        ON ASS.SubjectId = S.SubjectId
+
+    -- Student academic details
+    LEFT JOIN StudentAcademicDetails SAD
+        ON SAD.UserId = ASS.UserId
+       AND SAD.SessionId = ASS.SessionId
+
+    -- Correct subject mapping
+    LEFT JOIN LevelSemesterSubjects LS
+        ON LS.SubjectId = ASS.SubjectId
+       AND LS.StreamId = SAD.StreamId
+       AND LS.CourseId = SAD.CourseId
+       AND LS.LevelId = SAD.LevelId
+       AND LS.SemesterId = SAD.SemesterId
+       AND LS.SessionId = ASS.SessionId
+
+    LEFT JOIN Streams ST
+        ON LS.StreamId = ST.StreamId
+
+    LEFT JOIN Courses C
+        ON LS.CourseId = C.CourseId
+
+    -- Teacher mapping
+    LEFT JOIN SubjectFaculty SF
+        ON SF.SubjectId   = S.SubjectId
+       AND SF.InstituteId = @InstId
+       AND SF.SessionId   = @SessId
+       AND SF.IsActive    = 1
+
+    LEFT JOIN Users U
+        ON SF.TeacherId = U.UserId
+
+    LEFT JOIN UserProfile UP
+        ON U.UserId = UP.UserId
+
+    WHERE ASS.UserId      = @UserId
+      AND ASS.InstituteId = @InstId
+      AND ASS.SessionId   = @SessId
+      AND S.IsActive      = 1
+
+    ORDER BY S.SubjectName");
 
         cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@InstId", instituteId);

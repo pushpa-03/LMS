@@ -323,582 +323,723 @@
 
 
 <%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------%>
-
-
 <%@ Page Title="Video Player" Language="C#" MasterPageFile="~/Admin/AdminMaster.master"
     AutoEventWireup="true" CodeBehind="VideoPlayer.aspx.cs"
     Inherits="LearningManagementSystem.Admin.VideoPlayer" %>
 
-<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<asp:Content ID="C2" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
 <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-    --ink:#0d0f1a; --ink-soft:#4a4f6a; --surface:#f5f6fa; --card-bg:#fff;
-    --border:#e4e7f0; --accent:#4f46e5; --accent-2:#7c3aed;
-    --success:#059669; --danger:#dc2626; --warn:#d97706;
-    --radius:14px; --shadow:0 4px 24px rgba(13,15,26,.07);
-    --shadow-lg:0 12px 48px rgba(13,15,26,.13);
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #eef2ff;
+    --success: #059669;
+    --danger: #dc2626;
+    --warn: #d97706;
+    --amber: #f59e0b;
+    --purple: #7c3aed;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --dim: #94a3b8;
+    --shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+    --radius: 12px;
+    --font: 'Inter', system-ui, sans-serif;
 }
-* { box-sizing:border-box; }
-body { font-family:'DM Sans',sans-serif; background:var(--surface); color:var(--ink); }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
 
-/* ── BACK ── */
-.back-bar { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-.btn-back { display:inline-flex; align-items:center; gap:7px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:8px 16px; font-size:.84rem; font-weight:600; color:var(--ink-soft); text-decoration:none; transition:.2s; }
-.btn-back:hover { border-color:var(--accent); color:var(--accent); }
-.back-bar h2 { font-family:'Syne',sans-serif; font-weight:800; font-size:1.25rem; flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+/* ── PAGE WRAPPER ── */
+.vp-wrap { max-width: 1480px; margin: 0 auto; padding: 20px 22px; }
+@media(max-width:700px){ .vp-wrap { padding: 12px; } }
 
-/* ── MAIN LAYOUT ── */
-.vp-layout { display:grid; grid-template-columns:1fr 340px; gap:20px; }
-@media(max-width:1000px){ .vp-layout{grid-template-columns:1fr;} }
-
-/* ── VIDEO WRAPPER ── */
-.video-wrap { background:#000; border-radius:var(--radius); overflow:hidden; position:relative; aspect-ratio:16/9; }
-video { width:100%; height:100%; display:block; background:#000; }
-
-/* Skip overlays */
-.skip-zone {
-    position:absolute; top:0; bottom:0; width:30%;
-    display:flex; align-items:center; justify-content:center;
-    opacity:0; transition:opacity .2s; cursor:pointer;
-    font-size:2rem; color:#fff;
+/* ── BACK BAR ── */
+.back-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.btn-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--muted);
+    text-decoration: none; transition: .18s;
 }
-.skip-zone.left  { left:0;  background:linear-gradient(90deg,rgba(0,0,0,.35),transparent); }
-.skip-zone.right { right:0; background:linear-gradient(270deg,rgba(0,0,0,.35),transparent); }
-.video-wrap:hover .skip-zone { opacity:1; }
-.skip-label { display:flex; flex-direction:column; align-items:center; font-size:.7rem; font-weight:700; letter-spacing:.05em; }
+.btn-back:hover { border-color: var(--primary); color: var(--primary); }
+.page-head { font-size: 1.1rem; font-weight: 800; color: var(--text); flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Floating controls top-right */
-.vid-controls { position:absolute; top:12px; right:12px; display:flex; gap:8px; z-index:10; }
-.vid-ctrl-btn { background:rgba(0,0,0,.55); backdrop-filter:blur(6px); color:#fff; border:none; border-radius:8px; padding:7px 11px; font-size:.8rem; cursor:pointer; transition:.2s; display:flex; align-items:center; gap:5px; }
-.vid-ctrl-btn:hover { background:rgba(0,0,0,.8); }
+/* ── GRID ── */
+.vp-grid { display: grid; grid-template-columns: 1fr 320px; gap: 18px; align-items: start; }
+@media(max-width:1100px){ .vp-grid { grid-template-columns: 1fr; } }
 
-/* Settings panel */
-.settings-panel {
-    position:absolute; top:48px; right:12px; width:230px;
-    background:var(--card-bg); border:1px solid var(--border);
-    border-radius:var(--radius); box-shadow:var(--shadow-lg);
-    padding:16px; z-index:20; display:none;
+/* ── VIDEO BOX ── */
+.vid-box {
+    background: #000; border-radius: var(--radius);
+    overflow: hidden; position: relative; width: 100%; aspect-ratio: 16/9;
+    box-shadow: var(--shadow-lg);
 }
-.settings-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:.83rem; font-weight:500; }
-.settings-row:last-child { margin-bottom:0; }
-.toggle-sw { position:relative; width:38px; height:20px; }
-.toggle-sw input { opacity:0; width:0; height:0; }
-.toggle-track { position:absolute; inset:0; background:#cbd5e1; border-radius:20px; cursor:pointer; transition:.3s; }
-.toggle-track:before { content:''; position:absolute; height:14px; width:14px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.3s; }
-input:checked + .toggle-track { background:var(--accent); }
-input:checked + .toggle-track:before { transform:translateX(18px); }
+.vid-box video { width: 100%; height: 100%; display: block; }
 
-/* Speed selector */
-.speed-btns { display:flex; gap:4px; }
-.speed-btn { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:3px 8px; font-size:.76rem; font-weight:600; cursor:pointer; transition:.2s; }
-.speed-btn.active, .speed-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.skip-z {
+    position: absolute; top: 0; bottom: 0; width: 28%;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: .2s; cursor: pointer; color: #fff;
+}
+.skip-z.L { left: 0; background: linear-gradient(90deg,rgba(0,0,0,.45),transparent); }
+.skip-z.R { right: 0; background: linear-gradient(270deg,rgba(0,0,0,.45),transparent); }
+.vid-box:hover .skip-z { opacity: 1; }
+.sk-lbl { display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 700; gap: 2px; }
+
+.vid-ov { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 10; }
+.vbtn {
+    background: rgba(0,0,0,.55); backdrop-filter: blur(6px); color: #fff;
+    border: none; border-radius: 8px; padding: 7px 11px; font-size: 12px;
+    cursor: pointer; transition: .18s; display: flex; align-items: center; gap: 5px;
+    font-family: var(--font);
+}
+.vbtn:hover { background: rgba(0,0,0,.8); }
+
+/* Settings dropdown */
+.sett {
+    position: absolute; top: 46px; right: 12px; width: 230px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; z-index: 20;
+    display: none; box-shadow: var(--shadow-lg);
+}
+.srow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
+.srow:last-child { margin-bottom: 0; }
+.sw { position: relative; width: 38px; height: 20px; flex-shrink: 0; }
+.sw input { opacity: 0; width: 0; height: 0; position: absolute; }
+.sw-t { position: absolute; inset: 0; background: var(--border); border-radius: 20px; cursor: pointer; transition: .3s; }
+.sw-t::before { content:''; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .3s; }
+.sw input:checked + .sw-t { background: var(--primary); }
+.sw input:checked + .sw-t::before { transform: translateX(18px); }
+.spds { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.spd { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text); transition: .18s; font-family: var(--font); }
+.spd.on, .spd:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
 
 /* ── INFO CARD ── */
-.vid-info { background:var(--card-bg); border-radius:var(--radius); border:1px solid var(--border); padding:20px; box-shadow:var(--shadow); margin-top:14px; }
-.vid-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem; }
-.vid-meta-row { display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:8px; }
-.vid-meta-left { display:flex; gap:14px; font-size:.82rem; color:var(--ink-soft); align-items:center; }
-.star-filled { color:#fbbf24; }
-.star-empty  { color:#d1d5db; }
+.info-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 14px; box-shadow: var(--shadow); }
+.vid-title { font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1.35; margin-bottom: 10px; }
+.vid-meta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.meta-chips { display: flex; gap: 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; align-items: center; }
+.meta-chips span { display: flex; align-items: center; gap: 4px; }
+.stars { display: flex; gap: 2px; font-size: 13px; }
+.son { color: #f59e0b; } .soff { color: var(--border); }
 
-/* Tags / topics toggle */
-.topics-strip { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:14px; }
-.topic-item { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border); cursor:pointer; transition:.15s; font-size:.83rem; }
-.topic-item:last-child { border-bottom:none; }
-.topic-item:hover { color:var(--accent); }
-.topic-time { font-family:'Syne',sans-serif; font-weight:700; font-size:.75rem; background:#eef2ff; color:var(--accent); border-radius:6px; padding:2px 8px; min-width:50px; text-align:center; flex-shrink:0; }
+/* Description expand */
+.desc-wrap { margin-top: 12px; }
+.desc-body { font-size: 13px; color: var(--muted); line-height: 1.7; overflow: hidden; transition: max-height .3s ease; }
+.desc-body.clamp { max-height: 48px; }
+.desc-body.open  { max-height: 4000px; }
+.btn-more {
+    background: none; border: none; color: var(--primary); font-size: 12px;
+    font-weight: 700; cursor: pointer; padding: 5px 0; font-family: var(--font);
+    display: flex; align-items: center; gap: 4px; margin-top: 4px;
+}
 
-/* ── STATS ROW ── */
-.vid-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }
-@media(max-width:640px){ .vid-stats{grid-template-columns:repeat(2,1fr);} }
-.stat-box { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center; box-shadow:var(--shadow); }
-.stat-val { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
-.stat-lbl { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-top:2px; }
+/* Topics strip */
+.topics { background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 12px; margin-top: 10px; display: none; }
+.topics.open { display: block; }
+.t-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px; transition: .15s; }
+.t-row:last-child { border-bottom: none; }
+.t-row:hover { color: var(--primary); }
+.t-ts { font-size: 11px; font-weight: 700; background: var(--primary-light); color: var(--primary); border-radius: 5px; padding: 2px 7px; min-width: 48px; text-align: center; flex-shrink: 0; font-family: monospace; }
 
-/* ── STUDENT RESTRICTION NOTICE (first-watch lock) ── */
-.first-watch-notice { background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px 14px; font-size:.82rem; color:#92400e; display:flex; align-items:center; gap:8px; margin-top:10px; }
+/* First-watch notice */
+.fw-notice {
+    display: flex; align-items: center; gap: 8px;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 9px;
+    padding: 9px 13px; font-size: 12px; color: #92400e; margin-top: 12px;
+}
+
+/* ── STATS ── */
+.stats-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 14px; }
+@media(max-width:600px){ .stats-strip { grid-template-columns: repeat(2,1fr); } }
+.stat-b { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; box-shadow: var(--shadow); }
+.sn { font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; font-family: monospace; }
+.sl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 4px; }
 
 /* ── COMMENTS ── */
-.comment-section { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); margin-top:14px; }
-.comment-section h5 { font-family:'Syne',sans-serif; font-weight:700; margin-bottom:16px; }
-.comment-input-row { display:flex; gap:10px; margin-bottom:20px; }
-.cmt-avatar { width:38px; height:38px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; flex-shrink:0; }
-.cmt-input { flex:1; border:1px solid var(--border); border-radius:10px; padding:9px 14px; font-size:.85rem; font-family:'DM Sans',sans-serif; transition:.2s; resize:none; color:var(--ink); }
-.cmt-input:focus { border-color:var(--accent); outline:none; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
-.btn-send { background:var(--accent); color:#fff; border:none; border-radius:10px; padding:9px 18px; font-weight:700; cursor:pointer; font-size:.83rem; white-space:nowrap; }
-.cmt-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); animation:fadeUp .3s ease; }
-.cmt-item:last-child { border-bottom:none; }
-.cmt-body strong { font-size:.85rem; }
-.cmt-body p { font-size:.82rem; color:#374151; margin:3px 0 0; }
-.cmt-time { font-size:.72rem; color:var(--ink-soft); margin-top:4px; }
-.cmt-del { background:none; border:none; color:var(--danger); cursor:pointer; font-size:.75rem; margin-left:auto; opacity:.6; transition:.2s; }
-.cmt-del:hover { opacity:1; }
+.cmts-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 14px; box-shadow: var(--shadow); }
+.cmts-hdr { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.cmts-hdr h5 { font-size: 15px; font-weight: 800; color: var(--text); }
+.cmt-count { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+/* Comment role filters */
+.cmt-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.cf {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
+    padding: 3px 12px; font-size: 11px; font-weight: 700; cursor: pointer;
+    color: var(--muted); transition: .18s; font-family: var(--font);
+}
+.cf.active, .cf:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* New comment input */
+.new-cmt { display: flex; gap: 10px; margin-bottom: 20px; }
+.av { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+.av.sm { width: 28px; height: 28px; font-size: 11px; background: #4338ca; }
+.cinput-wrap { flex: 1; }
+.ctxt {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 9px; padding: 9px 13px; font-size: 13px; color: var(--text);
+    resize: none; font-family: var(--font); transition: .18s; min-height: 56px;
+}
+.ctxt:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+.cmt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 7px; }
+.btn-cancel { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; color: var(--muted); cursor: pointer; font-family: var(--font); }
+.btn-post { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 6px 16px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: .18s; }
+.btn-post:hover { background: var(--primary-dark); }
+.btn-post:disabled { opacity: .5; pointer-events: none; }
+
+/* Comment item */
+.ci { display: flex; gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--border); animation: fadeUp .3s ease; }
+.ci:last-child { border-bottom: none; }
+.cb { flex: 1; min-width: 0; }
+.cmt-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.cn { font-size: 13px; font-weight: 700; color: var(--text); }
+.crole { font-size: 10px; font-weight: 700; border-radius: 4px; padding: 1px 6px; text-transform: uppercase; }
+.role-student { background: #dcfce7; color: #15803d; }
+.role-teacher { background: #dbeafe; color: #1d4ed8; }
+.role-admin   { background: #f3e8ff; color: #7c3aed; }
+.role-other   { background: var(--bg); color: var(--muted); }
+.ct { font-size: 11px; color: var(--dim); }
+.cc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+.c-btns { display: flex; gap: 10px; margin-top: 6px; }
+.btn-rep, .btn-del { background: none; border: none; font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: .15s; }
+.btn-rep { color: var(--muted); } .btn-rep:hover { color: var(--primary); }
+.btn-del { color: var(--dim); }   .btn-del:hover { color: var(--danger); }
+
+/* Reply box */
+.reply-box { margin: 8px 0 0 46px; background: var(--bg); border-radius: 9px; padding: 12px; display: none; }
+.reply-box.open { display: block; }
+.reply-list { margin-top: 10px; }
+.ri { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.ri:last-child { border-bottom: none; }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── RIGHT PANEL ── */
-.right-panel { display:flex; flex-direction:column; gap:14px; }
+.right-col { display: flex; flex-direction: column; gap: 14px; }
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.ph { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.ph h6 { font-size: 13px; font-weight: 700; color: var(--text); }
+.badge-pill { background: var(--primary-light); color: var(--primary); border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
 
 /* Playlist */
-.playlist-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
-.playlist-header { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-.playlist-header h6 { font-family:'Syne',sans-serif; font-weight:700; margin:0; }
-.playlist-list { max-height:340px; overflow-y:auto; }
-.pl-item { display:flex; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border); transition:.2s; }
-.pl-item:hover { background:var(--surface); }
-.pl-item.active { background:#eef2ff; border-left:3px solid var(--accent); }
-.pl-thumb { width:72px; height:42px; background:#1e1b4b; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.8rem; }
-.pl-meta strong { font-size:.8rem; display:block; line-height:1.3; color:var(--ink); }
-.pl-meta span { font-size:.72rem; color:var(--ink-soft); }
+.pl-scroll { max-height: 300px; overflow-y: auto; }
+.pli { display: flex; gap: 10px; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: .15s; }
+.pli:hover { background: var(--bg); }
+.pli.on { background: var(--primary-light); border-left: 3px solid var(--primary); }
+.pl-thumb { width: 68px; height: 40px; background: #1e1b4b; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; }
+.pli-info strong { font-size: 12px; font-weight: 600; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pli-info span { font-size: 11px; color: var(--muted); }
 
-/* Nav buttons */
-.nav-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.btn-nav { border:1px solid var(--border); border-radius:10px; padding:9px; font-size:.82rem; font-weight:700; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; }
-.btn-nav.prev { background:var(--card-bg); color:var(--ink); }
-.btn-nav.next { background:var(--accent); color:#fff; border-color:var(--accent); }
-.btn-nav:hover { opacity:.88; }
-.btn-nav:disabled, .btn-nav[disabled] { opacity:.4; pointer-events:none; }
+.nav-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+.bn { border-radius: 9px; padding: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; text-decoration: none; transition: .18s; border: none; font-family: var(--font); }
+.bn.prev { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.bn.next { background: var(--primary); color: #fff; }
+.bn:hover { opacity: .85; } .bn:disabled { opacity: .35; pointer-events: none; }
 
-/* Engagement card */
-.engagement-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
-.engagement-header { padding:13px 16px; border-bottom:1px solid var(--border); font-family:'Syne',sans-serif; font-weight:700; font-size:.88rem; display:flex; justify-content:space-between; }
-.eng-row { display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:1px solid var(--border); font-size:.8rem; }
-.eng-row:last-child { border-bottom:none; }
-.eng-name { flex:1; font-weight:500; }
-.progress-pill { background:var(--surface); border-radius:20px; height:6px; width:70px; overflow:hidden; flex-shrink:0; }
-.progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:20px; }
-.eng-pct { font-weight:700; font-size:.75rem; color:var(--accent); min-width:30px; text-align:right; }
+/* Rating */
+.rat-body { padding: 14px; }
+.big-n { font-size: 2.6rem; font-weight: 800; color: var(--text); line-height: 1; font-family: monospace; }
+.rat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
-/* AI usage card */
-.ai-card { background:linear-gradient(135deg,#1e1b4b,#312e81); color:#fff; border-radius:var(--radius); padding:16px; box-shadow:var(--shadow-lg); }
-.ai-card h6 { font-family:'Syne',sans-serif; font-weight:700; margin-bottom:12px; }
-.ai-stat-row { display:flex; justify-content:space-between; font-size:.8rem; padding:5px 0; border-bottom:1px solid rgba(255,255,255,.1); }
-.ai-stat-row:last-child { border-bottom:none; }
+/* Engagement */
+.eng-list { max-height: 230px; overflow-y: auto; }
+.er { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.er:last-child { border-bottom: none; }
+.en { flex: 1; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pt { background: var(--border); border-radius: 20px; height: 5px; width: 80px; overflow: hidden; flex-shrink: 0; }
+.pb { height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--primary), var(--purple)); transition: width .5s ease; }
+.ep { font-size: 12px; font-weight: 700; color: var(--primary); min-width: 34px; text-align: right; font-family: monospace; }
 
-/* Rating card */
-.rating-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); }
-.rating-card h6 { font-family:'Syne',sans-serif; font-weight:700; margin-bottom:10px; }
-.big-rating { font-family:'Syne',sans-serif; font-size:3rem; font-weight:800; color:var(--ink); line-height:1; }
-.rating-count { font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
+/* AI Stats */
+.ai-body { padding: 14px; }
+.air { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.air:last-child { border-bottom: none; }
+.air span { color: var(--muted); }
+.air strong { color: var(--text); font-family: monospace; }
 
-/* Toast */
-#toast-wrap { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
-.toast-msg { border-radius:12px; padding:11px 18px; font-size:.83rem; font-weight:500; box-shadow:var(--shadow-lg); animation:slideIn .3s; color:#fff; max-width:320px; }
-.toast-msg.success { background:#059669; }
-.toast-msg.danger  { background:#dc2626; }
+/* ── TOAST ── */
+#toast-root { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #fff; animation: slideIn .3s ease; max-width: 320px; pointer-events: auto; box-shadow: var(--shadow-lg); }
+.toast.ok { background: #059669; } .toast.err { background: #dc2626; } .toast.inf { background: var(--primary); }
 @keyframes slideIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
-
-/* Alert */
-.alert-auto { border-radius:10px; font-size:.85rem; padding:10px 16px; }
+.alert-box { border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
 </style>
+
+<div class="vp-wrap">
 
 <!-- BACK BAR -->
 <div class="back-bar">
     <a href="javascript:history.back()" class="btn-back"><i class="fa fa-arrow-left"></i> Back</a>
-    <h2 id="pageTitle" runat="server"></h2>
+    <span class="page-head" id="pageTitle" runat="server"></span>
 </div>
 
-<asp:Label ID="lblMsg" runat="server" CssClass="alert alert-danger alert-auto d-block mb-3" Visible="false"></asp:Label>
+<asp:Label ID="lblMsg" runat="server" CssClass="alert-box" Visible="false" />
 
-<div class="vp-layout">
-
-    <!-- ═══════ LEFT: Video + Info + Comments ═══════ -->
-    <div>
-        <!-- VIDEO -->
-        <div class="video-wrap" id="videoContainer">
-            <video id="videoPlayer" runat="server" controls preload="metadata"></video>
-
-            <div class="skip-zone left" onclick="seekVideo(-10)" title="Back 10s">
-                <div class="skip-label"><i class="fa fa-backward"></i><span>10s</span></div>
-            </div>
-            <div class="skip-zone right" onclick="seekVideo(10)" title="Forward 10s">
-                <div class="skip-label"><i class="fa fa-forward"></i><span>10s</span></div>
-            </div>
-
-            <!-- Floating controls -->
-            <div class="vid-controls">
-                <button class="vid-ctrl-btn" onclick="takeScreenshot()" title="Screenshot"><i class="fa fa-camera"></i></button>
-                <button class="vid-ctrl-btn" onclick="toggleSettings()" title="Settings"><i class="fa fa-cog"></i></button>
-            </div>
-
-            <!-- Settings panel -->
-            <div class="settings-panel" id="settingsPanel">
-                <div class="settings-row">
-                    <span><i class="fa fa-sync me-2"></i>Loop</span>
-                    <label class="toggle-sw"><input type="checkbox" id="chkLoop" onchange="onLoopChange()"><span class="toggle-track"></span></label>
-                </div>
-                <div class="settings-row">
-                    <span><i class="fa fa-forward me-2"></i>Auto Next</span>
-                    <label class="toggle-sw"><input type="checkbox" id="chkAutoNext" onchange="onAutoNextChange()"><span class="toggle-track"></span></label>
-                </div>
-                <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px">
-                    <span><i class="fa fa-tachometer-alt me-2"></i>Playback Speed</span>
-                    <div class="speed-btns">
-                        <button class="speed-btn" onclick="setSpeed(0.5)">0.5×</button>
-                        <button class="speed-btn" onclick="setSpeed(1)">1×</button>
-                        <button class="speed-btn active" onclick="setSpeed(1.25)">1.25×</button>
-                        <button class="speed-btn" onclick="setSpeed(1.5)">1.5×</button>
-                        <button class="speed-btn" onclick="setSpeed(2)">2×</button>
-                    </div>
+<div class="vp-grid">
+<!-- ═══ LEFT ═══ -->
+<div>
+    <!-- VIDEO -->
+    <div class="vid-box">
+        <video id="videoPlayer" runat="server" controls preload="metadata"></video>
+        <div class="skip-z L" onclick="seek(-10)"><div class="sk-lbl"><i class="fas fa-backward"></i><span>10s</span></div></div>
+        <div class="skip-z R" onclick="seek(10)"><div class="sk-lbl"><i class="fas fa-forward"></i><span>10s</span></div></div>
+        <div class="vid-ov">
+            <button type="button" class="vbtn" onclick="takeShot()"><i class="fas fa-camera"></i></button>
+            <button type="button" class="vbtn" onclick="toggleSett()"><i class="fas fa-cog"></i></button>
+        </div>
+        <div class="sett" id="settPanel">
+            <div class="srow"><span>Loop</span>
+                <label class="sw"><input type="checkbox" id="chkLoop" onchange="vid.loop=this.checked"><span class="sw-t"></span></label></div>
+            <div class="srow"><span>Auto Next</span>
+                <label class="sw"><input type="checkbox" id="chkAN"><span class="sw-t"></span></label></div>
+            <div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">
+                <span>Speed</span>
+                <div class="spds">
+                    <button class="spd" type="button" onclick="setSpd(0.5)">0.5×</button>
+                    <button class="spd" type="button" onclick="setSpd(0.75)">0.75×</button>
+                    <button class="spd on" type="button" onclick="setSpd(1)">1×</button>
+                    <button class="spd" type="button" onclick="setSpd(1.5)">1.5×</button>
+                    <button class="spd" type="button" onclick="setSpd(2)">2×</button>
                 </div>
             </div>
-        </div>
-
-        <!-- FIRST-WATCH LOCK NOTICE (admin info) -->
-        <div class="first-watch-notice">
-            <i class="fa fa-lock me-1"></i>
-            <strong>Student restriction active:</strong>&nbsp;Students cannot skip this video on first watch. Seeking is unlocked after 100% completion.
-        </div>
-
-        <!-- VIDEO INFO -->
-        <div class="vid-info">
-            <div class="vid-title" id="lblVideoTitle" runat="server">Loading…</div>
-            <div class="vid-meta-row">
-                <div class="vid-meta-left">
-                    <span><i class="fa fa-eye me-1"></i><span id="liveViews" runat="server">0</span> views</span>
-                    <span><i class="fa fa-user me-1"></i><span id="lblInstructor" runat="server"></span></span>
-                    <span><i class="fa fa-calendar me-1"></i><span id="lblUploadDate" runat="server"></span></span>
-                </div>
-                <div id="starRating" runat="server"></div>
-            </div>
-
-            <!-- Show More / Topics -->
-            <div id="descBox" style="margin-top:12px">
-                <p id="lblDesc" runat="server" style="font-size:.88rem;color:var(--ink-soft);margin:0"></p>
-                <button id="btnToggleTopics" onclick="toggleTopics()" style="background:none;border:none;color:var(--accent);font-weight:700;font-size:.82rem;cursor:pointer;padding:6px 0;margin-top:6px">
-                    <i class="fa fa-list-ul me-1"></i>Show Topics
-                </button>
-            </div>
-
-            <div class="topics-strip" id="topicsStrip" style="display:none">
-                <asp:Repeater ID="rptTopics" runat="server">
-                    <ItemTemplate>
-                        <div class="topic-item" onclick="jumpToTime('<%# Eval("StartTime") %>')">
-                            <span class="topic-time"><%# Eval("StartTime") %></span>
-                            <span><%# Eval("TopicTitle") %></span>
-                        </div>
-                    </ItemTemplate>
-                </asp:Repeater>
-            </div>
-        </div>
-
-        <!-- STATS ROW -->
-        <div class="vid-stats">
-            <div class="stat-box">
-                <div class="stat-val" id="statViews" runat="server">—</div>
-                <div class="stat-lbl">Views</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-val" id="statStudents" runat="server">—</div>
-                <div class="stat-lbl">Unique Students</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-val" id="statCompletion" runat="server">—</div>
-                <div class="stat-lbl">Avg Completion</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-val" id="statComments" runat="server">—</div>
-                <div class="stat-lbl">Comments</div>
-            </div>
-        </div>
-
-        <!-- COMMENTS -->
-        <div class="comment-section">
-            <h5><i class="fa fa-comments me-2" style="color:var(--accent)"></i>Discussion
-                <span id="commentCountBadge" style="font-size:.78rem;font-weight:600;color:var(--ink-soft);margin-left:8px"></span>
-            </h5>
-            <div class="comment-input-row">
-                <div class="cmt-avatar" id="adminInitial" runat="server">A</div>
-                <textarea id="txtComment" class="cmt-input" rows="2" placeholder="Add a comment…"></textarea>
-                <button class="btn-send" onclick="postComment()"><i class="fa fa-paper-plane"></i></button>
-            </div>
-            <div id="commentsList"></div>
         </div>
     </div>
 
-    <!-- ═══════ RIGHT PANEL ═══════ -->
-    <div class="right-panel">
+    <div class="fw-notice">
+        <i class="fas fa-lock"></i>
+        <span><strong>Student restriction active</strong> — Students cannot seek on first watch. Unlocks after 100% completion.</span>
+    </div>
 
-        <!-- PLAYLIST -->
-        <div class="playlist-card">
-            <div class="playlist-header">
-                <h6><i class="fa fa-list me-2"></i>Playlist</h6>
-                <span class="badge" style="background:#eef2ff;color:var(--accent);border-radius:8px;padding:3px 10px;font-size:.74rem;font-weight:700">Admin View</span>
+    <!-- INFO -->
+    <div class="info-card">
+        <div class="vid-title" id="lblVideoTitle" runat="server">Loading…</div>
+        <div class="vid-meta">
+            <div class="meta-chips">
+                <span><i class="fas fa-eye"></i> <span id="liveViews" runat="server">0</span> student views</span>
+                <span><i class="fas fa-user"></i> <span id="lblInstructor" runat="server">—</span></span>
+                <span><i class="fas fa-calendar"></i> <span id="lblUploadDate" runat="server">—</span></span>
             </div>
-            <div class="playlist-list">
-                <asp:Repeater ID="rptPlaylist" runat="server">
+            <div class="stars" id="starRating" runat="server"></div>
+        </div>
+        <div class="desc-wrap">
+            <div class="desc-body clamp" id="descBody">
+                <span id="lblDesc" runat="server" style="font-size:13px;color:var(--muted);line-height:1.7"></span>
+            </div>
+            <button type="button" class="btn-more" id="btnMore" onclick="toggleMore()">
+                <i class="fas fa-chevron-down" id="moreIcon"></i> Show more
+            </button>
+            <div class="topics" id="topicsDiv">
+                <asp:Repeater ID="rptTopics" runat="server">
                     <ItemTemplate>
-                        <div class='pl-item <%# Convert.ToInt32(Eval("VideoId")) == VideoId ? "active" : "" %>'
-                             onclick="window.location='VideoPlayer.aspx?VideoId=<%# Eval("VideoId") %>'">
-                            <div class="pl-thumb"><i class="fa fa-play"></i></div>
-                            <div class="pl-meta">
-                                <strong><%# Server.HtmlEncode(Eval("Title").ToString()) %></strong>
-                                <span><i class="fa fa-eye me-1"></i><%# Eval("ViewCount") %> views</span>
-                            </div>
+                        <div class="t-row" onclick="jumpTo('<%# Eval("StartTime") %>')">
+                            <span class="t-ts"><%# Eval("StartTime") %></span>
+                            <span><%# Server.HtmlEncode(Eval("TopicTitle").ToString()) %></span>
                         </div>
                     </ItemTemplate>
                 </asp:Repeater>
             </div>
         </div>
+    </div>
 
-        <!-- NAV BUTTONS -->
+    <!-- STATS -->
+    <div class="stats-strip">
+        <div class="stat-b"><div class="sn" id="statViews" runat="server">—</div><div class="sl">Student Views</div></div>
+        <div class="stat-b"><div class="sn" id="statStudents" runat="server">—</div><div class="sl">Unique Students</div></div>
+        <div class="stat-b"><div class="sn" id="statCompletion" runat="server">—</div><div class="sl">Avg Completion</div></div>
+        <div class="stat-b"><div class="sn" id="statComments" runat="server">—</div><div class="sl">All Comments</div></div>
+    </div>
+
+    <!-- COMMENTS — ALL ROLES VISIBLE -->
+    <div class="cmts-card">
+        <div class="cmts-hdr">
+            <div>
+                <h5><i class="fas fa-comments me-2" style="color:var(--primary)"></i>Discussion</h5>
+                <span class="cmt-count" id="cntBadge"></span>
+            </div>
+            <!-- Role filter buttons -->
+            <div class="cmt-filters">
+                <button type="button" class="cf active" onclick="filterCmts('all',this)">All</button>
+                <button type="button" class="cf" onclick="filterCmts('Student',this)">Students</button>
+                <button type="button" class="cf" onclick="filterCmts('Teacher',this)">Teachers</button>
+                <button type="button" class="cf" onclick="filterCmts('Admin',this)">Admins</button>
+            </div>
+        </div>
+
+        <!-- New comment -->
+        <div class="new-cmt">
+            <div class="av" id="adminInitial" runat="server">A</div>
+            <div class="cinput-wrap">
+                <textarea id="txtCmt" class="ctxt" rows="2"
+                    placeholder="Add a comment — visible to students, teachers, and admins…"
+                    onfocus="this.rows=4" onblur="if(!this.value.trim())this.rows=2"></textarea>
+                <div class="cmt-actions">
+                    <button class="btn-cancel" type="button" onclick="document.getElementById('txtCmt').value=''">Cancel</button>
+                    <button class="btn-post" type="button" id="btnPost" onclick="postCmt()">
+                        <i class="fas fa-paper-plane me-1"></i>Comment
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="cmtList">
+            <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
+                <i class="fas fa-spinner fa-spin me-2"></i>Loading comments…
+            </div>
+        </div>
+    </div>
+</div><!-- /left -->
+
+<!-- ═══ RIGHT ═══ -->
+<div class="right-col">
+
+    <!-- Playlist -->
+    <div class="panel">
+        <div class="ph"><h6><i class="fas fa-list me-2"></i>Playlist</h6><span class="badge-pill">Admin View</span></div>
+        <div class="pl-scroll">
+            <asp:Repeater ID="rptPlaylist" runat="server">
+                <ItemTemplate>
+                    <div class='pli <%# Convert.ToInt32(Eval("VideoId"))==VideoId?"on":"" %>'
+                         onclick="location='VideoPlayer.aspx?VideoId=<%# Eval("VideoId") %>'">
+                        <div class="pl-thumb"><i class="fas fa-play"></i></div>
+                        <div class="pli-info">
+                            <strong><%# Server.HtmlEncode(Eval("Title").ToString()) %></strong>
+                            <span><i class="fas fa-users me-1"></i><%# Eval("UniqueViews") %> students</span>
+                        </div>
+                    </div>
+                </ItemTemplate>
+            </asp:Repeater>
+        </div>
         <div class="nav-btns">
-            <asp:LinkButton ID="btnPrev" runat="server" CssClass="btn-nav prev" OnClick="btnPrev_Click">
-                <i class="fa fa-chevron-left"></i> Previous
+            <asp:LinkButton ID="btnPrev" runat="server" CssClass="bn prev" OnClick="btnPrev_Click">
+                <i class="fas fa-chevron-left"></i> Prev
             </asp:LinkButton>
-            <asp:LinkButton ID="btnNext" runat="server" CssClass="btn-nav next" OnClick="btnNext_Click">
-                Next <i class="fa fa-chevron-right"></i>
+            <asp:LinkButton ID="btnNext" runat="server" CssClass="bn next" OnClick="btnNext_Click">
+                Next <i class="fas fa-chevron-right"></i>
             </asp:LinkButton>
         </div>
+    </div>
 
-        <!-- INSTRUCTOR RATING -->
-        <div class="rating-card">
-            <h6><i class="fa fa-star me-2" style="color:#fbbf24"></i>Instructor Rating</h6>
-            <div class="big-rating" id="avgRatingVal" runat="server">—</div>
-            <div id="ratingStars" runat="server"></div>
-            <div class="rating-count" id="ratingCount" runat="server"></div>
+    <!-- Rating -->
+    <div class="panel">
+        <div class="ph"><h6><i class="fas fa-star me-2" style="color:#f59e0b"></i>Instructor Rating</h6></div>
+        <div class="rat-body">
+            <div class="big-n" id="avgRatingVal" runat="server">—</div>
+            <div class="stars" style="margin-top:6px" id="ratingStars" runat="server"></div>
+            <div class="rat-sub" id="ratingCount" runat="server"></div>
         </div>
+    </div>
 
-        <!-- STUDENT ENGAGEMENT -->
-        <div class="engagement-card">
-            <div class="engagement-header">
-                <span><i class="fa fa-users me-2"></i>Student Progress</span>
-                <span id="engCount" style="font-size:.75rem;color:var(--ink-soft)"></span>
-            </div>
-            <div id="engagementList" style="max-height:250px;overflow-y:auto">
-                <asp:Repeater ID="rptEngagement" runat="server">
-                    <ItemTemplate>
-                        <div class="eng-row">
-                            <span class="eng-name"><%# Server.HtmlEncode(Eval("UserName").ToString()) %></span>
-                            <div class="progress-pill">
-                                <div class="progress-fill" style="width:<%# Eval("WatchedPercent") %>%"></div>
-                            </div>
-                            <span class="eng-pct"><%# Eval("WatchedPercent") %>%</span>
-                        </div>
-                    </ItemTemplate>
-                </asp:Repeater>
-            </div>
+    <!-- Student Progress -->
+    <div class="panel">
+        <div class="ph">
+            <h6><i class="fas fa-users me-2"></i>Student Watch Progress</h6>
+            <span class="badge-pill" id="engBadge"></span>
         </div>
+        <div class="eng-list">
+            <asp:Repeater ID="rptEngagement" runat="server">
+                <ItemTemplate>
+                    <div class="er">
+                        <span class="en" title="<%# Server.HtmlEncode(Eval("UserName").ToString()) %>">
+                            <%# Server.HtmlEncode(Eval("UserName").ToString()) %>
+                        </span>
+                        <div class="pt"><div class="pb" style="width:<%# Eval("WatchedPercent") %>%"></div></div>
+                        <span class="ep"><%# Eval("WatchedPercent") %>%</span>
+                    </div>
+                </ItemTemplate>
+            </asp:Repeater>
+        </div>
+    </div>
 
-        <!-- AI USAGE STATS -->
-        <div class="ai-card">
-            <h6><i class="fa fa-robot me-2"></i>AI Feature Usage</h6>
+    <!-- AI Stats -->
+    <div class="panel">
+        <div class="ph"><h6><i class="fas fa-robot me-2"></i>AI Feature Usage</h6></div>
+        <div class="ai-body">
             <asp:Repeater ID="rptAIStats" runat="server">
                 <ItemTemplate>
-                    <div class="ai-stat-row">
+                    <div class="air">
                         <span><%# Eval("Type") %></span>
                         <strong><%# Eval("UsageCount") %></strong>
                     </div>
                 </ItemTemplate>
             </asp:Repeater>
         </div>
-
     </div>
-</div>
 
-<!-- HIDDEN FIELDS -->
-<asp:HiddenField ID="hfVideoId" runat="server" />
+</div><!-- /right -->
+</div><!-- /grid -->
+</div><!-- /wrap -->
+
+<asp:HiddenField ID="hfVideoId"   runat="server" />
 <asp:HiddenField ID="hfAdminName" runat="server" />
-
-<!-- TOAST -->
-<div id="toast-wrap"></div>
+<div id="toast-root"></div>
 
 <script>
+    /* ── State ── */
     const vid = document.getElementById('<%= videoPlayer.ClientID %>');
-    const vidId = '<%= VideoId %>';
-    const STORAGE_KEY = 'vp_pos_' + vidId;
+    const VID_ID = parseInt('<%= VideoId %>') || 0;
+    const SKEY = 'lms_vpos_' + VID_ID;
+    let ptimer = null, lastSec = -1, moreOpen = false;
+    let allCmts = [];   // store all comments for filtering
+    let activeFilter = 'all';
 
-    // ── Toast ──
-    function toast(msg, type) {
-        const w = document.getElementById('toast-wrap');
-        const t = document.createElement('div');
-        t.className = 'toast-msg ' + (type || 'success');
-        t.textContent = msg;
-        w.appendChild(t);
-        setTimeout(() => t.remove(), 5000);
+    /* ── Toast ── */
+    function toast(msg, t = 'inf') {
+        const w = document.getElementById('toast-root'), d = document.createElement('div');
+        d.className = 'toast ' + t; d.textContent = msg; w.appendChild(d);
+        setTimeout(() => d.remove(), 4500);
     }
 
-    // ── Video resume (admin side – allowed to seek) ──
-    window.addEventListener('load', () => {
-        const saved = parseFloat(localStorage.getItem(STORAGE_KEY) || 0);
-        if (saved > 5) {
-            vid.currentTime = saved;
-            toast('Resumed from ' + formatTime(saved), 'success');
-        }
+    /* ── Resume position ── */
+    vid.addEventListener('loadedmetadata', () => {
+        const s = parseFloat(localStorage.getItem(SKEY) || 0);
+        if (s > 5) { vid.currentTime = s; toast('Resumed from ' + fmt(s), 'inf'); }
     });
-
     vid.addEventListener('timeupdate', () => {
-        if (!isNaN(vid.currentTime) && vid.currentTime > 0)
-            localStorage.setItem(STORAGE_KEY, vid.currentTime);
+        if (!isNaN(vid.currentTime) && vid.currentTime > 1)
+            localStorage.setItem(SKEY, vid.currentTime);
     });
 
+    /* ── Progress tracking ── */
+    vid.addEventListener('play', () => { clearInterval(ptimer); ptimer = setInterval(() => saveProg(false), 10000); });
+    vid.addEventListener('pause', () => clearInterval(ptimer));
     vid.addEventListener('ended', () => {
-        localStorage.removeItem(STORAGE_KEY);
-        if (document.getElementById('chkAutoNext').checked) {
-            const btn = document.getElementById('<%= btnNext.ClientID %>');
-        if (btn && !btn.disabled) btn.click();
+        clearInterval(ptimer); localStorage.removeItem(SKEY); saveProg(true);
+        if (document.getElementById('chkAN').checked) {
+            const b = document.getElementById('<%= btnNext.ClientID %>');
+        if (b && !b.disabled) b.click();
     }
 });
 
-    function formatTime(s) {
-        const m = Math.floor(s / 60), sec = Math.floor(s % 60);
-        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    function saveProg(force) {
+        if (!vid.duration || vid.duration === 0) return;
+        const ws = force ? Math.floor(vid.duration) : Math.floor(vid.currentTime);
+        const dur = Math.floor(vid.duration);
+        if (ws === lastSec && !force) return;
+        lastSec = ws;
+        fetch('VideoPlayer.aspx/SaveProgress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json;charset=utf-8' },
+            body: JSON.stringify({ vid: VID_ID, watchedSec: ws, totalSec: dur })
+        }).catch(() => { });
     }
 
-    // ── Skip / seek ──
-    function seekVideo(delta) {
-        vid.currentTime = Math.max(0, Math.min(vid.duration || 0, vid.currentTime + delta));
+    /* ── Seek / Jump ── */
+    function seek(d) { vid.currentTime = Math.max(0, Math.min(vid.duration || 0, vid.currentTime + d)); }
+    function jumpTo(ts) {
+        const p = ts.split(':').map(Number); let s = 0;
+        if (p.length === 2) s = p[0] * 60 + p[1];
+        else if (p.length === 3) s = p[0] * 3600 + p[1] * 60 + p[2];
+        vid.currentTime = s; vid.play();
     }
+    function fmt(s) { const m = Math.floor(s / 60), sc = Math.floor(s % 60); return m + ':' + (sc < 10 ? '0' : '') + sc; }
 
-    // ── Jump to topic timestamp ──
-    function jumpToTime(ts) {
-        if (!ts) return;
-        const parts = ts.split(':').map(Number);
-        let secs = 0;
-        if (parts.length === 2) secs = parts[0] * 60 + parts[1];
-        else if (parts.length === 3) secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
-        vid.currentTime = secs;
-        vid.play();
-    }
-
-    // ── Topics toggle ──
-    let topicsVisible = false;
-    function toggleTopics() {
-        topicsVisible = !topicsVisible;
-        document.getElementById('topicsStrip').style.display = topicsVisible ? 'block' : 'none';
-        document.getElementById('btnToggleTopics').innerHTML =
-            `<i class="fa fa-list-ul me-1"></i>${topicsVisible ? 'Hide Topics' : 'Show Topics'}`;
-    }
-
-    // ── Settings panel ──
-    function toggleSettings() {
-        const p = document.getElementById('settingsPanel');
+    /* ── Settings ── */
+    function toggleSett() {
+        const p = document.getElementById('settPanel');
         p.style.display = p.style.display === 'block' ? 'none' : 'block';
     }
     document.addEventListener('click', e => {
-        if (!e.target.closest('#settingsPanel') && !e.target.closest('.vid-ctrl-btn'))
-            document.getElementById('settingsPanel').style.display = 'none';
+        if (!e.target.closest('.sett') && !e.target.closest('.vbtn'))
+            document.getElementById('settPanel').style.display = 'none';
     });
-
-    // ── Loop / AutoNext ──
-    function onLoopChange() {
-        const chkLoop = document.getElementById('chkLoop');
-        vid.loop = chkLoop.checked;
-        if (chkLoop.checked) document.getElementById('chkAutoNext').checked = false;
-    }
-    function onAutoNextChange() {
-        if (document.getElementById('chkAutoNext').checked)
-            document.getElementById('chkLoop').checked = false;
-    }
-
-    // ── Speed ──
-    function setSpeed(s) {
+    function setSpd(s) {
         vid.playbackRate = s;
-        document.querySelectorAll('.speed-btn').forEach(b => {
-            b.classList.toggle('active', parseFloat(b.textContent) === s);
-        });
+        document.querySelectorAll('.spd').forEach(b => b.classList.toggle('on', parseFloat(b.textContent) === s));
     }
 
-    // ── Screenshot ──
-    function takeScreenshot() {
+    /* ── Screenshot ── */
+    function takeShot() {
         try {
             const c = document.createElement('canvas');
             c.width = vid.videoWidth; c.height = vid.videoHeight;
             c.getContext('2d').drawImage(vid, 0, 0);
             const a = document.createElement('a');
-            a.href = c.toDataURL('image/png');
-            a.download = 'capture_' + Date.now() + '.png';
-            a.click();
-            toast('Screenshot saved!', 'success');
-        } catch (ex) { toast('Screenshot failed (CORS?)', 'danger'); }
+            a.href = c.toDataURL('image/png'); a.download = 'cap_' + Date.now() + '.png'; a.click();
+            toast('Screenshot saved!', 'ok');
+        } catch (e) { toast('Screenshot failed', 'err'); }
     }
 
-    // ── Comments (AJAX) ──
-    function loadComments() {
+    /* ── Show More / Topics ── */
+    function toggleMore() {
+        moreOpen = !moreOpen;
+        document.getElementById('descBody').className = 'desc-body ' + (moreOpen ? 'open' : 'clamp');
+        document.getElementById('topicsDiv').className = 'topics' + (moreOpen ? ' open' : '');
+        document.getElementById('btnMore').innerHTML =
+            `<i class="fas fa-chevron-${moreOpen ? 'up' : 'down'}" id="moreIcon"></i> Show ${moreOpen ? 'less' : 'more'}`;
+    }
+
+    /* ── Escape HTML ── */
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    /* ── Role badge ── */
+    function roleBadge(role) {
+        const r = (role || '').toLowerCase();
+        if (r === 'student') return `<span class="crole role-student">Student</span>`;
+        if (r === 'teacher') return `<span class="crole role-teacher">Teacher</span>`;
+        if (r === 'admin' || r === 'superadmin') return `<span class="crole role-admin">Admin</span>`;
+        return `<span class="crole role-other">${esc(role || 'User')}</span>`;
+    }
+
+    /* ── Filter comments by role ── */
+    function filterCmts(role, btn) {
+        activeFilter = role;
+        document.querySelectorAll('.cf').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderCmts(allCmts);
+    }
+
+    /* ── Load ALL comments (no role filter in SQL — filter client-side) ── */
+    function loadCmts() {
         fetch('VideoPlayer.aspx/GetComments', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({ vid: parseInt(vidId) })
+            headers: { 'Content-Type': 'application/json;charset=utf-8' },
+            body: JSON.stringify({ vid: VID_ID })
         })
             .then(r => r.json())
             .then(res => {
-                const data = typeof res.d === 'string' ? JSON.parse(res.d) : res.d;
-                const list = document.getElementById('commentsList');
-                const badge = document.getElementById('commentCountBadge');
-                if (!list) return;
-                if (!data || data.length === 0) {
-                    list.innerHTML = '<p style="color:var(--ink-soft);font-size:.83rem;text-align:center;padding:20px 0">No comments yet. Be the first!</p>';
-                    if (badge) badge.textContent = '(0)';
-                    return;
-                }
-                if (badge) badge.textContent = `(${data.length})`;
-                list.innerHTML = data.map(c => `
-            <div class="cmt-item">
-                <div class="cmt-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0">
-                    ${c.Username.charAt(0).toUpperCase()}
-                </div>
-                <div class="cmt-body" style="flex:1">
-                    <strong>${escHtml(c.Username)}</strong>
-                    <p>${escHtml(c.Comment)}</p>
-                    <div style="display:flex;align-items:center;gap:10px">
-                        <span class="cmt-time">${c.CommentedOn || ''}</span>
-                        <button class="cmt-del" onclick="deleteComment(${c.CommentId})"><i class="fa fa-trash"></i> Delete</button>
+                allCmts = typeof res.d === 'string' ? JSON.parse(res.d) : (res.d || []);
+                renderCmts(allCmts);
+            })
+            .catch(() => toast('Failed to load comments', 'err'));
+    }
+
+    function renderCmts(data) {
+        const list = document.getElementById('cmtList');
+        const badge = document.getElementById('cntBadge');
+
+        // Apply role filter
+        const filtered = activeFilter === 'all'
+            ? data
+            : data.filter(c => (c.Role || '').toLowerCase() === activeFilter.toLowerCase());
+
+        if (badge) badge.textContent = '(' + data.length + ' total, ' + filtered.length + ' shown)';
+
+        const stat = document.getElementById('<%= statComments.ClientID %>');
+        if (stat) stat.textContent = data.length;
+
+        if (!filtered.length) {
+            list.innerHTML = `<p style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
+            No ${activeFilter === 'all' ? '' : '' + activeFilter + ' '}comments yet.</p>`;
+            return;
+        }
+
+        list.innerHTML = filtered.map(c => `
+<div class="ci" id="ci-${c.CommentId}" data-role="${esc(c.Role || '')}">
+    <div class="av" style="width:34px;height:34px;border-radius:50%;background:var(--primary);
+        color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;
+        font-size:12px;flex-shrink:0">${esc((c.Username || '?').charAt(0).toUpperCase())}</div>
+    <div class="cb">
+        <div class="cmt-top">
+            <span class="cn">${esc(c.Username || 'Unknown')}</span>
+            ${roleBadge(c.Role)}
+            <span class="ct">${esc(c.CommentedOn || '')}</span>
+        </div>
+        <div class="cc">${esc(c.Comment || '')}</div>
+        <div class="c-btns">
+            <button class="btn-rep" type="button" onclick="toggleRep(${c.CommentId})">
+                <i class="fas fa-reply"></i> Reply${c.ReplyCount > 0 ? ' (' + c.ReplyCount + ')' : ''}
+            </button>
+            <button class="btn-del" type="button" onclick="delCmt(${c.CommentId})">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+        <div class="reply-box" id="rb-${c.CommentId}">
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+                <div class="av sm">R</div>
+                <div style="flex:1">
+                    <textarea class="ctxt" id="rt-${c.CommentId}" rows="2"
+                        placeholder="Write a reply…" style="font-size:12px;min-height:46px"></textarea>
+                    <div class="cmt-actions" style="margin-top:6px">
+                        <button class="btn-cancel" type="button" onclick="toggleRep(${c.CommentId})">Cancel</button>
+                        <button class="btn-post" type="button" style="padding:5px 12px;font-size:11px"
+                            onclick="postReply(${c.CommentId})">Reply</button>
                     </div>
                 </div>
-            </div>`).join('');
-            })
-            .catch(() => toast('Failed to load comments.', 'danger'));
+            </div>
+            <div class="reply-list">
+                ${(c.Replies || []).map(r => `
+<div class="ri">
+    <div class="av sm" style="background:#4338ca">${esc((r.Username || '?').charAt(0).toUpperCase())}</div>
+    <div class="cb">
+        <div class="cmt-top">
+            <span class="cn" style="font-size:12px">${esc(r.Username || '')}</span>
+            ${roleBadge(r.Role)}
+            <span class="ct">${esc(r.CommentedOn || '')}</span>
+        </div>
+        <div class="cc" style="font-size:12px">${esc(r.Comment || '')}</div>
+    </div>
+</div>`).join('')}
+            </div>
+        </div>
+    </div>
+</div>`).join('');
     }
 
-    function postComment() {
-        const box = document.getElementById('txtComment');
+    function toggleRep(id) {
+        const rb = document.getElementById('rb-' + id);
+        rb.classList.toggle('open');
+        if (rb.classList.contains('open')) document.getElementById('rt-' + id)?.focus();
+    }
+
+    function postReply(parentId) {
+        const t = (document.getElementById('rt-' + parentId)?.value || '').trim();
+        if (!t) { toast('Please type a reply', 'err'); return; }
+        fetch('VideoPlayer.aspx/AddReply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json;charset=utf-8' },
+            body: JSON.stringify({ vid: VID_ID, parentId, msg: t })
+        }).then(r => r.json()).then(() => { loadCmts(); toast('Reply posted!', 'ok'); })
+            .catch(() => toast('Failed to post reply', 'err'));
+    }
+
+    function postCmt() {
+        const box = document.getElementById('txtCmt');
         const msg = (box.value || '').trim();
-        if (!msg) { toast('Please type a comment.', 'danger'); return; }
+        if (!msg) { toast('Please type a comment', 'err'); return; }
+        const btn = document.getElementById('btnPost');
+        btn.disabled = true;
         fetch('VideoPlayer.aspx/AddComment', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({ vid: parseInt(vidId), msg })
-        })
-            .then(r => r.json())
-            .then(() => { box.value = ''; loadComments(); })
-            .catch(() => toast('Failed to post comment.', 'danger'));
+            headers: { 'Content-Type': 'application/json;charset=utf-8' },
+            body: JSON.stringify({ vid: VID_ID, msg })
+        }).then(r => r.json()).then(() => { box.value = ''; loadCmts(); toast('Comment posted!', 'ok'); })
+            .catch(() => toast('Failed', 'err')).finally(() => btn.disabled = false);
     }
 
-    function deleteComment(id) {
-        if (!confirm('Delete this comment?')) return;
+    function delCmt(id) {
+        if (!confirm('Delete this comment and its replies?')) return;
         fetch('VideoPlayer.aspx/DeleteCommentAjax', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            headers: { 'Content-Type': 'application/json;charset=utf-8' },
             body: JSON.stringify({ commentId: id })
-        })
-            .then(() => { loadComments(); toast('Comment deleted.', 'success'); })
-            .catch(() => toast('Failed to delete.', 'danger'));
+        }).then(() => { loadCmts(); toast('Deleted', 'ok'); })
+            .catch(() => toast('Failed', 'err'));
     }
 
-    function escHtml(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    // ── Init ──
-    window.addEventListener('DOMContentLoaded', () => {
-        loadComments();
-        // Set admin initial
-        const adm = document.getElementById('<%= hfAdminName.ClientID %>');
-    const ini = document.getElementById('<%= adminInitial.ClientID %>');
-    if (adm && ini && adm.value) ini.textContent = adm.value.charAt(0).toUpperCase();
-
-    // Engagement count badge
-    const rows = document.querySelectorAll('.eng-row');
-    const cnt = document.getElementById('engCount');
-    if (cnt) cnt.textContent = rows.length + ' student' + (rows.length !== 1 ? 's' : '');
+    /* ── Init ── */
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCmts();
+        const an = document.getElementById('<%= hfAdminName.ClientID %>');
+    const ai = document.getElementById('<%= adminInitial.ClientID %>');
+    if (an && ai && an.value) ai.textContent = an.value.charAt(0).toUpperCase();
+    const rows = document.querySelectorAll('.er');
+    const eb = document.getElementById('engBadge');
+    if (eb) eb.textContent = rows.length + ' student' + (rows.length !== 1 ? 's' : '');
 });
 
-    // Keyboard shortcuts
+    /* ── Keyboard shortcuts ── */
     document.addEventListener('keydown', e => {
-        if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-        if (e.key === 'ArrowLeft') seekVideo(-10);
-        if (e.key === 'ArrowRight') seekVideo(10);
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+        if (e.key === 'ArrowLeft') seek(-10);
+        if (e.key === 'ArrowRight') seek(10);
         if (e.key === ' ') { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
     });
 </script>

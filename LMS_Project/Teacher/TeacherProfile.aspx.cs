@@ -74,7 +74,24 @@ namespace LMS_Project.Teacher
             SetEditMode(false);
             LoadProfile();
         }
+        protected void btnCancel_Click(object sender, EventArgs e)
+        {
+            foreach (var ctrl in new[] {
+        txtFullName, txtContact, txtAddress,
+        txtCity, txtCountry, txtPincode,
+        txtDesignation, txtQualification, txtExperience })
+            {
+                ctrl.ReadOnly = true;
+                ctrl.Style.Remove("background");
+                ctrl.Style.Remove("border-color");
+            }
 
+            btnUpdate.Visible = false;
+            btnCancel.Visible = false;
+            btnEdit.Visible = true;
+            pnlChangePassword.Visible = false;
+            pnlSuccess.Visible = false;
+        }
         private void SetEditMode(bool enable)
         {
             txtFullName.ReadOnly = !enable;

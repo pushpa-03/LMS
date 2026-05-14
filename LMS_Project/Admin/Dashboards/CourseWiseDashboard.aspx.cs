@@ -25,7 +25,7 @@ namespace LearningManagementSystem.Admin.Dashboards
                 ddlCourse.SelectedValue = "0";
                 SelectedCourseId = 0;
                 LoadDashboard();
-                LoadBannerIfExists();
+                //LoadBannerIfExists();
             }
         }
 
@@ -75,7 +75,7 @@ namespace LearningManagementSystem.Admin.Dashboards
             if (val < 0) ddlCourse.SelectedValue = "0";
 
             LoadDashboard();
-            LoadBannerIfExists();
+            //LoadBannerIfExists();
         }
 
         // ──────────────────────────────────────────────────────────
@@ -237,98 +237,98 @@ namespace LearningManagementSystem.Admin.Dashboards
         // ──────────────────────────────────────────────────────────
         // Banner Upload  — validated, production-safe
         // ──────────────────────────────────────────────────────────
-        protected void btnUploadBanner_Click(object sender, EventArgs e)
-        {
-            int.TryParse(ddlCourse.SelectedValue, out SelectedCourseId);
-            if (SelectedCourseId < 0) SelectedCourseId = 0;
+        //protected void btnUploadBanner_Click(object sender, EventArgs e)
+        //{
+        //    int.TryParse(ddlCourse.SelectedValue, out SelectedCourseId);
+        //    if (SelectedCourseId < 0) SelectedCourseId = 0;
 
-            if (!fuBanner.HasFile)
-            {
-                ShowAlert("Please select an image file before uploading.", "warning");
-                return;
-            }
+        //    if (!fuBanner.HasFile)
+        //    {
+        //        ShowAlert("Please select an image file before uploading.", "warning");
+        //        return;
+        //    }
 
-            string ext = Path.GetExtension(fuBanner.FileName).ToLower().Trim();
-            var allowed = new HashSet<string> { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-            if (!allowed.Contains(ext))
-            {
-                ShowAlert("Invalid file type. Allowed: JPG, JPEG, PNG, WebP, GIF.", "danger");
-                return;
-            }
+        //    string ext = Path.GetExtension(fuBanner.FileName).ToLower().Trim();
+        //    var allowed = new HashSet<string> { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        //    if (!allowed.Contains(ext))
+        //    {
+        //        ShowAlert("Invalid file type. Allowed: JPG, JPEG, PNG, WebP, GIF.", "danger");
+        //        return;
+        //    }
 
-            const int maxBytes = 5 * 1024 * 1024; // 5 MB
-            if (fuBanner.FileBytes.Length > maxBytes)
-            {
-                ShowAlert("File too large. Maximum allowed size is 5 MB.", "danger");
-                return;
-            }
+        //    const int maxBytes = 5 * 1024 * 1024; // 5 MB
+        //    if (fuBanner.FileBytes.Length > maxBytes)
+        //    {
+        //        ShowAlert("File too large. Maximum allowed size is 5 MB.", "danger");
+        //        return;
+        //    }
 
-            try
-            {
-                string folder = Server.MapPath("~/Uploads/CourseBanners/");
-                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+        //    try
+        //    {
+        //        string folder = Server.MapPath("~/Uploads/CourseBanners/");
+        //        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
-                // Delete old banner for this course (any extension)
-                foreach (var oldExt in allowed)
-                {
-                    string old = Path.Combine(folder, $"course_{SelectedCourseId}{oldExt}");
-                    if (File.Exists(old)) File.Delete(old);
-                }
+        //        // Delete old banner for this course (any extension)
+        //        foreach (var oldExt in allowed)
+        //        {
+        //            string old = Path.Combine(folder, $"course_{SelectedCourseId}{oldExt}");
+        //            if (File.Exists(old)) File.Delete(old);
+        //        }
 
-                string fileName = $"course_{SelectedCourseId}{ext}";
-                string fullPath = Path.Combine(folder, fileName);
-                fuBanner.SaveAs(fullPath);
+        //        string fileName = $"course_{SelectedCourseId}{ext}";
+        //        string fullPath = Path.Combine(folder, fileName);
+        //        fuBanner.SaveAs(fullPath);
 
-                imgBanner.ImageUrl = ResolveUrl($"~/Uploads/CourseBanners/{fileName}");
-                imgBanner.Visible = true;
-                hdnBannerPath.Value = $"~/Uploads/CourseBanners/{fileName}";
-                ShowAlert("Banner uploaded successfully.", "success");
-            }
-            catch (Exception ex)
-            {
-                ShowAlert("Upload failed: " + ex.Message, "danger");
-            }
-        }
+        //        imgBanner.ImageUrl = ResolveUrl($"~/Uploads/CourseBanners/{fileName}");
+        //        imgBanner.Visible = true;
+        //        hdnBannerPath.Value = $"~/Uploads/CourseBanners/{fileName}";
+        //        ShowAlert("Banner uploaded successfully.", "success");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        ShowAlert("Upload failed: " + ex.Message, "danger");
+        //    }
+        //}
 
-        protected void btnRemoveBanner_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (!string.IsNullOrEmpty(hdnBannerPath.Value))
-                {
-                    string p = Server.MapPath(hdnBannerPath.Value);
-                    if (File.Exists(p)) File.Delete(p);
-                }
-                imgBanner.Visible = false;
-                hdnBannerPath.Value = "";
-                ShowAlert("Banner removed.", "info");
-            }
-            catch (Exception ex)
-            {
-                ShowAlert("Remove failed: " + ex.Message, "danger");
-            }
-        }
+        //protected void btnRemoveBanner_Click(object sender, EventArgs e)
+        //{
+        //    try
+        //    {
+        //        if (!string.IsNullOrEmpty(hdnBannerPath.Value))
+        //        {
+        //            string p = Server.MapPath(hdnBannerPath.Value);
+        //            if (File.Exists(p)) File.Delete(p);
+        //        }
+        //        imgBanner.Visible = false;
+        //        hdnBannerPath.Value = "";
+        //        ShowAlert("Banner removed.", "info");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        ShowAlert("Remove failed: " + ex.Message, "danger");
+        //    }
+        //}
 
-        private void LoadBannerIfExists()
-        {
-            int.TryParse(ddlCourse.SelectedValue, out SelectedCourseId);
-            if (SelectedCourseId < 0) SelectedCourseId = 0;
+        //private void LoadBannerIfExists()
+        //{
+        //    int.TryParse(ddlCourse.SelectedValue, out SelectedCourseId);
+        //    if (SelectedCourseId < 0) SelectedCourseId = 0;
 
-            foreach (var ext in new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" })
-            {
-                string rel = $"~/Uploads/CourseBanners/course_{SelectedCourseId}{ext}";
-                string phys = Server.MapPath(rel);
-                if (File.Exists(phys))
-                {
-                    imgBanner.ImageUrl = ResolveUrl(rel);
-                    imgBanner.Visible = true;
-                    hdnBannerPath.Value = rel;
-                    return;
-                }
-            }
-            imgBanner.Visible = false;
-            hdnBannerPath.Value = "";
-        }
+        //    foreach (var ext in new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" })
+        //    {
+        //        string rel = $"~/Uploads/CourseBanners/course_{SelectedCourseId}{ext}";
+        //        string phys = Server.MapPath(rel);
+        //        if (File.Exists(phys))
+        //        {
+        //            imgBanner.ImageUrl = ResolveUrl(rel);
+        //            imgBanner.Visible = true;
+        //            hdnBannerPath.Value = rel;
+        //            return;
+        //        }
+        //    }
+        //    imgBanner.Visible = false;
+        //    hdnBannerPath.Value = "";
+        //}
 
         // ──────────────────────────────────────────────────────────
         // JSON serialisers — safe for chart injection

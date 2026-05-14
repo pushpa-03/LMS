@@ -128,36 +128,6 @@ namespace LearningManagementSystem.Admin.Dashboards
             rptTeachers.DataBind();
         }
 
-        // ── Banner Upload ──
-        protected void btnUploadBanner_Click(object sender, EventArgs e)
-        {
-            SelectedStreamId = Convert.ToInt32(ddlStream.SelectedValue);
-            if (!fuBanner.HasFile) { ShowAlert("Select an image first.", "warning"); return; }
-            string ext = Path.GetExtension(fuBanner.FileName).ToLower();
-            if (!".jpg.jpeg.png.webp.gif".Contains(ext)) { ShowAlert("Only image files allowed.", "danger"); return; }
-            if (fuBanner.FileBytes.Length > 5 * 1024 * 1024) { ShowAlert("Max 5 MB.", "danger"); return; }
-
-            string folder = Server.MapPath("~/Uploads/StreamBanners/");
-            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-            string fileName = $"stream_{SelectedStreamId}{ext}";
-            fuBanner.SaveAs(Path.Combine(folder, fileName));
-            string url = $"~/Uploads/StreamBanners/{fileName}";
-            imgBanner.ImageUrl = ResolveUrl(url);
-            imgBanner.Visible = true;
-            hdnBannerPath.Value = url;
-            ShowAlert("Banner uploaded!", "success");
-        }
-
-        protected void btnRemoveBanner_Click(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrEmpty(hdnBannerPath.Value))
-            {
-                string p = Server.MapPath(hdnBannerPath.Value);
-                if (File.Exists(p)) File.Delete(p);
-                imgBanner.Visible = false; hdnBannerPath.Value = "";
-                ShowAlert("Banner removed.", "info");
-            }
-        }
 
         private void LoadBannerIfExists()
         {

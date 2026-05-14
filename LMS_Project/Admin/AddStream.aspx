@@ -212,7 +212,8 @@
                 <div class="modal-body">
                     <label class="fw-bold">Stream Name</label>
                     <asp:TextBox ID="txtStreamName" runat="server"
-                        CssClass="form-control" />
+                        CssClass="form-control"
+                        onkeyup="validateStreamInput(this)" />
                 </div>
 
                 <div class="modal-footer">
@@ -241,7 +242,8 @@
                 <div class="modal-body">
                     <label class="fw-bold">Stream Name</label>
                     <asp:TextBox ID="txtStreamNameEdit" runat="server"
-                        CssClass="form-control" />
+                    CssClass="form-control"
+                    onkeyup="validateStreamInput(this)" />
                 </div>
 
                 <div class="modal-footer">
@@ -292,6 +294,7 @@
     box-shadow: 0 15px 30px rgba(0,0,0,0.12);
 }
 
+/*====Model=====*/
 /* smooth input */
 .form-control:focus {
     box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
@@ -419,5 +422,15 @@ body.modal-open {
             }
 
         });
+
+        function validateStreamInput(input) {
+            let regex = /^[A-Za-z\s]*$/;
+
+            if (!regex.test(input.value)) {
+                input.classList.add("is-invalid");
+            } else {
+                input.classList.remove("is-invalid");
+            }
+        }
     </script>
 </asp:Content>

@@ -1,4 +1,294 @@
-﻿using System;
+﻿//using System;
+//using System.Data;
+//using System.IO;
+//using System.Runtime.InteropServices.ComTypes;
+//using System.Web.UI;
+//using System.Web.UI.WebControls;
+
+//namespace LMS_Project.Teacher
+//{
+//    public partial class SubjectDetails_T_Side : BasePage
+//    {
+//        SubjectDetailsBL bl = new SubjectDetailsBL();
+
+
+//        protected void Page_Load(object sender, EventArgs e)
+//        {
+//            if (!IsPostBack)
+//            {
+//                if (SessionId == 0)
+//                {
+//                    lblMsg.Text = "No active academic session found!";
+//                    lblMsg.Visible = true;
+//                    return;
+//                }
+
+//                if (Request.QueryString["SubjectId"] != null &&
+//                    int.TryParse(Request.QueryString["SubjectId"], out int subjectId))
+//                {
+//                    hfSubjectId.Value = subjectId.ToString();
+
+//                    LoadSubject();
+//                    BindChapters();
+//                    BindSubjectAssignments();
+//                }
+//                else
+//                {
+//                    Response.Redirect("Subjects.aspx");
+//                }
+//            }
+//        }
+//        private void LoadSubject()
+//        {
+//            DataTable dt = bl.GetSubjectDetails(Convert.ToInt32(hfSubjectId.Value), SessionId);
+
+//            if (dt != null && dt.Rows.Count > 0)
+//            {
+//                DataRow r = dt.Rows[0];
+
+//                litSubjectName.Text = "<strong>" + r["SubjectName"] + "</strong>";
+//                litSubjectCode.Text = r["SubjectCode"]?.ToString() ?? "";
+//                litDuration.Text = r["Duration"]?.ToString() ?? "";
+
+//                litStatus.Text = Convert.ToBoolean(r["IsActive"])
+//                    ? "<span class='badge bg-success'>Active</span>"
+//                    : "<span class='badge bg-danger'>Inactive</span>";
+
+//                litSociety.Text = r["SocietyName"]?.ToString() ?? "";
+//                litInstitute.Text = r["InstituteName"]?.ToString() ?? "";
+//                litStream.Text = r["StreamName"]?.ToString() ?? "";
+//                litCourse.Text = r["CourseName"]?.ToString() ?? "";
+//                litLevel.Text = r["LevelName"]?.ToString() ?? "";
+//                litSemester.Text = r["SemesterName"]?.ToString() ?? "";
+//                litDescription.Text = r["Description"]?.ToString() ?? "";
+//            }
+//        }
+
+//        private void BindChapters()
+//        {
+//            DataTable dt = bl.GetChapters(Convert.ToInt32(hfSubjectId.Value), SessionId);
+
+//            rptChapters.DataSource = dt;
+//            rptChapters.DataBind();
+
+//            if (dt != null && dt.Rows.Count > 0)
+//            {
+//                ddlChapters.DataSource = dt;
+//                ddlChapters.DataTextField = "ChapterName";
+//                ddlChapters.DataValueField = "ChapterId";
+//                ddlChapters.DataBind();
+//            }
+//        }
+
+//        // ================= BIND VIDEOS & MATERIALS =================
+//        protected void rptChapters_ItemDataBound(object sender, RepeaterItemEventArgs e)
+//        {
+//            if (e.Item.ItemType == ListItemType.Item ||
+//                e.Item.ItemType == ListItemType.AlternatingItem)
+//            {
+//                string chapterId = ((HiddenField)e.Item.FindControl("hfRowChapterId")).Value;
+
+//                Repeater rptVideos = (Repeater)e.Item.FindControl("rptVideos");
+//                Repeater rptMaterials = (Repeater)e.Item.FindControl("rptMaterials");
+
+//                rptVideos.DataSource = bl.GetVideosByChapter(Convert.ToInt32(chapterId), SessionId);
+//                rptVideos.DataBind();
+
+//                rptMaterials.DataSource = bl.GetMaterialsByChapter(Convert.ToInt32(chapterId), SessionId);
+//                rptMaterials.DataBind();
+
+
+//                //Repeater rptAssignments = (Repeater)e.Item.FindControl("rptAssignments");
+
+//                //rptAssignments.DataSource = bl.GetAssignmentsBySubject(
+//                //    Convert.ToInt32(hfSubjectId.Value)
+//                //);
+//                //rptAssignments.DataBind();
+//            }
+//        }
+
+//        private void BindSubjectAssignments()
+//        {
+//            try
+//            {
+//                // Use the Subject ID from your HiddenField
+//                int subjectId = Convert.ToInt32(hfSubjectId.Value);
+
+//                // Bind directly to the Repeater that is now outside the chapters
+//                rptAssignments.DataSource = bl.GetAssignmentsBySubject(subjectId, SessionId);
+//                rptAssignments.DataBind();
+//            }
+//            catch (Exception ex)
+//            {
+//                lblMsg.Text = "Error loading assignments: " + ex.Message;
+//                lblMsg.Visible = true;
+//            }
+//        }
+
+//        // ================= SAVE CHAPTER =================
+//        protected void btnSaveChapter_Click(object sender, EventArgs e)
+//        {
+//            if (string.IsNullOrWhiteSpace(txtChapterName.Text))
+//            {
+//                ShowMsg("Chapter name required", false);
+//                return;
+//            }
+
+//            int subjectId = Convert.ToInt32(hfSubjectId.Value);
+//            bl.SaveChapter(
+//                hfChapterId.Value,
+//                SessionId,
+//                subjectId.ToString(),
+//                txtChapterName.Text.Trim(),
+//                txtOrderNo.Text.Trim(),
+//                SocietyId, InstituteId
+//            );
+
+//            hfChapterId.Value = "";
+//            txtChapterName.Text = "";
+//            txtOrderNo.Text = "";
+
+//            BindChapters();
+//            ShowMsg("Chapter Saved Successfully", true);
+//        }
+
+//        // ================= EDIT / DELETE CHAPTER =================
+//        protected void rptChapters_ItemCommand(object source, RepeaterCommandEventArgs e)
+//        {
+//            int id = Convert.ToInt32(e.CommandArgument);
+
+//            if (e.CommandName == "EditChapter")
+//            {
+//                DataTable dt = bl.GetChapterById(id, SessionId);
+
+//                if (dt != null && dt.Rows.Count > 0)
+//                {
+//                    hfChapterId.Value = id.ToString();
+//                    txtChapterName.Text = dt.Rows[0]["ChapterName"].ToString();
+//                    txtOrderNo.Text = dt.Rows[0]["OrderNo"].ToString();
+
+//                    ScriptManager.RegisterStartupScript(this, GetType(),
+//                        "modal", "showChapterModal();", true);
+//                }
+//            }
+//            else if (e.CommandName == "DeleteChapter")
+//            {
+//                bl.DeleteChapter(id, SessionId);
+
+//                BindChapters();
+//                ShowMsg("Chapter Deleted Successfully", true);
+//            }
+//        }
+
+//        // ================= UPLOAD CONTENT =================
+//        protected void btnUploadSave_Click(object sender, EventArgs e)
+//        {
+//            if (!fuContent.HasFile)
+//            {
+//                ShowMsg("Please select file", false);
+//                return;
+//            }
+
+//            try
+//            {
+//                string fileName = Path.GetFileName(fuContent.FileName);
+
+//                string folderRelPath =
+//                    ddlContentType.SelectedValue == "Video"
+//                    ? "~/Uploads/Videos/"
+//                    : "~/Uploads/Materials/";
+
+//                string physicalPath = Server.MapPath(folderRelPath);
+
+//                if (!Directory.Exists(physicalPath))
+//                    Directory.CreateDirectory(physicalPath);
+
+//                string fullPath = Path.Combine(physicalPath, fileName);
+//                fuContent.SaveAs(fullPath);
+
+//                string dbPath = folderRelPath.Replace("~", "") + fileName;
+//                int subjectId = Convert.ToInt32(hfSubjectId.Value);
+
+//                if (ddlContentType.SelectedValue == "Video")
+//                {
+//                    if (!int.TryParse(ddlChapters.SelectedValue, out int chapterId))
+//                    {
+//                        ShowMsg("Invalid chapter selected", false);
+//                        return;
+//                    }
+//                    int instructorId = 0;
+//                    int newVideoId = bl.InsertVideo(
+//                        SocietyId,
+//                        InstituteId,
+//                        SessionId,
+//                        chapterId,
+//                        subjectId,
+//                        txtContentTitle.Text.Trim(),
+//                        txtVideoDesc.Text.Trim(),
+//                        dbPath,
+//                        instructorId,
+//                        UserId
+//                    );
+
+//                    string[] times = Request.Form.GetValues("topicTime");
+//                    string[] titles = Request.Form.GetValues("topicTitle");
+
+//                    if (times != null && titles != null)
+//                    {
+
+//                        bl.InsertVideoTopics(
+//                             SocietyId,
+//                             InstituteId,
+//                             SessionId,
+//                             newVideoId,
+//                             times,
+//                             titles
+//                         );
+//                    }
+//                }
+//                else
+//                {
+//                    // ✅ Validate first
+//                    if (!int.TryParse(ddlChapters.SelectedValue, out int chapterId))
+//                    {
+//                        ShowMsg("Invalid chapter selected", false);
+//                        return;
+//                    }
+
+//                    // ✅ Then call method
+//                    bl.InsertMaterial(
+//                         SocietyId,
+//                         InstituteId,
+//                         SessionId,
+//                         chapterId,
+//                         txtContentTitle.Text.Trim(),
+//                         dbPath,
+//                         Path.GetExtension(fileName)
+//                     );
+//                }
+
+//                txtContentTitle.Text = "";
+//                txtVideoDesc.Text = "";
+//                txtInstructor.Text = "";
+
+//                BindChapters();
+//                ShowMsg("Uploaded Successfully", true);
+//            }
+//            catch (Exception ex)
+//            {
+//                ShowMsg("Error: " + ex.Message, false);
+//            }
+//        }
+
+//        private void ShowMsg(string msg, bool success)
+//        {
+//            lblMsg.Text = msg;
+//            lblMsg.CssClass = success ? "alert alert-success" : "alert alert-danger";
+//            lblMsg.Visible = true;
+//        }
+//    }
+//}
+using System;
 using System.Data;
 using System.IO;
 using System.Runtime.InteropServices.ComTypes;
@@ -7,7 +297,7 @@ using System.Web.UI.WebControls;
 
 namespace LMS_Project.Teacher
 {
-    public partial class SubjectDetails_T_Side : BasePage
+    public partial class SubjectDetails : BasePage
     {
         SubjectDetailsBL bl = new SubjectDetailsBL();
 
@@ -90,23 +380,20 @@ namespace LMS_Project.Teacher
 
                 Repeater rptVideos = (Repeater)e.Item.FindControl("rptVideos");
                 Repeater rptMaterials = (Repeater)e.Item.FindControl("rptMaterials");
+                Panel pnlNoMaterials = (Panel)e.Item.FindControl("pnlNoMaterials");
 
                 rptVideos.DataSource = bl.GetVideosByChapter(Convert.ToInt32(chapterId), SessionId);
                 rptVideos.DataBind();
 
-                rptMaterials.DataSource = bl.GetMaterialsByChapter(Convert.ToInt32(chapterId), SessionId);
+                DataTable dtMat = bl.GetMaterialsByChapter(Convert.ToInt32(chapterId), SessionId);
+                rptMaterials.DataSource = dtMat;
                 rptMaterials.DataBind();
 
-
-                //Repeater rptAssignments = (Repeater)e.Item.FindControl("rptAssignments");
-
-                //rptAssignments.DataSource = bl.GetAssignmentsBySubject(
-                //    Convert.ToInt32(hfSubjectId.Value)
-                //);
-                //rptAssignments.DataBind();
+                // Show empty state if no materials
+                if (pnlNoMaterials != null)
+                    pnlNoMaterials.Visible = (dtMat == null || dtMat.Rows.Count == 0);
             }
         }
-
         private void BindSubjectAssignments()
         {
             try
@@ -179,7 +466,49 @@ namespace LMS_Project.Teacher
                 ShowMsg("Chapter Deleted Successfully", true);
             }
         }
+        protected string GetMaterialIcon(string fileType)
+        {
+            if (string.IsNullOrWhiteSpace(fileType))
+                return "<i class=\"fa-solid fa-file me-1 text-secondary\"></i>";
 
+            string ext = fileType.ToLower().TrimStart('.');
+
+            switch (ext)
+            {
+                case ".pdf":
+                case "pdf":
+                    return "<i class=\"fa-solid fa-file-pdf text-danger\" style=\"font-size:1.3rem\"></i>";
+                case ".doc":
+                case "doc":
+                case ".docx":
+                case "docx":
+                    return "<i class=\"fa-solid fa-file-word text-primary\" style=\"font-size:1.3rem\"></i>";
+                case ".ppt":
+                case "ppt":
+                case ".pptx":
+                case "pptx":
+                    return "<i class=\"fa-solid fa-file-powerpoint text-warning\" style=\"font-size:1.3rem\"></i>";
+                case ".xls":
+                case "xls":
+                case ".xlsx":
+                case "xlsx":
+                    return "<i class=\"fa-solid fa-file-excel text-success\" style=\"font-size:1.3rem\"></i>";
+                case ".jpg":
+                case "jpg":
+                case ".jpeg":
+                case "jpeg":
+                case ".png":
+                case "png":
+                    return "<i class=\"fa-solid fa-file-image text-info\" style=\"font-size:1.3rem\"></i>";
+                case ".mp4":
+                case "mp4":
+                case ".avi":
+                case "avi":
+                    return "<i class=\"fa-solid fa-file-video text-danger\" style=\"font-size:1.3rem\"></i>";
+                default:
+                    return "<i class=\"fa-solid fa-file text-secondary\" style=\"font-size:1.3rem\"></i>";
+            }
+        }
         // ================= UPLOAD CONTENT =================
         protected void btnUploadSave_Click(object sender, EventArgs e)
         {
@@ -233,6 +562,7 @@ namespace LMS_Project.Teacher
                     string[] times = Request.Form.GetValues("topicTime");
                     string[] titles = Request.Form.GetValues("topicTitle");
 
+
                     if (times != null && titles != null)
                     {
 
@@ -279,7 +609,13 @@ namespace LMS_Project.Teacher
                 ShowMsg("Error: " + ex.Message, false);
             }
         }
-
+        public string GetMaterialUrl(object filePath)
+        {
+            if (filePath == null || filePath == DBNull.Value) return "#";
+            // FilePath is stored as /Uploads/Materials/filename.ext
+            // Just return it as-is for direct browser access
+            return filePath.ToString().Replace("~", "");
+        }
         private void ShowMsg(string msg, bool success)
         {
             lblMsg.Text = msg;

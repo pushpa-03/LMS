@@ -69,62 +69,90 @@ public class StudentManagementDashboardBL
     // KPI SUMMARY — live totals with all filters applied
     // ════════════════════════════════════════════════════════════
     public DataTable GetKPISummary(int instituteId, int sessionId,
-        int streamId, int courseId, int semesterId, int sectionId,
-        string gender, string joinMonth, string joinYear)
+    int streamId, int courseId, int semesterId, int sectionId,
+    string gender, string joinMonth, string joinYear)
     {
+        // Use a CTE to isolate unique students with RoleId = 4 (Students) first.
+        // This prevents multiplication of counts caused by multiple attendance/quiz records.
         SqlCommand cmd = new SqlCommand(@"
-            SELECT
-              COUNT(DISTINCT sa.UserId)                           AS TotalStudents,
-              SUM(CASE WHEN u.IsActive=1 THEN 1 ELSE 0 END)      AS ActiveStudents,
-              SUM(CASE WHEN u.IsActive=0 THEN 1 ELSE 0 END)      AS InactiveStudents,
-              SUM(CASE WHEN u.IsFirstLogin=1 THEN 1 ELSE 0 END)  AS NewAdmissions,
+        WITH Students AS (
+    SELECT DISTINCT sa.UserId
+    FROM StudentAcademicDetails sa
+    INNER JOIN Users u ON u.UserId = sa.UserId
+    WHERE sa.InstituteId = @Inst
+      AND sa.SessionId   = @Sess
+      AND u.RoleId = 4   -- ✅ Only Students
+      AND (@Stream   = 0 OR sa.StreamId   = @Stream)
+      AND (@Course   = 0 OR sa.CourseId   = @Course)
+      AND (@Semester = 0 OR sa.SemesterId = @Semester)
+      AND (@Section  = 0 OR sa.SectionId  = @Section)
+),
 
-              -- Attendance avg
-              ISNULL(CAST(
-                100.0*SUM(CASE WHEN a.Status='Present' THEN 1 ELSE 0 END)
-                /NULLIF(COUNT(a.AttendanceId),0)
-              AS DECIMAL(5,2)),0)                                 AS AttendancePct,
+UserInfo AS (
+    SELECT s.UserId, u.IsActive, u.IsFirstLogin, up.Gender
+    FROM Students s
+    INNER JOIN Users u ON u.UserId = s.UserId
+    INNER JOIN UserProfile up ON up.UserId = s.UserId
+    WHERE (@Gender = '' OR up.Gender = @Gender)
+      AND (@Month  = '' OR MONTH(up.JoinedDate) = TRY_CAST(@Month AS INT))
+      AND (@Year   = '' OR YEAR(up.JoinedDate)  = TRY_CAST(@Year AS INT))
+)
 
-              -- Assignment submission rate
-              ISNULL(CAST(
-                100.0*COUNT(DISTINCT asub.SubmissionId)
-                /NULLIF(COUNT(DISTINCT asgn.AssignmentId)*COUNT(DISTINCT sa.UserId),0)
-              AS DECIMAL(5,2)),0)                                 AS AssignmentRate,
+SELECT
+    COUNT(*) AS TotalStudents,
 
-              -- Avg quiz score
-              ISNULL(CAST(AVG(CAST(qr.Score AS FLOAT)) AS DECIMAL(5,2)),0) AS AvgQuizScore,
+    COUNT(CASE WHEN IsActive = 1 THEN 1 END) AS ActiveStudents,
+    COUNT(CASE WHEN IsActive = 0 THEN 1 END) AS InactiveStudents,
 
-              -- Male/Female/Other counts
-              SUM(CASE WHEN up.Gender='Male'   THEN 1 ELSE 0 END) AS Males,
-              SUM(CASE WHEN up.Gender='Female' THEN 1 ELSE 0 END) AS Females,
-              SUM(CASE WHEN up.Gender NOT IN ('Male','Female') OR up.Gender IS NULL THEN 1 ELSE 0 END) AS Others
+    COUNT(CASE WHEN IsFirstLogin = 1 THEN 1 END) AS NewAdmissions,
 
-            FROM StudentAcademicDetails sa
-            INNER JOIN Users       u   ON u.UserId      = sa.UserId
-            INNER JOIN UserProfile up  ON up.UserId     = sa.UserId
-            LEFT  JOIN Attendance  a   ON a.UserId      = sa.UserId
-                                      AND a.InstituteId = @Inst
-                                      AND a.SessionId   = @Sess
-            LEFT  JOIN Assignments asgn ON asgn.InstituteId=@Inst AND asgn.SessionId=@Sess
-            LEFT  JOIN AssignmentSubmissions asub
-                       ON asub.StudentId    = sa.UserId
-                      AND asub.AssignmentId = asgn.AssignmentId
-                      AND asub.SessionId    = @Sess
-            LEFT  JOIN QuizResults qr  ON qr.StudentId  = sa.UserId
-                                       AND qr.SessionId = @Sess
-                                       AND qr.InstituteId=@Inst
-            WHERE sa.InstituteId = @Inst
-              AND sa.SessionId   = @Sess
-              AND (@Stream   = 0 OR sa.StreamId   = @Stream)
-              AND (@Course   = 0 OR sa.CourseId   = @Course)
-              AND (@Semester = 0 OR sa.SemesterId = @Semester)
-              AND (@Section  = 0 OR sa.SectionId  = @Section)
-              AND (@Gender   = '' OR up.Gender     = @Gender)
-              AND (@Month    = '' OR MONTH(up.JoinedDate) = TRY_CAST(@Month AS INT))
-              AND (@Year     = '' OR YEAR(up.JoinedDate)  = TRY_CAST(@Year  AS INT));");
+    -- Gender (correct now)
+    COUNT(CASE WHEN Gender = 'Male' THEN 1 END) AS Males,
+    COUNT(CASE WHEN Gender = 'Female' THEN 1 END) AS Females,
+    COUNT(CASE WHEN Gender NOT IN ('Male','Female') OR Gender IS NULL THEN 1 END) AS Others,
+
+    -- Attendance %
+    ISNULL((
+        SELECT CAST(
+            100.0 * SUM(CASE WHEN a.Status='Present' THEN 1 ELSE 0 END)
+            / NULLIF(COUNT(*),0)
+        AS DECIMAL(5,2))
+        FROM Attendance a
+        WHERE a.UserId IN (SELECT UserId FROM Students)
+          AND a.InstituteId = @Inst
+          AND a.SessionId   = @Sess
+    ),0) AS AttendancePct,
+
+    -- Assignment Rate
+    ISNULL((
+        SELECT CAST(
+            100.0 * COUNT(DISTINCT asub.SubmissionId)
+            / NULLIF(COUNT(DISTINCT asgn.AssignmentId) * COUNT(DISTINCT s.UserId),0)
+        AS DECIMAL(5,2))
+        FROM Students s
+        CROSS JOIN Assignments asgn
+        LEFT JOIN AssignmentSubmissions asub
+            ON asub.StudentId = s.UserId
+           AND asub.AssignmentId = asgn.AssignmentId
+           AND asub.SessionId = @Sess
+        WHERE asgn.InstituteId = @Inst
+          AND asgn.SessionId   = @Sess
+    ),0) AS AssignmentRate,
+
+    -- Avg Quiz Score
+    ISNULL((
+        SELECT CAST(AVG(CAST(qr.Score AS FLOAT)) AS DECIMAL(5,2))
+        FROM QuizResults qr
+        WHERE qr.StudentId IN (SELECT UserId FROM Students)
+          AND qr.SessionId = @Sess
+          AND qr.InstituteId = @Inst
+    ),0) AS AvgQuizScore
+
+FROM UserInfo;");
 
         AddCommonParams(cmd, instituteId, sessionId, streamId, courseId,
                         semesterId, sectionId, gender, joinMonth, joinYear);
+
         return dl.GetDataTable(cmd);
     }
 

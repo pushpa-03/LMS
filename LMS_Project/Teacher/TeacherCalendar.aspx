@@ -95,6 +95,36 @@
         .weekend {
             background-color: #fef9e6;
         }
+        /* ── match dashboard styles ── */
+.panel-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    padding: 20px;
+}
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+/* ── GridView header/row overrides ── */
+.table thead tr th {
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 10px 14px;
+    border: none;
+}
+.table tbody tr td {
+    border: none;
+    border-bottom: 1px solid #e3f2fd;
+    padding: 12px 14px;
+    vertical-align: middle;
+}
+.table tbody tr:hover td {
+    background: #f0f7ff !important;
+}
     </style>
 </asp:Content>
 
@@ -134,76 +164,133 @@
 
     </div>
 
-    <!-- EVENTS TABLE FOR THIS MONTH -->
-<div class="card shadow p-3">
+<!-- EVENTS TABLE FOR THIS MONTH -->
+<div class="panel-card" style="margin-top: 24px;">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">
-            📅 Events in <asp:Label ID="lblTableMonthYear" runat="server" />
-        </h5>
-        <asp:Label ID="lblEventCount" runat="server" CssClass="text-muted" />
+    <div class="section-header" style="margin-bottom: 14px;">
+        <h6 style="font-weight:700;font-size:15px;color:#1565c0;margin:0;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-calendar-alt"></i>
+            Events in <asp:Label ID="lblTableMonthYear" runat="server" Style="margin-left:5px;" />
+        </h6>
+        <asp:Label ID="lblEventCount" runat="server"
+            Style="font-size:12px;color:#90a4ae;font-weight:600;" />
     </div>
-
 
     <div class="table-responsive">
-       <asp:GridView ID="gvEvents" runat="server"
-    CssClass="table table-bordered table-hover table-sm align-middle"
-    AutoGenerateColumns="false"
-    GridLines="None"
-    EmptyDataText="📭 No events scheduled for this month."
-    OnRowCommand="gvEvents_RowCommand">
+        <asp:GridView ID="gvEvents" runat="server"
+            CssClass="table align-middle"
+            AutoGenerateColumns="false"
+            GridLines="None"
+            EmptyDataText="No events scheduled for this month."
+            OnRowCommand="gvEvents_RowCommand"
+            EmptyDataRowStyle-CssClass="text-center p-4">
 
-    <Columns>
-        <asp:BoundField DataField="Title" HeaderText="Event Title" HeaderStyle-Width="25%" />
-        
-        <asp:TemplateField HeaderText="Type" HeaderStyle-Width="12%">
-            <ItemTemplate>
-                <span class='badge badge-<%# Eval("EventType").ToString().ToLower() %> p-2'>
-                    <%# Eval("EventType") %>
-                </span>
-            </ItemTemplate>
-        </asp:TemplateField>
-        
-        <asp:BoundField DataField="SubjectName" HeaderText="Subject" HeaderStyle-Width="20%" />
-        
-        <asp:BoundField DataField="StartDate" HeaderText="Start Date" 
-            DataFormatString="{0:dd MMM yyyy}" HeaderStyle-Width="15%" />
-        
-        <asp:BoundField DataField="EndDate" HeaderText="End Date" 
-            DataFormatString="{0:dd MMM yyyy}" HeaderStyle-Width="15%" />
-        
-        <asp:TemplateField HeaderText="All Day" HeaderStyle-Width="8%">
-            <ItemTemplate>
-                <span class="badge bg-secondary">
-                    <%# Convert.ToBoolean(Eval("IsAllDay")) ? "✓ All Day" : "Timed" %>
-                </span>
-            </ItemTemplate>
-        </asp:TemplateField>
+            <HeaderStyle BackColor="#e3f2fd" ForeColor="#1565c0" Font-Size="11px" Font-Bold="true" />
+<RowStyle Font-Size="13px" />
+<AlternatingRowStyle BackColor="#f8fbff" Font-Size="13px" />
 
-        <asp:TemplateField HeaderText="Actions" HeaderStyle-Width="15%">
-            <ItemTemplate>
-                <asp:LinkButton ID="btnEdit" runat="server"
-                    CommandName="EditEvent"
-                    CommandArgument='<%# Eval("EventId") %>'
-                    CssClass="btn btn-sm btn-outline-primary me-1"
-                    ToolTip="Edit Event">
-                    ✏️ Edit
-                </asp:LinkButton>
-                <asp:LinkButton ID="btnDel" runat="server"
-                    CommandName="DeleteEvent"
-                    CommandArgument='<%# Eval("EventId") %>'
-                    CssClass="btn btn-sm btn-outline-danger"
-                    OnClientClick="return confirm('⚠️ Delete this event from all days it appears?\n\nThis action cannot be undone.');"
-                    ToolTip="Delete Event">
-                    🗑️ Delete
-                </asp:LinkButton>
-            </ItemTemplate>
-        </asp:TemplateField>
-    </Columns>
-    
-    <EmptyDataRowStyle CssClass="text-center p-4" />
-</asp:GridView>
+            <Columns>
+
+                <asp:TemplateField HeaderText="Event Title" HeaderStyle-Width="28%">
+                    <ItemTemplate>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:36px;height:36px;border-radius:10px;background:#e3f2fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-calendar-day" style="color:#1565c0;font-size:14px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:700;color:#263238;"><%# Eval("Title") %></div>
+                            </div>
+                        </div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+
+                <asp:TemplateField HeaderText="Type" HeaderStyle-Width="12%">
+                    <ItemTemplate>
+                        <span style='<%# GetEventBadgeStyle(Eval("EventType").ToString()) %>
+                            padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;'>
+                            <%# GetEventIcon(Eval("EventType").ToString()) %> <%# Eval("EventType") %>
+                        </span>
+                    </ItemTemplate>
+                </asp:TemplateField>
+
+                <asp:TemplateField HeaderText="Subject" HeaderStyle-Width="20%">
+                    <ItemTemplate>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <i class="fas fa-book" style="color:#1976d2;font-size:11px;"></i>
+                            <span style="color:#546e7a;font-size:12px;font-weight:600;"><%# Eval("SubjectName") %></span>
+                        </div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+
+                <asp:TemplateField HeaderText="Start Date" HeaderStyle-Width="13%">
+                    <ItemTemplate>
+                        <div style="display:flex;align-items:center;gap:5px;">
+                            <i class="fas fa-calendar" style="color:#1565c0;font-size:11px;"></i>
+                            <span style="color:#263238;font-weight:600;font-size:12px;">
+                                <%# Convert.ToDateTime(Eval("StartDate")).ToString("dd MMM yyyy") %>
+                            </span>
+                        </div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+
+                <asp:TemplateField HeaderText="End Date" HeaderStyle-Width="13%">
+                    <ItemTemplate>
+                        <div style="display:flex;align-items:center;gap:5px;">
+                            <i class="fas fa-calendar-check" style="color:#0288d1;font-size:11px;"></i>
+                            <span style="color:#263238;font-weight:600;font-size:12px;">
+                                <%# Convert.ToDateTime(Eval("EndDate")).ToString("dd MMM yyyy") %>
+                            </span>
+                        </div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+
+            <asp:TemplateField HeaderText="All Day" HeaderStyle-Width="8%">
+    <ItemTemplate>
+        <asp:Label runat="server"
+            Visible='<%# Convert.ToBoolean(Eval("IsAllDay")) %>'
+            Text="✓ All Day"
+            style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;display:inline-block;" />
+        <asp:Label runat="server"
+            Visible='<%# !Convert.ToBoolean(Eval("IsAllDay")) %>'
+            Text="⏱ Timed"
+            style="background:#f5f5f5;color:#90a4ae;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;display:inline-block;" />
+    </ItemTemplate>
+</asp:TemplateField>
+
+                <asp:TemplateField HeaderText="Actions" HeaderStyle-Width="14%">
+                    <ItemTemplate>
+                        <div style="display:flex;gap:6px;">
+                            <asp:LinkButton ID="btnEdit" runat="server"
+                                CommandName="EditEvent"
+                                CommandArgument='<%# Eval("EventId") %>'
+                                ToolTip="Edit Event"
+                                Style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:#e3f2fd;color:#1565c0;border-radius:8px;font-size:11px;font-weight:700;border:none;text-decoration:none;transition:background .2s;">
+                                <i class="fas fa-pencil-alt"></i> Edit
+                            </asp:LinkButton>
+                            <asp:LinkButton ID="btnDel" runat="server"
+                                CommandName="DeleteEvent"
+                                CommandArgument='<%# Eval("EventId") %>'
+                                OnClientClick="return confirm('Delete this event? This cannot be undone.');"
+                                ToolTip="Delete Event"
+                                Style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:#ffebee;color:#c62828;border-radius:8px;font-size:11px;font-weight:700;border:none;text-decoration:none;transition:background .2s;">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </asp:LinkButton>
+                        </div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+
+            </Columns>
+
+        </asp:GridView>
     </div>
+
+    <%-- Empty state --%>
+    <asp:Panel ID="pnlNoEvents" runat="server" Visible="false">
+        <div style="text-align:center;padding:40px 10px;color:#90a4ae;">
+            <i class="fas fa-calendar-times" style="font-size:40px;margin-bottom:10px;display:block;color:#90caf9;"></i>
+            <p style="font-size:13px;margin:0;">No events scheduled for this month.</p>
+        </div>
+    </asp:Panel>
 
 </div>
 

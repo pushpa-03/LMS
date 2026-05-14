@@ -28,13 +28,47 @@ namespace LearningManagementSystem.BL
             string col = GetColumn(obj.Type);
 
             SqlCommand cmd = new SqlCommand(
-                $"INSERT INTO {table} (SocietyId,InstituteId,SessionId, {col}) VALUES (@S,@I,@SessionId,@N)");
+                $"INSERT INTO {table} (SocietyId,InstituteId,SessionId,{col}) VALUES (@S,@I,@SessionId,@N)");
 
             cmd.Parameters.AddWithValue("@S", obj.SocietyId);
             cmd.Parameters.AddWithValue("@I", obj.InstituteId);
+            cmd.Parameters.AddWithValue("@SessionId", obj.SessionId); // ✅ FIX
             cmd.Parameters.AddWithValue("@N", obj.Name);
 
             dl.ExecuteCMD(cmd);
+        }
+
+        // ================= DELETE =================
+        public void Delete(string type, int id, int instituteId, int sessionId)
+        {
+            string table = GetTable(type);
+            string pk = GetPk(type);
+
+            SqlCommand cmd = new SqlCommand(
+                $"DELETE FROM {table} WHERE {pk}=@Id AND InstituteId=@Inst AND SessionId=@SessionId");
+
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@Inst", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId); // ✅ FIX
+
+            dl.ExecuteCMD(cmd);
+        }
+
+        // ================= GET BY ID =================
+        public DataTable GetById(string type, int id, int instituteId, int sessionId)
+        {
+            string table = GetTable(type);
+            string col = GetColumn(type);
+            string pk = GetPk(type);
+
+            SqlCommand cmd = new SqlCommand(
+                $"SELECT {col} FROM {table} WHERE {pk}=@Id AND InstituteId=@Inst AND SessionId=@SessionId");
+
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@Inst", instituteId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId); // ✅ FIX
+
+            return dl.GetDataTable(cmd);
         }
 
         // ================= UPDATE =================
@@ -55,37 +89,7 @@ namespace LearningManagementSystem.BL
             dl.ExecuteCMD(cmd);
         }
 
-        // ================= DELETE =================
-        public void Delete(string type, int id, int instituteId)
-        {
-            string table = GetTable(type);
-            string pk = GetPk(type);
-
-            SqlCommand cmd = new SqlCommand(
-                $"DELETE FROM {table} WHERE {pk}=@Id AND InstituteId=@Inst AND SessionId=@SessionId");
-
-            cmd.Parameters.AddWithValue("@Id", id);
-            cmd.Parameters.AddWithValue("@Inst", instituteId);
-
-            dl.ExecuteCMD(cmd);
-        }
-
-        // ================= GET BY ID =================
-        public DataTable GetById(string type, int id, int instituteId)
-        {
-            string table = GetTable(type);
-            string col = GetColumn(type);
-            string pk = GetPk(type);
-
-            SqlCommand cmd = new SqlCommand(
-                $"SELECT {col} FROM {table} WHERE {pk}=@Id AND InstituteId=@Inst AND SessionId=@SessionId");
-
-            cmd.Parameters.AddWithValue("@Id", id);
-            cmd.Parameters.AddWithValue("@Inst", instituteId);
-
-            return dl.GetDataTable(cmd);
-        }
-
+       
         // ================= HELPERS =================
         private string GetTable(string type)
             => type == "Level" ? "StudyLevels"

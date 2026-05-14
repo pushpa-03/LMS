@@ -282,7 +282,7 @@ body{background:var(--page-bg);font-family:'Inter','Segoe UI',sans-serif;color:v
 <asp:HiddenField ID="hdnTrendStudents"   runat="server"/>
 <asp:HiddenField ID="hdnTrendAtt"        runat="server"/>
 <asp:HiddenField ID="hdnTrendViews"      runat="server"/>
-<asp:HiddenField ID="hdnBannerPath"      runat="server"/>
+
 
 <div class="dash-wrap">
 
@@ -314,47 +314,21 @@ body{background:var(--page-bg);font-family:'Inter','Segoe UI',sans-serif;color:v
       </div>
   </div>
 
-  <!-- ══ BANNER / IMAGE UPLOAD SECTION ══ -->
-  <div class="banner-section">
-      <div class="banner-inner" id="bannerInner">
-          <!-- Background image (shown after upload) -->
-          <asp:Image ID="imgBannerPreview" runat="server" Visible="false"
-              CssClass="banner-bg-img" AlternateText="Monthly Banner"/>
-          <div class="banner-overlay" id="bannerOverlay" style="display:none;"></div>
-
-          <div class="banner-text">
-              <h2><i class="fa fa-chart-bar" style="margin-right:8px;"></i>
-                  Monthly Analytics Report</h2>
-              <p>Upload a banner image to personalise this dashboard for
-                 <asp:Label ID="lblBannerPeriod" runat="server" Text="this month"/></p>
-          </div>
-
-          <div class="banner-actions">
-              <!-- Upload area -->
-              <div class="upload-area" onclick="document.getElementById('fuBannerInput').click();">
-                  <i class="fa fa-cloud-arrow-up"></i>
-                  <span>Click to upload banner<br/><small style="opacity:.7;">JPG, PNG, WebP · Max 5MB</small></span>
-                  <asp:FileUpload ID="fuBanner" runat="server" Style="display:none;" CssClass="d-none"/>
-                  <input type="file" id="fuBannerInput" accept="image/*" style="display:none;"
-                         onchange="syncFileUpload(this)"/>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                  <asp:Button ID="btnUploadBanner" runat="server" Text="⬆ Upload"
-                      CssClass="btn-upload" OnClick="btnUploadBanner_Click"
-                      OnClientClick="return validateBannerFile();"/>
-                  <asp:Button ID="btnRemoveBanner" runat="server" Text="✕ Remove"
-                      CssClass="btn-remove" OnClick="btnRemoveBanner_Click"/>
-              </div>
-          </div>
-      </div>
-
-      <!-- Upload progress bar (client-side feedback) -->
-      <div id="uploadProgress" style="display:none;padding:0 0 4px;">
-          <div style="height:4px;background:var(--primary-light);">
-              <div id="uploadBar" style="height:4px;background:var(--primary);width:0%;transition:width .3s;border-radius:0 0 4px 4px;"></div>
-          </div>
-      </div>
-  </div>
+      <!-- ══ BANNER SECTION (STATIC) ══ -->
+    <div class="banner-section">
+        <div class="banner-inner">
+            <div class="banner-text">
+                <h2>
+                    <i class="fa fa-chart-bar" style="margin-right:8px;"></i>
+                    Monthly Analytics Report
+                </h2>
+                <p>
+                    Analytics overview for 
+                    <asp:Label ID="lblBannerPeriod" runat="server" />
+                </p>
+            </div>
+        </div>
+    </div>
 
   <!-- ══ KPI CARDS ══ -->
   <div class="kpi-grid">
@@ -840,38 +814,6 @@ const animCfg   = { duration:900, easing:'easeInOutQuart' };
   });
 })();
 
-/* ── Banner upload UX ── */
-function syncFileUpload(input){
-  if(!input.files || !input.files[0]) return;
-  // Copy file to ASP.NET file upload control (workaround)
-  const fuReal = document.getElementById('<%= fuBanner.ClientID %>');
-  // We can't programmatically set files on an ASP FileUpload,
-  // so show a filename preview and let user click Upload
-  const name = input.files[0].name;
-  const size = (input.files[0].size/1024/1024).toFixed(2);
-  document.querySelector('.upload-area span').innerHTML =
-      `<strong>${name}</strong><br/><small>${size} MB selected — click Upload ⬆</small>`;
-
-  // Preview locally
-  const reader = new FileReader();
-  reader.onload = e => {
-      const img = document.getElementById('<%= imgBannerPreview.ClientID %>');
-      img.src = e.target.result;
-      img.style.display = 'block';
-      document.getElementById('bannerOverlay').style.display = 'block';
-  };
-  reader.readAsDataURL(input.files[0]);
-}
-window.syncFileUpload = syncFileUpload;
-
-function validateBannerFile(){
-  const fu = document.getElementById('fuBannerInput');
-  if(!fu.files || !fu.files[0]){
-      // copy from hidden input if needed
-  }
-  return true;
-}
-window.validateBannerFile = validateBannerFile;
 
 /* ── Empty state guards ── */
 document.querySelectorAll('[id$="rptTopTeachers"]').forEach(()=>{});

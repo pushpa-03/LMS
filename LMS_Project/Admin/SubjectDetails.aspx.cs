@@ -296,6 +296,7 @@ using System.Web;
 using System.Web.Services;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using Newtonsoft.Json;
 
 namespace LearningManagementSystem.Admin
 {
@@ -309,17 +310,10 @@ namespace LearningManagementSystem.Admin
             {
                 if (!IsPostBack)
                 {
-                    if (SessionId == 0)
-                    {
-                        ShowMsg("No active academic session found.", "warning");
-                        return;
-                    }
+                    if (SessionId == 0) { ShowMsg("No active academic session found.", "warning"); return; }
 
                     if (!int.TryParse(Request.QueryString["SubjectId"], out int subjectId) || subjectId <= 0)
-                    {
-                        Response.Redirect("Subjects.aspx");
-                        return;
-                    }
+                    { Response.Redirect("Subjects.aspx"); return; }
 
                     hfSubjectId.Value = subjectId.ToString();
                     LoadSubject(subjectId);
@@ -327,24 +321,16 @@ namespace LearningManagementSystem.Admin
                     BindSubjectAssignments(subjectId);
                 }
             }
-            catch (Exception ex)
-            {
-                ShowMsg("Error loading page: " + ex.Message, "danger");
-            }
+            catch (Exception ex) { ShowMsg("Error loading page: " + ex.Message, "danger"); }
         }
 
-        // ── Load subject header info ──────────────────────────────────────────
+        // ── Subject info ──────────────────────────────────────────────────────
         private void LoadSubject(int subjectId)
         {
             try
             {
                 DataTable dt = _bl.GetSubjectDetails(subjectId, SessionId);
-                if (dt == null || dt.Rows.Count == 0)
-                {
-                    ShowMsg("Subject not found.", "warning");
-                    return;
-                }
-
+                if (dt == null || dt.Rows.Count == 0) { ShowMsg("Subject not found.", "warning"); return; }
                 DataRow r = dt.Rows[0];
                 litSubjectName.Text = Server.HtmlEncode(r["SubjectName"]?.ToString() ?? "—");
                 litSubjectCode.Text = r["SubjectCode"]?.ToString() ?? "—";
@@ -355,20 +341,16 @@ namespace LearningManagementSystem.Admin
                 litCourse.Text = r["CourseName"]?.ToString() ?? "—";
                 litLevel.Text = r["LevelName"]?.ToString() ?? "—";
                 litSemester.Text = r["SemesterName"]?.ToString() ?? "—";
-                litDescription.Text = Server.HtmlEncode(r["Description"]?.ToString() ?? "No description provided.");
-
-                bool isActive = r["IsActive"] != DBNull.Value && Convert.ToBoolean(r["IsActive"]);
-                litStatus.Text = isActive
+                litDescription.Text = Server.HtmlEncode(r["Description"]?.ToString() ?? "No description.");
+                bool active = r["IsActive"] != DBNull.Value && Convert.ToBoolean(r["IsActive"]);
+                litStatus.Text = active
                     ? "<span style='background:#dcfce7;color:#15803d;border-radius:6px;padding:3px 10px;font-size:.8rem;font-weight:700'>Active</span>"
                     : "<span style='background:#fee2e2;color:#991b1b;border-radius:6px;padding:3px 10px;font-size:.8rem;font-weight:700'>Inactive</span>";
             }
-            catch (Exception ex)
-            {
-                ShowMsg("Error loading subject: " + ex.Message, "danger");
-            }
+            catch (Exception ex) { ShowMsg("Error loading subject: " + ex.Message, "danger"); }
         }
 
-        // ── Bind chapters + nested repeaters ─────────────────────────────────
+        // ── Chapters ──────────────────────────────────────────────────────────
         private void BindChapters(int subjectId)
         {
             try
@@ -376,47 +358,29 @@ namespace LearningManagementSystem.Admin
                 DataTable dt = _bl.GetChapters(subjectId, SessionId);
                 rptChapters.DataSource = dt;
                 rptChapters.DataBind();
-
                 phNoChapters.Visible = (dt == null || dt.Rows.Count == 0);
-
-                // Populate chapter dropdown in Upload Modal
                 ddlChapters.Items.Clear();
-                if (dt != null && dt.Rows.Count > 0)
-                {
+                ddlChapters.Items.Add(new ListItem("-- Select Chapter --", ""));
+                if (dt != null)
                     foreach (DataRow row in dt.Rows)
-                    {
-                        ddlChapters.Items.Add(new ListItem(
-                            row["ChapterName"].ToString(),
-                            row["ChapterId"].ToString()));
-                    }
-                }
+                        ddlChapters.Items.Add(new ListItem(row["ChapterName"].ToString(), row["ChapterId"].ToString()));
             }
-            catch (Exception ex)
-            {
-                ShowMsg("Error loading chapters: " + ex.Message, "danger");
-            }
+            catch (Exception ex) { ShowMsg("Error loading chapters: " + ex.Message, "danger"); }
         }
 
-        // ── ItemDataBound: load nested videos & materials ─────────────────────
         protected void rptChapters_ItemDataBound(object sender, RepeaterItemEventArgs e)
         {
-            if (e.Item.ItemType != ListItemType.Item &&
-                e.Item.ItemType != ListItemType.AlternatingItem) return;
-
+            if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem) return;
             try
             {
                 string chapterId = ((HiddenField)e.Item.FindControl("hfRowChapterId")).Value;
                 int cid = Convert.ToInt32(chapterId);
-
-                ((Repeater)e.Item.FindControl("rptVideos")).DataSource =
-                    _bl.GetVideosByChapter(cid, SessionId);
+                ((Repeater)e.Item.FindControl("rptVideos")).DataSource = _bl.GetVideosByChapter(cid, SessionId);
                 ((Repeater)e.Item.FindControl("rptVideos")).DataBind();
-
-                ((Repeater)e.Item.FindControl("rptMaterials")).DataSource =
-                    _bl.GetMaterialsByChapter(cid, SessionId);
+                ((Repeater)e.Item.FindControl("rptMaterials")).DataSource = _bl.GetMaterialsByChapter(cid, SessionId);
                 ((Repeater)e.Item.FindControl("rptMaterials")).DataBind();
             }
-            catch { /* Silently skip broken chapter row */ }
+            catch { }
         }
 
         // ── Assignments ───────────────────────────────────────────────────────
@@ -427,18 +391,13 @@ namespace LearningManagementSystem.Admin
                 rptAssignments.DataSource = _bl.GetAssignmentsBySubject(subjectId, SessionId);
                 rptAssignments.DataBind();
             }
-            catch (Exception ex)
-            {
-                ShowMsg("Error loading assignments: " + ex.Message, "danger");
-            }
+            catch (Exception ex) { ShowMsg("Error loading assignments: " + ex.Message, "danger"); }
         }
 
         // ── Chapter commands ──────────────────────────────────────────────────
         protected void rptChapters_ItemCommand(object source, RepeaterCommandEventArgs e)
         {
-            int id = 0;
-            int.TryParse(e.CommandArgument?.ToString(), out id);
-
+            int.TryParse(e.CommandArgument?.ToString(), out int id);
             try
             {
                 if (e.CommandName == "EditChapter")
@@ -450,123 +409,94 @@ namespace LearningManagementSystem.Admin
                         txtChapterName.Text = dt.Rows[0]["ChapterName"].ToString();
                         txtOrderNo.Text = dt.Rows[0]["OrderNo"].ToString();
                         litChapterModalTitle.Text = "Edit Chapter";
-                        ScriptManager.RegisterStartupScript(this, GetType(), "openChapterModal", "showChapterModal();", true);
+                        ScriptManager.RegisterStartupScript(this, GetType(), "ocm", "showChapterModal();", true);
                     }
                 }
                 else if (e.CommandName == "DeleteChapter")
                 {
                     _bl.DeleteChapter(id, SessionId);
-                    int subjectId = Convert.ToInt32(hfSubjectId.Value);
-                    BindChapters(subjectId);
-                    SetToast("Chapter deleted successfully.", "success");
+                    BindChapters(Convert.ToInt32(hfSubjectId.Value));
+                    SetToast("Chapter deleted.", "success");
                 }
             }
-            catch (Exception ex)
-            {
-                ShowMsg("Error: " + ex.Message, "danger");
-            }
+            catch (Exception ex) { ShowMsg("Error: " + ex.Message, "danger"); }
         }
 
-        // ── Video delete ──────────────────────────────────────────────────────
         protected void rptVideos_ItemCommand(object source, RepeaterCommandEventArgs e)
         {
             if (e.CommandName != "DeleteVideo") return;
             try
             {
-                int videoId = Convert.ToInt32(e.CommandArgument);
-                int subjectId = Convert.ToInt32(hfSubjectId.Value);
-                _bl.DeleteVideo(videoId, SessionId);
-                BindChapters(subjectId);
-                SetToast("Video deleted successfully.", "success");
+                _bl.DeleteVideo(Convert.ToInt32(e.CommandArgument), SessionId);
+                BindChapters(Convert.ToInt32(hfSubjectId.Value));
+                SetToast("Video deleted.", "success");
             }
-            catch (Exception ex)
-            {
-                ShowMsg("Error deleting video: " + ex.Message, "danger");
-            }
+            catch (Exception ex) { ShowMsg("Error: " + ex.Message, "danger"); }
         }
 
-        // ── Material delete ───────────────────────────────────────────────────
         protected void rptMaterials_ItemCommand(object source, RepeaterCommandEventArgs e)
         {
             if (e.CommandName != "DeleteMaterial") return;
             try
             {
-                int materialId = Convert.ToInt32(e.CommandArgument);
-                int subjectId = Convert.ToInt32(hfSubjectId.Value);
-                _bl.DeleteMaterial(materialId, SessionId);
-                BindChapters(subjectId);
+                _bl.DeleteMaterial(Convert.ToInt32(e.CommandArgument), SessionId);
+                BindChapters(Convert.ToInt32(hfSubjectId.Value));
                 SetToast("Material deleted.", "success");
             }
-            catch (Exception ex)
-            {
-                ShowMsg("Error deleting material: " + ex.Message, "danger");
-            }
+            catch (Exception ex) { ShowMsg("Error: " + ex.Message, "danger"); }
         }
 
         // ── Save chapter ──────────────────────────────────────────────────────
         protected void btnSaveChapter_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtChapterName.Text))
-            {
-                ShowMsg("Chapter name is required.", "warning");
-                return;
-            }
-
+            if (string.IsNullOrWhiteSpace(txtChapterName.Text)) { ShowMsg("Chapter name is required.", "warning"); return; }
             try
             {
                 int subjectId = Convert.ToInt32(hfSubjectId.Value);
-                _bl.SaveChapter(
-                    hfChapterId.Value, SessionId,
-                    subjectId.ToString(),
+                _bl.SaveChapter(hfChapterId.Value, SessionId, subjectId.ToString(),
                     txtChapterName.Text.Trim(),
                     string.IsNullOrWhiteSpace(txtOrderNo.Text) ? "0" : txtOrderNo.Text.Trim(),
-                    SocietyId, InstituteId
-                );
-
-                hfChapterId.Value = "";
-                txtChapterName.Text = "";
-                txtOrderNo.Text = "";
+                    SocietyId, InstituteId);
+                hfChapterId.Value = ""; txtChapterName.Text = ""; txtOrderNo.Text = "";
                 litChapterModalTitle.Text = "Add Chapter";
-
                 BindChapters(subjectId);
-                SetToast("Chapter saved successfully.", "success");
+                SetToast("Chapter saved!", "success");
             }
-            catch (Exception ex)
-            {
-                ShowMsg("Error saving chapter: " + ex.Message, "danger");
-            }
+            catch (Exception ex) { ShowMsg("Error saving chapter: " + ex.Message, "danger"); }
         }
 
-        // ── Upload content (video or material) ────────────────────────────────
+        // ── Upload content ────────────────────────────────────────────────────
         protected void btnUploadSave_Click(object sender, EventArgs e)
         {
             try
             {
-                if (!fuContent.HasFile)
-                {
-                    ShowMsg("Please select a file to upload.", "warning");
-                    return;
-                }
-                if (string.IsNullOrWhiteSpace(txtContentTitle.Text))
-                {
-                    ShowMsg("Please provide a title.", "warning");
-                    return;
-                }
-                if (!int.TryParse(ddlChapters.SelectedValue, out int chapterId))
-                {
-                    ShowMsg("Please select a valid chapter.", "warning");
-                    return;
-                }
-
-                string ext = Path.GetExtension(fuContent.FileName).ToLower();
-                string safeFile = Path.GetFileNameWithoutExtension(fuContent.FileName)
-                                     .Replace(" ", "_")
-                                     .Replace("..", "") + "_" + DateTime.Now.Ticks + ext;
+                // ── Validations ──
+                if (!fuContent.HasFile) { ShowMsg("Please select a file to upload.", "warning"); return; }
+                if (string.IsNullOrWhiteSpace(txtContentTitle.Text)) { ShowMsg("Title is required.", "warning"); return; }
+                if (string.IsNullOrEmpty(ddlChapters.SelectedValue)) { ShowMsg("Please select a chapter.", "warning"); return; }
+                if (!int.TryParse(ddlChapters.SelectedValue, out int chapterId)) { ShowMsg("Invalid chapter selected.", "warning"); return; }
 
                 string contentType = ddlContentType.SelectedValue;
+                string ext = Path.GetExtension(fuContent.FileName).ToLower().Trim();
+
+                if (string.IsNullOrEmpty(ext)) { ShowMsg("File has no extension. Please select a valid file.", "warning"); return; }
+
+                // ── Video-specific validations ──
+                if (contentType == "Video")
+                {
+                    ValidateVideoFile(ext); // throws if invalid
+                    int instructorId = 0;
+                    int.TryParse(hfInstructorId.Value, out instructorId);
+                    if (instructorId <= 0) { ShowMsg("Please select an instructor for the video.", "warning"); return; }
+                }
+
+                // ── Save file ──
+                string safeFile = Path.GetFileNameWithoutExtension(fuContent.FileName)
+                    .Replace(" ", "_").Replace("..", "").Replace("/", "").Replace("\\", "")
+                    + "_" + DateTime.Now.Ticks + ext;
+
                 string folder = contentType == "Video" ? "~/Uploads/Videos/" : "~/Uploads/Materials/";
                 string physPath = Server.MapPath(folder);
-
                 if (!Directory.Exists(physPath)) Directory.CreateDirectory(physPath);
 
                 string fullPath = Path.Combine(physPath, safeFile);
@@ -577,100 +507,97 @@ namespace LearningManagementSystem.Admin
 
                 if (contentType == "Video")
                 {
-                    ValidateVideoFile(ext);
-
-                    int instructorId = 0;
-                    int.TryParse(hfInstructorId.Value, out instructorId);
-
-                    int newVideoId = _bl.InsertVideo(
-                        SocietyId, InstituteId, SessionId, chapterId, subjectId,
-                        txtContentTitle.Text.Trim(),
-                        txtVideoDesc.Text.Trim(),
-                        dbPath, instructorId, UserId
-                    );
+                    int.TryParse(hfInstructorId.Value, out int instructorId);
+                    int newVideoId = _bl.InsertVideo(SocietyId, InstituteId, SessionId,
+                        chapterId, subjectId,
+                        txtContentTitle.Text.Trim(), txtVideoDesc.Text.Trim(),
+                        dbPath, instructorId, UserId);
 
                     string[] times = Request.Form.GetValues("topicTime");
                     string[] titles = Request.Form.GetValues("topicTitle");
-
                     if (times != null && titles != null)
                         _bl.InsertVideoTopics(SocietyId, InstituteId, SessionId, newVideoId, times, titles);
 
-                    // Notify enrolled students
                     _bl.NotifyStudents(SocietyId, InstituteId, SessionId, subjectId,
-                        $"New video uploaded: {txtContentTitle.Text.Trim()}");
+                        $"New video: {txtContentTitle.Text.Trim()}");
                 }
                 else
                 {
                     _bl.InsertMaterial(SocietyId, InstituteId, SessionId, chapterId,
                         txtContentTitle.Text.Trim(), dbPath, ext);
-
                     _bl.NotifyStudents(SocietyId, InstituteId, SessionId, subjectId,
-                        $"New material uploaded: {txtContentTitle.Text.Trim()}");
+                        $"New material: {txtContentTitle.Text.Trim()}");
                 }
 
-                // Log admin activity
                 _bl.LogActivity(UserId, SocietyId, InstituteId, SessionId,
                     $"Uploaded {contentType}: {txtContentTitle.Text.Trim()}");
 
-                // Reset form
-                txtContentTitle.Text = "";
-                txtVideoDesc.Text = "";
-                hfInstructorId.Value = "";
-
+                txtContentTitle.Text = ""; txtVideoDesc.Text = ""; hfInstructorId.Value = "";
                 BindChapters(subjectId);
-                SetToast($"{contentType} uploaded successfully! Students notified.", "success");
+                SetToast($"{contentType} uploaded! Students notified.", "success");
             }
-            catch (InvalidOperationException ioex)
+            catch (InvalidOperationException ioex) { ShowMsg(ioex.Message, "warning"); }
+            catch (Exception ex) { ShowMsg("Upload failed: " + ex.Message, "danger"); }
+        }
+
+        // ── File type validation ──────────────────────────────────────────────
+        private void ValidateVideoFile(string ext)
+        {
+            string[] ok = { ".mp4", ".webm", ".ogg", ".avi", ".mov", ".mkv", ".flv", ".wmv" };
+            foreach (var a in ok) if (ext == a) return;
+            throw new InvalidOperationException("Invalid video format. Allowed: mp4, webm, ogg, avi, mov, mkv, flv, wmv.");
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  TEACHER SEARCH — WebMethod (AJAX)
+        //  Called from JS: fetch('SubjectDetails.aspx/SearchTeachers', { method:'POST', ... })
+        //  This is the FIXED approach — no more Page_PreRender query string hack
+        // ══════════════════════════════════════════════════════════════════════
+        [WebMethod(EnableSession = true)]
+        public static string SearchTeachers(string q, int subjectId)
+        {
+            try
             {
-                ShowMsg(ioex.Message, "warning");
+                if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 1)
+                    return "[]";
+
+                int instituteId = GetSess("InstituteId");
+                int sessionId = GetSess("SessionId");
+
+                if (instituteId == 0) return "[]";
+
+                var bl = new SubjectDetailsBL();
+                DataTable dt = bl.SearchTeachersForSubject(q.Trim(), subjectId, instituteId, sessionId);
+
+                var list = new System.Collections.Generic.List<object>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    list.Add(new
+                    {
+                        UserId = row["UserId"],
+                        Name = row["FullName"]?.ToString() ?? "",
+                        Designation = row["Designation"]?.ToString() ?? "Teacher"
+                    });
+                }
+                return JsonConvert.SerializeObject(list);
             }
             catch (Exception ex)
             {
-                ShowMsg("Upload failed: " + ex.Message, "danger");
+                // Return error as JSON so JS can show a useful message
+                return JsonConvert.SerializeObject(new[] {
+                    new { UserId = 0, Name = "Error: " + ex.Message, Designation = "" }
+                });
             }
         }
 
-        // ── Helper: file type validation ──────────────────────────────────────
-        private void ValidateVideoFile(string ext)
+        // ── Session helper ────────────────────────────────────────────────────
+        private static int GetSess(string key)
         {
-            string[] allowed = { ".mp4", ".webm", ".ogg", ".avi", ".mov", ".mkv", ".flv", ".wmv" };
-            bool valid = false;
-            foreach (string a in allowed) if (ext == a) { valid = true; break; }
-            if (!valid) throw new InvalidOperationException("Invalid video format. Allowed: mp4, webm, ogg, avi, mov, mkv.");
+            var v = HttpContext.Current.Session[key];
+            return v != null && int.TryParse(v.ToString(), out int r) ? r : 0;
         }
 
-        // ── Teacher search (AJAX GET endpoint) ───────────────────────────────
-        // Called by JS fetch: SubjectDetails.aspx/SearchTeachers?q=&subjectId=
-        protected void Page_PreRender(object sender, EventArgs e)
-        {
-            if (Request.QueryString["action"] == "SearchTeachers")
-            {
-                string q = (Request.QueryString["q"] ?? "").Trim();
-                string subjectIdQ = Request.QueryString["subjectId"] ?? "0";
-                int.TryParse(subjectIdQ, out int sId);
-
-                DataTable dt = _bl.SearchTeachersForSubject(q, sId, InstituteId, SessionId);
-                Response.Clear();
-                Response.ContentType = "application/json";
-
-                var sb = new System.Text.StringBuilder("[");
-                bool first = true;
-                if (dt != null)
-                {
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        if (!first) sb.Append(",");
-                        sb.Append($"{{\"UserId\":{row["UserId"]},\"Name\":\"{row["FullName"].ToString().Replace("\"", "\\\"")}\",\"Designation\":\"{row["Designation"]?.ToString().Replace("\"", "\\\"") ?? ""}\"}}");
-                        first = false;
-                    }
-                }
-                sb.Append("]");
-                Response.Write(sb.ToString());
-                Response.End();
-            }
-        }
-
-        // ── Code-behind helpers for ASPX markup ──────────────────────────────
+        // ── ASPX markup helpers ───────────────────────────────────────────────
         protected string GetFileIcon(string ext)
         {
             switch ((ext ?? "").ToLower().Trim('.'))
@@ -697,7 +624,6 @@ namespace LearningManagementSystem.Admin
             }
         }
 
-        // ── Show messages / toasts ────────────────────────────────────────────
         private void ShowMsg(string msg, string type)
         {
             lblMsg.Text = msg;

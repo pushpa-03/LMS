@@ -254,22 +254,7 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',sans-serif;color:var(--
           </div>
         </div>
       </div>
-      <div class="up-col">
-        <div class="dz" onclick="document.getElementById('fpicker').click();">
-          <i class="fa fa-cloud-arrow-up"></i>
-          <div class="dz-lbl" id="dzLabel">
-            Click to choose banner<br/>
-            <small style="opacity:.7;">JPG · PNG · WebP &nbsp;|&nbsp; Max 5 MB</small>
-          </div>
-        </div>
-        <input type="file" id="fpicker" accept="image/*" style="display:none;" onchange="onFilePick(this)"/>
-        <asp:FileUpload ID="fuBanner" runat="server" Style="display:none;"/>
-        <div id="upProg"><div id="upBar"></div></div>
-        <asp:Button ID="btnUploadBanner" runat="server" Text="⬆  Upload Banner"
-          CssClass="btn-up" OnClick="btnUploadBanner_Click"/>
-        <asp:Button ID="btnRemoveBanner" runat="server" Text="✕  Remove Banner"
-          CssClass="btn-rm" OnClick="btnRemoveBanner_Click"/>
-      </div>
+      
     </div>
   </div>
 

@@ -267,15 +267,6 @@ namespace LearningManagementSystem.Admin.Dashboards
         protected global::System.Web.UI.WebControls.HiddenField hdnAssignSubmitted;
 
         /// <summary>
-        /// hdnBannerPath control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hdnBannerPath;
-
-        /// <summary>
         /// pnlAlert control.
         /// </summary>
         /// <remarks>
@@ -409,33 +400,6 @@ namespace LearningManagementSystem.Admin.Dashboards
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label lblAvgQuiz;
-
-        /// <summary>
-        /// fuBanner control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.FileUpload fuBanner;
-
-        /// <summary>
-        /// btnUploadBanner control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnUploadBanner;
-
-        /// <summary>
-        /// btnRemoveBanner control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnRemoveBanner;
 
         /// <summary>
         /// lblAssignSub control.

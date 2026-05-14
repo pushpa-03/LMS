@@ -1,700 +1,1040 @@
-﻿<%@ Page Title="Students" Language="C#" MasterPageFile="~/Admin/AdminMaster.master" AutoEventWireup="true" CodeBehind="AddStudent.aspx.cs" Inherits="LearningManagementSystem.Admin.Student" %>
+﻿<%@ Page Title="Students" Language="C#" MasterPageFile="~/Admin/AdminMaster.master"
+    AutoEventWireup="true" CodeBehind="AddStudent.aspx.cs"
+    Inherits="LearningManagementSystem.Admin.Student" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" runat="server" />
-
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
-    <asp:HiddenField ID="hfStudentUserId" runat="server" />
-    <asp:Label ID="lblMsg" runat="server" CssClass="fw-bold mb-2 d-block" />
 
-
-
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-
-    <!-- LEFT -->
-    <div>
-        <h3 class="fw-bold mb-1">Students Management</h3>
-        <small class="text-muted">Manage all students efficiently</small>
-        <span class="mx-2 text-muted">|</span>
-        <small class="text-muted">
-            Last updated: <%= DateTime.Now.ToString("dd MMM yyyy hh:mm tt") %>
-        </small>
-    </div>
-
-    <!-- RIGHT -->
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-
-        <!-- 🔍 SEARCH -->
-        <div class="search-box">
-            <i class="fa fa-search"></i>
-            <asp:TextBox ID="txtSearch" runat="server"
-                CssClass="form-control"
-                placeholder="Search students..."
-                onkeyup="filterStudents()" />
-        </div>
-
-        <!-- 👁 FILTER -->
-        <asp:LinkButton ID="btnToggleView" runat="server"
-            CssClass="btn btn-outline-dark rounded-pill px-3"
-            OnClick="ToggleView_Click">
-            👁 View Inactive
-        </asp:LinkButton>
-
-        <!-- ➕ ADD -->
-        <button type="button"
-            class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm"
-            onclick="openCreateModal()">
-            <i class="fa fa-plus"></i> Add Student
-        </button>
-
-        <!-- 📂 BULK -->
-        <button type="button"
-            class="btn btn-success rounded-pill px-3"
-            data-bs-toggle="modal"
-            data-bs-target="#BulkModal">
-            <i class="fa fa-file-import"></i>
-        </button>
-
-    </div>
-</div>
-
-  <%--stat--%>
-    <div class="row mb-4">
-
-    <div class="col-md-3">
-        <div class="card stat-card shadow-sm border-0">
-            <div class="card-body">
-                <h6>Total Students</h6>
-                <h3><%= TotalStudents %></h3>            
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card stat-card bg-success text-white">
-            <div class="card-body">
-                <h6>Active</h6>
-                <h3 class="stat-active"><%= ActiveStudents %></h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card stat-card bg-warning">
-            <div class="card-body">
-                <h6>Inactive</h6>
-               <h3 class="stat-inactive"><%= InactiveStudents %></h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card stat-card bg-info text-white">
-            <div class="card-body">
-                <h6>New This Month</h6>
-               <h3><%= NewStudents %></h3>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<%---------------stat counts------------%>
-  
-<div class="card shadow-sm border-0 rounded-4 mb-4">
-    <div class="card-body">
-        <h5 class="fw-bold mb-3">📊 Students by Stream & Course</h5>
-
-     <div class="stats-grid">
-    <asp:Repeater ID="rptStats" runat="server">
-        <ItemTemplate>
-            <div class="stats-box">
-                <div class="stats-header">
-                    <span class="stream fw-bold text-dark"><%# Eval("StreamName") %></span>
-                </div>
-
-                <div class="stats-header">
-                    <span class="course"><%# Eval("CourseName") %></span>
-                </div>
-
-                <div class="stats-body">
-                    <h2><%# Eval("TotalStudents") %></h2>
-                    <small>Students</small>
-                </div>
-            </div>
-        </ItemTemplate>
-    </asp:Repeater>
-</div>
-
-    </div>
-</div>
-
-<%--table--%>
-   <div class="card border-0 shadow-sm rounded-4">
-    <div class="table-responsive">
-
-        <asp:GridView ID="gvStudents" runat="server"
-            CssClass="table table-hover align-middle modern-table"
-            AutoGenerateColumns="false"
-            OnRowCommand="gvStudents_RowCommand">
-
-            <HeaderStyle CssClass="table-header text-white" />
-
-            <Columns>
-
-                <asp:TemplateField HeaderText="#">
-                    <ItemTemplate>
-                        <%# Container.DataItemIndex + 1 %>
-                    </ItemTemplate>
-                </asp:TemplateField>
-
-                <asp:BoundField DataField="RollNumber" HeaderText="Roll No" />
-                <asp:BoundField DataField="FullName" HeaderText="Student" />
-                <asp:BoundField DataField="YearName" HeaderText="Year" />
-                <asp:BoundField DataField="StreamName" HeaderText="Stream" />
-                <asp:BoundField DataField="CourseName" HeaderText="Course" />
-
-
-                <asp:TemplateField HeaderText="Actions">
-                    <ItemTemplate>
-
-                        <asp:LinkButton runat="server"
-                            CommandName="ViewRow"
-                            CommandArgument='<%# Eval("UserId") %>'
-                            CssClass="action-btn view">
-                            <i class="fa fa-eye"></i>
-                        </asp:LinkButton>
-
-                        <asp:LinkButton runat="server"
-                            CommandName="EditRow"
-                            CommandArgument='<%# Eval("UserId") %>'
-                            CssClass="action-btn edit">
-                            <i class="fa fa-pen"></i>
-                        </asp:LinkButton>
-
-                        <asp:LinkButton runat="server"
-                            CommandName="Toggle"
-                            CommandArgument='<%# Eval("UserId") %>'
-                            CssClass="action-btn toggle"
-                            OnClientClick='<%# "return toggleStudent(this," + Eval("UserId") + ");" %>'>
-                            <i class="fa fa-sync"></i>
-                        </asp:LinkButton>
-
-                        <asp:LinkButton runat="server"
-                            CommandName="DeleteRow"
-                            CommandArgument='<%# Eval("UserId") %>'
-                            CssClass="action-btn delete"
-                            OnClientClick="return confirm('Delete student?');">
-                            <i class="fa fa-trash"></i>
-                        </asp:LinkButton>
-
-                    </ItemTemplate>
-                </asp:TemplateField>
-
-            </Columns>
-
-        </asp:GridView>
-
-    </div>
-</div>
-
-<%--------------Ctreate model--------------%>
-    <div class="modal fade" id="CreateModal">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content rounded-4">
-
-            <div class="modal-header bg-gradient-primary text-white">
-                <h5 class="modal-title">Add Student</h5>
-                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label>Stream (Optional)</label>
-                       <asp:DropDownList ID="ddlStream" runat="server"
-                        CssClass="form-select"
-                        AutoPostBack="true"
-                        OnSelectedIndexChanged="ddlDepartment_SelectedIndexChanged" 
-                        OnClientClick="setTimeout(keepModalOpen,100);" />
-                    </div>
-
-                     <div class="col-md-4">
-                         <label>Course (Optional)</label>
-                         <asp:DropDownList ID="ddlCourse" runat="server" CssClass="form-select" />
-                     </div>
-                    <div class="col-md-4">
-                        <label>Class (Optional)</label>
-                        <asp:DropDownList ID="ddlStudyLevel" runat="server" CssClass="form-select" />
-                    </div>
-                    <div class="col-md-4">
-                        <label>Semester (Optional)</label>
-                        <asp:DropDownList ID="ddlSemester" runat="server" CssClass="form-select" />
-                    </div>
-                     <div class="col-md-4">
-                         <label>Section (Optional)</label>
-                         <asp:DropDownList ID="ddlSection" runat="server" CssClass="form-select" />
-                     </div>
-
-                    <div class="col-md-6">
-                        <label>Username *</label>
-                        <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label>Email *</label>
-                        <asp:TextBox ID="txtEmail" runat="server" CssClass="form-control" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label>Full Name *</label>
-                        <asp:TextBox ID="txtFullName" runat="server" CssClass="form-control" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label>Roll Number *</label>
-                        <asp:TextBox ID="txtRollNo" runat="server" CssClass="form-control" />                        
-                    </div>
-
-                    <div class="col-md-4">
-                        <label>Gender</label>
-                        <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-select" >
-                            <asp:ListItem Text="Male" Value="Male" />
-                            <asp:ListItem Text="Female" Value="Female" />
-                        </asp:DropDownList>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label>DOB</label>
-                        <asp:TextBox ID="txtDOB" runat="server" TextMode="Date" CssClass="form-control" />
-                    </div>
-
-                    <div class="col-md-4">
-                        <label>Contact</label>
-                        <asp:TextBox ID="txtContact" runat="server" CssClass="form-control" />
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-
-                <asp:Button ID="btnSave" runat="server"
-                    Text="Save Student"
-                    CssClass="btn btn-primary"
-                    OnClick="btnSave_Click"
-                    OnClientClick="return validateStudent();" />
-            </div>
-
-        </div>
-    </div>
-</div>
-
-    <div class="modal fade" id="EditModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">Edit Student Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label>Stream</label>
-                            <asp:DropDownList ID="ddlStreamEdit" runat="server" CssClass="form-select" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label>Course</label>
-                            <asp:DropDownList ID="txtCourseEdit" runat="server" CssClass="form-select" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label>Class</label>
-                            <asp:DropDownList ID="ddlStudyLevelEdit" runat="server" CssClass="form-select" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label>Semester</label>
-                            <asp:DropDownList ID="ddlSemesterEdit" runat="server" CssClass="form-select" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label>Section</label>
-                            <asp:DropDownList ID="txtSecctionEdit" runat="server" CssClass="form-select" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label>Username</label>
-                            <asp:TextBox ID="txtUsernameEdit" runat="server" CssClass="form-control" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label>Email</label>
-                            <asp:TextBox ID="txtEmailEdit" runat="server" CssClass="form-control" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label>Full Name</label>
-                            <asp:TextBox ID="txtFullNameEdit" runat="server" CssClass="form-control" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label>Roll Number</label>
-                            <asp:TextBox ID="txtRollNumberEdit" runat="server" CssClass="form-control" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label>Gender</label>
-                            <asp:DropDownList ID="ddlGenderEdit" runat="server" CssClass="form-select">
-                                <asp:ListItem Text="Male" Value="Male" />
-                                <asp:ListItem Text="Female" Value="Female" />
-                            </asp:DropDownList>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label>DOB</label>
-                            <asp:TextBox ID="txtDOBEdit" runat="server" TextMode="Date" CssClass="form-control" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label>Contact</label>
-                            <asp:TextBox ID="txtContactEdit" runat="server" CssClass="form-control" />
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <asp:Button ID="btnUpdate" runat="server" Text="Update Student" CssClass="btn btn-success" OnClick="btnUpdate_Click" />
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="BulkModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Bulk Student Upload</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info small">
-                        Please upload a CSV file with headers:
-                        <br />
-                      <strong>
-                        Username, Email, FullName, RollNumber,
-                        StreamId, LevelId, SemesterId, CourseId, SectionId,
-                        Gender, DOB, Contact
-                      </strong>
-
-                    </div>
-                    <div class="mb-3">
-                        <label>Select CSV/Excel File</label>
-                        <asp:FileUpload ID="fuBulk" runat="server" CssClass="form-control" />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <asp:Button ID="btnUploadBulk" runat="server" Text="Upload & Process" CssClass="btn btn-primary" OnClick="btnUploadBulk_Click" />
-                </div>
-            </div>
-        </div>
-    </div>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<%-- ── Server hidden fields ── --%>
+<asp:HiddenField ID="hfStudentUserId"    runat="server" />
+<asp:HiddenField ID="hfReEnrolUserId"    runat="server" />
+<asp:HiddenField ID="hfToastMsg"         runat="server" />
+<asp:HiddenField ID="hfToastType"        runat="server" />
+<asp:HiddenField ID="hfCurrentPage"      runat="server" Value="1" />
+<asp:HiddenField ID="hfViewData"         runat="server" />
+<asp:HiddenField ID="hfIsSuperAdmin"     runat="server" />
 
 <style>
-.table-header {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#6366f1;--pd:#4f46e5;--pl:#eef2ff;
+  --success:#059669;--danger:#dc2626;--warn:#d97706;--sky:#0284c7;
+  --purple:#7c3aed;
+  --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;
+  --text:#0f172a;--muted:#64748b;--dim:#94a3b8;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
+  --shl:0 8px 32px rgba(0,0,0,.13);
+  --r:14px;--f:'Plus Jakarta Sans',system-ui,sans-serif;
 }
-.table-header th {
-    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
-    color: white;
-    border: none;
-    padding: 14px !important;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
+body{font-family:var(--f);background:var(--bg);color:var(--text);font-size:14px}
+.pg{max-width:1380px;margin:0 auto;padding:22px 20px}
+@media(max-width:640px){.pg{padding:12px 10px}}
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 15px;
-}
+/* ── HEADER ── */
+.pg-hdr{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.pg-hdr h2{font-size:1.3rem;font-weight:800;color:var(--text)}
+.pg-hdr p{font-size:12px;color:var(--muted);margin-top:2px}
+.hdr-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-.stats-box {
-    background: #908bef;
-    color: white;
-    border-radius: 18px;
-    padding: 18px;
-    transition: 0.3s;
-    position: relative;
-    overflow: hidden;
-}
+/* ── BUTTONS ── */
+.btn-p{background:var(--primary);color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--f);display:inline-flex;align-items:center;gap:6px;transition:.18s}
+.btn-p:hover{background:var(--pd)}
+.btn-o{background:var(--card);color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--f);display:inline-flex;align-items:center;gap:6px;transition:.18s}
+.btn-o:hover{border-color:var(--primary);color:var(--primary)}
+.btn-g{background:#059669;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--f);display:inline-flex;align-items:center;gap:6px;transition:.18s}
+.btn-g:hover{background:#047857}
+.btn-warn{background:#fff7ed;color:#92400e;border:1px solid #fde68a;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--f);display:inline-flex;align-items:center;gap:6px;transition:.18s}
+.btn-warn:hover{background:#fef3c7}
+.btn-purple{background:var(--purple);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--f);display:inline-flex;align-items:center;gap:6px;transition:.18s}
+.btn-purple:hover{background:#6d28d9}
 
-.stats-box:hover {
-    transform: translateY(-6px) scale(1.03);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
+.bico{width:30px;height:30px;border:none;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px;transition:.15s;font-family:var(--f)}
+.bico:hover{filter:brightness(.9);transform:scale(1.07)}
+.bi-v{background:#e0f2fe;color:#0284c7}
+.bi-e{background:#dcfce7;color:#15803d}
+.bi-r{background:#f3e8ff;color:var(--purple)}
+.bi-t{background:#fef9c3;color:#854d0e}
+.bi-d{background:#fee2e2;color:var(--danger)}
 
-.stats-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    opacity: 0.9;
-}
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:1000px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:580px){.stats{grid-template-columns:1fr 1fr}}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--sh);transition:.2s}
+.sc:hover{transform:translateY(-2px);box-shadow:var(--shl)}
+.sc-ico{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ico-i{background:#eef2ff;color:var(--primary)}
+.ico-g{background:#ecfdf5;color:var(--success)}
+.ico-r{background:#fef2f2;color:var(--danger)}
+.ico-a{background:#fffbeb;color:var(--warn)}
+.ico-p{background:#f3e8ff;color:var(--purple)}
+.sc-val{font-size:1.4rem;font-weight:800;line-height:1;font-family:monospace}
+.sc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:3px}
 
-.stats-body h2 {
-    font-size: 28px;
-    margin: 10px 0 0;
-    font-weight: bold;
-}
+/* ── STREAM CARDS ── */
+.sc-section{margin-bottom:20px}
+.sc-section h5{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.scard{border-radius:12px;padding:14px;position:relative;overflow:hidden;transition:.2s}
+.scard:hover{transform:translateY(-3px);box-shadow:var(--shl)}
+.scard::after{content:'';position:absolute;top:-16px;right:-16px;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.12)}
+.scard .sc-label{font-size:11px;font-weight:600;opacity:.8;margin-bottom:2px}
+.scard .sc-title{font-size:13px;font-weight:700;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.scard .sc-num{font-size:1.9rem;font-weight:800;color:#fff;font-family:monospace;line-height:1}
+.scard .sc-sub{font-size:11px;color:rgba(255,255,255,.75);margin-top:2px}
+.sv0{background:linear-gradient(135deg,#6366f1,#818cf8)}
+.sv1{background:linear-gradient(135deg,#059669,#34d399)}
+.sv2{background:linear-gradient(135deg,#d97706,#fbbf24)}
+.sv3{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+.sv4{background:linear-gradient(135deg,#0284c7,#38bdf8)}
+.sv5{background:linear-gradient(135deg,#dc2626,#f87171)}
+.sv6{background:linear-gradient(135deg,#0891b2,#22d3ee)}
+.sv7{background:linear-gradient(135deg,#4f46e5,#818cf8)}
 
-.stats-body small {
-    opacity: 0.8;
+/* ── PARENT SUGGESTION BANNER ── */
+.parent-suggestion-banner{
+    display:none;
+    background:linear-gradient(135deg,#fef3c7,#fde68a);
+    border:2px solid #f59e0b;
+    border-radius:12px;
+    padding:14px 18px;
+    margin-bottom:16px;
+    animation:slideDown .4s ease;
 }
-.search-box {
-    position: relative;
-}
-.search-box i {
-    position: absolute;
-    top: 10px;
-    left: 12px;
-    color: #888;
-}
-.search-box input {
-    padding-left: 35px;
-    border-radius: 20px;
-}
-.modern-table tbody tr {
-    transition: 0.2s;
-    border-radius: 12px;
-}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.parent-suggestion-banner .psb-inner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.parent-suggestion-banner .psb-icon{font-size:22px;flex-shrink:0;}
+.parent-suggestion-banner .psb-text{flex:1;}
+.parent-suggestion-banner .psb-text strong{font-size:14px;color:#92400e;display:block;margin-bottom:2px;}
+.parent-suggestion-banner .psb-text span{font-size:12px;color:#78350f;}
+.parent-suggestion-banner .psb-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.psb-btn-yes{background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;}
+.psb-btn-yes:hover{background:#d97706;}
+.psb-btn-dismiss{background:transparent;color:#92400e;border:1px solid #f59e0b;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;transition:.15s;}
+.psb-btn-dismiss:hover{background:#fef3c7;}
 
-.modern-table tbody tr:hover {
-    background: #f1f5f9;
-    transform: scale(1.01);
-}
+/* ── FILTER BAR ── */
+.filter-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:var(--sh)}
+.sb{position:relative;flex:1;min-width:200px}
+.sb i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;pointer-events:none}
+.sb input{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 11px 7px 30px;font-size:13px;font-family:var(--f);color:var(--text);background:var(--bg);transition:.18s}
+.sb input:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.fsel{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--f);color:var(--text);background:var(--bg);cursor:pointer}
+.fsel:focus{border-color:var(--primary);outline:none}
+.pg-sz{border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12px;font-family:var(--f);color:var(--muted);background:var(--bg);cursor:pointer}
+.rec-info{font-size:12px;color:var(--muted);white-space:nowrap}
 
-.modern-table td {
-    padding: 14px !important;
-}
+/* ── SUPERADMIN BANNER ── */
+.sa-banner{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13px;font-weight:600;color:#92400e}
+.sa-banner i{font-size:16px;color:#d97706}
 
-.action-btn {
-    border-radius: 50%;
-    padding: 8px;
-}
-.modern-table thead {
-    background: #f8fafc;
-    font-weight: 600;
-}
+/* ── TABLE ── */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.tbl-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-scroll table{width:100%;border-collapse:collapse;min-width:720px}
+.tbl-scroll thead th{background:linear-gradient(135deg,var(--pd),var(--primary));color:#fff;padding:12px 13px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left;vertical-align:middle}
+.tbl-scroll tbody td{padding:11px 13px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.tbl-scroll tbody tr:last-child td{border-bottom:none}
+.tbl-scroll tbody tr:hover{background:#f8faff}
+.tbl-scroll tbody tr.row-inactive{opacity:.55}
+.tbl-empty{text-align:center;padding:52px 20px;color:var(--muted)}
+.tbl-empty i{font-size:2.5rem;opacity:.18;display:block;margin-bottom:12px}
 
-.action-btn {
-    padding: 6px 10px;
-    border-radius: 8px;
-    margin-right: 5px;
-    display: inline-block;
-    transition: .2s;
-}
+.stu-cell{display:flex;align-items:center;gap:10px}
+.stu-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.stu-name{font-weight:600;font-size:13px;color:var(--text);line-height:1.2}
+.stu-email{font-size:11px;color:var(--muted)}
+.bdg{display:inline-flex;align-items:center;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;white-space:nowrap}
+.bdg-on{background:#dcfce7;color:#15803d}
+.bdg-off{background:#f1f5f9;color:#64748b}
+.act-g{display:flex;gap:4px;align-items:center}
 
-.action-btn.view { background: #e0f2fe; }
-.action-btn.edit { background: #dcfce7; }
-.action-btn.toggle { background: #fef9c3; }
-.action-btn.delete { background: #fee2e2; }
+/* ── PAGINATION ── */
+.pager{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.pager-info{font-size:12px;color:var(--muted)}
+.pager-btns{display:flex;gap:4px;flex-wrap:wrap}
+.pb{min-width:30px;height:30px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;font-family:var(--f);display:flex;align-items:center;justify-content:center;padding:0 7px;transition:.15s}
+.pb:hover{border-color:var(--primary);color:var(--primary)}
+.pb.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pb:disabled{opacity:.35;pointer-events:none;cursor:default}
 
-.action-btn:hover {
-    transform: scale(1.1);
-}
+/* ── MODAL ── */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:9990;backdrop-filter:blur(3px);align-items:flex-start;justify-content:center;padding:18px;overflow-y:auto}
+.mo.open{display:flex}
+.mb{background:var(--card);border-radius:var(--r);box-shadow:var(--shl);width:100%;margin:auto;animation:mIn .22s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.mh{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;border-radius:var(--r) var(--r) 0 0}
+.mh.blue{background:linear-gradient(135deg,var(--pd),var(--primary))}
+.mh.green{background:linear-gradient(135deg,#047857,#059669)}
+.mh.amber{background:linear-gradient(135deg,#b45309,#d97706)}
+.mh.purple{background:linear-gradient(135deg,#6d28d9,#7c3aed)}
+.mh h5{color:#fff;font-size:14px;font-weight:700;margin:0}
+.mc{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:7px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:.18s;flex-shrink:0}
+.mc:hover{background:rgba(255,255,255,.35)}
+.mbody{padding:18px 20px 8px}
+.mfoot{padding:12px 20px 18px;display:flex;justify-content:flex-end;gap:10px}
 
-.bg-gradient-primary {
-    background: linear-gradient(45deg, #4f46e5, #6366f1);
-}
-.progress-bar {
-    background: linear-gradient(90deg, #6366f1, #4f46e5);
-    transition: width 0.5s ease-in-out;
-}
+/* ── FORM ── */
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:520px){.f2,.f3{grid-template-columns:1fr}}
+@media(max-width:620px){.f3{grid-template-columns:1fr 1fr}}
+.fg{margin-bottom:0}
+.fg label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:5px}
+.fc{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:13px;font-family:var(--f);color:var(--text);background:var(--bg);transition:.18s}
+.fc:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.fc.err{border-color:var(--danger);box-shadow:0 0 0 3px rgba(220,38,38,.1)}
+.em{font-size:11px;color:var(--danger);margin-top:3px;display:none}
+.em.show{display:block}
+.fhint{font-size:11px;color:var(--muted);margin-top:3px}
+.fsect{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 0 5px;border-bottom:1px solid var(--border);margin:10px 0 12px;display:block}
+.info-box{border-radius:9px;padding:10px 13px;font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:12px}
+.info-box i{flex-shrink:0;margin-top:1px}
+.info-blue{background:var(--pl);border:1px solid #c7d2fe;color:#3730a3}
+.info-amber{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.info-green{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
 
-.stat-card {
-    border-radius: 18px;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
+/* ── VIEW MODAL ── */
+.prof-hdr{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.prof-av{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0}
+.prof-name{font-size:1.05rem;font-weight:800;color:var(--text)}
+.prof-meta{font-size:12px;color:var(--muted);margin-top:3px}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dr{background:var(--bg);border-radius:8px;padding:9px 12px}
+.dr-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:3px}
+.dr-val{font-size:13px;font-weight:600;color:var(--text)}
 
-.stat-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-}
+/* ── BULK ── */
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:26px;text-align:center;background:var(--bg);transition:.2s;cursor:pointer}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--primary);background:var(--pl)}
+.drop-zone i{font-size:1.8rem;color:var(--dim);margin-bottom:8px;display:block}
+.drop-zone p{font-size:13px;color:var(--muted);margin-bottom:4px}
+.drop-zone small{font-size:11px;color:var(--dim)}
+.up-prog{height:5px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:10px;display:none}
+.up-fill{height:100%;background:var(--primary);border-radius:4px;width:0%;transition:width .3s}
 
-.stat-card::after {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
-    top: 0;
-    left: -100%;
-    transition: 0.5s;
-}
+/* ── TOAST ── */
+#toast-root{position:fixed;bottom:22px;right:22px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast-item{border-radius:11px;padding:11px 16px;font-size:13px;font-weight:600;color:#fff;animation:tIn .3s ease;max-width:360px;pointer-events:auto;box-shadow:var(--shl);display:flex;align-items:center;gap:8px}
+.toast-item.ok  {background:#059669}
+.toast-item.err {background:#dc2626}
+.toast-item.warn{background:#d97706}
+.toast-item.inf {background:var(--primary)}
+@keyframes tIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
 
-.stat-card:hover::after {
-    left: 100%;
+@media(max-width:500px){
+  .hdr-btns .btn-p span,.hdr-btns .btn-g span,
+  .hdr-btns .btn-warn span,.hdr-btns .btn-o span{display:none}
 }
 </style>
-    
-   <script>
-       document.addEventListener("DOMContentLoaded", function () {
-           var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-           var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-               return new bootstrap.Tooltip(tooltipTriggerEl)
-           })
-       });
-    
-        function showEditModal() {
-            var myModal = new bootstrap.Modal(document.getElementById('EditModal'));
-            myModal.show();
-        }
-       
-        function hideMsg() {
 
-        var alertBox = document.getElementById('<%= lblMsg.ClientID %>');
+<div class="pg">
 
-           if (!alertBox || alertBox.innerText.trim() === "")
-           return;
+<%-- ── HEADER ── --%>
+<div class="pg-hdr">
+    <div>
+        <h2><i class="fa fa-user-graduate me-2" style="color:var(--primary)"></i>Students Management</h2>
+        <p>Enrol · edit · re-enrol · bulk import students · track activity</p>
+    </div>
+    <div class="hdr-btns">
+        <button type="button" class="btn-warn" id="btnBulkUploadOpen">
+            <i class="fa fa-file-import"></i><span> Bulk Upload</span>
+        </button>
+        <button type="button" class="btn-p" id="btnAddStudent">
+            <i class="fa fa-plus"></i><span> Add Student</span>
+        </button>
+    </div>
+</div>
 
-           setTimeout(function () {
+<%-- ── SUPERADMIN BANNER ── --%>
+<div class="sa-banner" id="saBanner" style="display:none">
+    <i class="fa fa-eye"></i>
+    <span>You are logged in as <strong>Super Admin</strong> — View Only access. CRUD operations are disabled.</span>
+</div>
 
-               // Smooth animation properties
-               alertBox.style.transition =
-               "opacity 0.5s ease, transform 0.5s ease, height 0.5s ease, margin 0.5s ease, padding 0.5s ease";
+<%-- ── PARENT SUGGESTION BANNER ── --%>
+<div class="parent-suggestion-banner" id="parentSuggestionBanner">
+    <div class="psb-inner">
+        <div class="psb-icon">👨‍👩‍👦</div>
+        <div class="psb-text">
+            <strong id="psbTitle">Student added successfully!</strong>
+            <span id="psbMsg">Would you like to enroll a parent/guardian for this student to track their academic progress?</span>
+        </div>
+        <div class="psb-actions">
+            <button class="psb-btn-yes" id="psbYesBtn" onclick="goToParentPage()">
+                <i class="fa fa-user-plus me-1"></i> Enroll Parent
+            </button>
+            <button class="psb-btn-dismiss" onclick="dismissParentSuggestion()">
+                Maybe Later
+            </button>
+        </div>
+    </div>
+</div>
 
-           alertBox.style.opacity = "0";
-           alertBox.style.transform = "translateY(-20px)";
-           alertBox.style.height = "0";
-           alertBox.style.marginTop = "0";
-           alertBox.style.marginBottom = "0";
-           alertBox.style.paddingTop = "0";
-           alertBox.style.paddingBottom = "0";
-           alertBox.style.overflow = "hidden";
+<%-- ── STATS ── --%>
+<div class="stats">
+    <div class="sc"><div class="sc-ico ico-i"><i class="fa fa-users"></i></div>
+        <div><div class="sc-val"><asp:Label ID="lblTotalStudents"   runat="server">0</asp:Label></div>
+             <div class="sc-lbl">Total</div></div></div>
+    <div class="sc"><div class="sc-ico ico-g"><i class="fa fa-check-circle"></i></div>
+        <div><div class="sc-val"><asp:Label ID="lblActiveStudents"  runat="server">0</asp:Label></div>
+             <div class="sc-lbl">Active</div></div></div>
+    <div class="sc"><div class="sc-ico ico-r"><i class="fa fa-times-circle"></i></div>
+        <div><div class="sc-val"><asp:Label ID="lblInactiveStudents" runat="server">0</asp:Label></div>
+             <div class="sc-lbl">Inactive</div></div></div>
+    <div class="sc"><div class="sc-ico ico-a"><i class="fa fa-calendar-plus"></i></div>
+        <div><div class="sc-val"><asp:Label ID="lblNewStudents"     runat="server">0</asp:Label></div>
+             <div class="sc-lbl">New This Month</div></div></div>
+    <div class="sc"><div class="sc-ico ico-p"><i class="fa fa-sync"></i></div>
+        <div><div class="sc-val"><asp:Label ID="lblReEnrolled"      runat="server">0</asp:Label></div>
+             <div class="sc-lbl">Re-enrolled</div></div></div>
+</div>
 
-           setTimeout(function () {
-               alertBox.remove();
-            }, 500);
+<%-- ── STREAM / COURSE CARDS ── --%>
+<div class="sc-section">
+    <h5><i class="fa fa-layer-group me-1" style="color:var(--primary)"></i>Students by Stream &amp; Course</h5>
+    <div class="sc-grid">
+        <asp:Repeater ID="rptStats" runat="server">
+            <ItemTemplate>
+                <div class="scard sv<%# Container.ItemIndex % 8 %>">
+                    <div class="sc-label"><%# Server.HtmlEncode(Eval("StreamName")?.ToString() ?? "No Stream") %></div>
+                    <div class="sc-title"><%# Server.HtmlEncode(Eval("CourseName")?.ToString() ?? "No Course") %></div>
+                    <div class="sc-num"><%# Eval("TotalStudents") %></div>
+                    <div class="sc-sub">students enrolled</div>
+                </div>
+            </ItemTemplate>
+        </asp:Repeater>
+    </div>
+</div>
 
-        }, 5000);
-    }  
+<%-- ── FILTER BAR ── --%>
+<div class="filter-bar">
+    <div class="sb">
+        <i class="fa fa-search"></i>
+        <input type="text" id="txtSearchClient" placeholder="Search name, roll no, email…"
+               oninput="clientSearch(this.value)" />
+    </div>
+    <asp:DropDownList ID="ddlFilterStream" runat="server" CssClass="fsel"
+        AutoPostBack="true" OnSelectedIndexChanged="Filter_Changed" />
+    <asp:DropDownList ID="ddlFilterStatus" runat="server" CssClass="fsel"
+        AutoPostBack="true" OnSelectedIndexChanged="Filter_Changed">
+        <asp:ListItem Text="Active"   Value="1" Selected="True" />
+        <asp:ListItem Text="Inactive" Value="0" />
+    </asp:DropDownList>
+    <asp:DropDownList ID="ddlPageSize" runat="server" CssClass="pg-sz"
+        AutoPostBack="true" OnSelectedIndexChanged="PageSize_Changed">
+        <asp:ListItem Text="10 / page" Value="10" />
+        <asp:ListItem Text="25 / page" Value="25" />
+        <asp:ListItem Text="50 / page" Value="50" />
+    </asp:DropDownList>
+    <span class="rec-info"><asp:Label ID="lblRecordInfo" runat="server" /></span>
+</div>
 
-       function filterStudents() {
-           let val = document.getElementById("<%= txtSearch.ClientID %>").value.toLowerCase();
+<%-- ── TABLE ── --%>
+<div class="tbl-wrap">
+    <div class="tbl-scroll">
+        <asp:GridView ID="gvStudents" runat="server"
+            AutoGenerateColumns="false"
+            CssClass="stu-tbl"
+            GridLines="None"
+            OnRowCommand="gvStudents_RowCommand"
+            OnRowDataBound="gvStudents_RowDataBound">
+            <EmptyDataTemplate>
+                <div class="tbl-empty">
+                    <i class="fa fa-user-slash"></i>
+                    <h5>No students found</h5>
+                    <p>Try changing filters or add a new student.</p>
+                </div>
+            </EmptyDataTemplate>
+            <Columns>
+                <asp:TemplateField HeaderText="#">
+                    <ItemTemplate><%# GetRowNumber(Container.DataItemIndex) %></ItemTemplate>
+                </asp:TemplateField>
+                <asp:TemplateField HeaderText="Student">
+                    <ItemTemplate>
+                        <div class="stu-cell">
+                            <div class="stu-av" style="background:<%# GetAvatarColor(Container.DataItemIndex) %>">
+                                <%# GetInitial(Eval("FullName")?.ToString()) %>
+                            </div>
+                            <div>
+                                <div class="stu-name"><%# Server.HtmlEncode(Eval("FullName")?.ToString() ?? "—") %></div>
+                                <div class="stu-email"><%# Server.HtmlEncode(Eval("Email")?.ToString() ?? "") %></div>
+                            </div>
+                        </div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+                <asp:BoundField DataField="RollNumber" HeaderText="Roll No" />
+                <asp:TemplateField HeaderText="Stream / Course">
+                    <ItemTemplate>
+                        <div style="font-size:13px;font-weight:600;color:var(--text)"><%# Server.HtmlEncode(Eval("StreamName")?.ToString() ?? "—") %></div>
+                        <div style="font-size:11px;color:var(--muted)"><%# Server.HtmlEncode(Eval("CourseName")?.ToString() ?? "—") %></div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+                <asp:TemplateField HeaderText="Year / Sem">
+                    <ItemTemplate>
+                        <div style="font-size:12px;font-weight:500"><%# Server.HtmlEncode(Eval("LevelName")?.ToString() ?? "—") %></div>
+                        <div style="font-size:11px;color:var(--muted)"><%# Server.HtmlEncode(Eval("SemesterName")?.ToString() ?? "") %></div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+                <asp:TemplateField HeaderText="Actions">
+                    <ItemTemplate>
+                        <div class="act-g">
+                            <asp:LinkButton runat="server" CssClass="bico bi-v" CommandName="ViewRow"
+                                CommandArgument='<%# Eval("UserId") %>' ToolTip="View Profile">
+                                <i class="fa fa-eye"></i>
+                            </asp:LinkButton>
+                            <asp:LinkButton runat="server" CssClass="bico bi-e" CommandName="EditRow"
+                                CommandArgument='<%# Eval("UserId") %>' ToolTip="Edit Student">
+                                <i class="fa fa-pen"></i>
+                            </asp:LinkButton>
+                            <asp:LinkButton runat="server" CssClass="bico bi-r" CommandName="ReEnroll"
+                                CommandArgument='<%# Eval("UserId") %>' ToolTip="Re-enrol to another session">
+                                <i class="fa fa-sync"></i>
+                            </asp:LinkButton>
+                            <asp:LinkButton runat="server" CssClass="bico bi-t" CommandName="Toggle"
+                                CommandArgument='<%# Eval("UserId") %>' ToolTip="Toggle Active / Inactive"
+                                OnClientClick="return confirm('Toggle this student\'s active status?');">
+                                <i class="fa fa-power-off"></i>
+                            </asp:LinkButton>
+                            <asp:LinkButton runat="server" CssClass="bico bi-d" CommandName="DeleteRow"
+                                CommandArgument='<%# Eval("UserId") %>' ToolTip="Delete Student"
+                                OnClientClick="return confirm('Permanently delete this student?');">
+                                <i class="fa fa-trash"></i>
+                            </asp:LinkButton>
+                        </div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+            </Columns>
+        </asp:GridView>
+    </div>
+    <div class="pager">
+        <div class="pager-info">
+            Page <strong><asp:Label ID="lblCurrentPage" runat="server">1</asp:Label></strong>
+            of <strong><asp:Label ID="lblTotalPages" runat="server">1</asp:Label></strong>
+        </div>
+        <div class="pager-btns">
+            <asp:LinkButton ID="btnFirst" runat="server" CssClass="pb" OnClick="Pager_Click" CommandArgument="First">«</asp:LinkButton>
+            <asp:LinkButton ID="btnPrev"  runat="server" CssClass="pb" OnClick="Pager_Click" CommandArgument="Prev">‹</asp:LinkButton>
+            <asp:PlaceHolder ID="phPages" runat="server"></asp:PlaceHolder>
+            <asp:LinkButton ID="btnNext"  runat="server" CssClass="pb" OnClick="Pager_Click" CommandArgument="Next">›</asp:LinkButton>
+            <asp:LinkButton ID="btnLast"  runat="server" CssClass="pb" OnClick="Pager_Click" CommandArgument="Last">»</asp:LinkButton>
+        </div>
+    </div>
+</div>
 
-        document.querySelectorAll("#<%= gvStudents.ClientID %> tbody tr")
-               .forEach(r => {
-                   r.style.display = r.innerText.toLowerCase().includes(val) ? "" : "none";
-               });
-       }
+</div><%-- /pg --%>
 
-       function openCreateModal() {
-           document.getElementById('<%= hfStudentUserId.ClientID %>').value = "";
+<%-- ══════════ ADD STUDENT MODAL ══════════ --%>
+<div class="mo" id="addMo">
+    <div class="mb" style="max-width:700px">
+        <div class="mh blue">
+            <h5 id="addMoTitle"><i class="fa fa-user-plus me-2"></i>Add New Student</h5>
+            <button type="button" class="mc" onclick="closeMo('addMo')"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="mbody">
+            <div class="info-box info-blue">
+                <i class="fa fa-info-circle"></i>
+                <span>Default password is <strong>Student@123</strong>. Student will be prompted to change on first login. Fields marked * are required.</span>
+            </div>
+            <span class="fsect">Academic Assignment (all optional)</span>
+            <div class="f3">
+                <div class="fg"><label>Stream</label>
+                    <asp:DropDownList ID="ddlStream" runat="server" CssClass="fc"
+                        AutoPostBack="true" OnSelectedIndexChanged="ddlStream_Changed" /></div>
+                <div class="fg"><label>Course</label>
+                    <asp:DropDownList ID="ddlCourse" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Year / Class</label>
+                    <asp:DropDownList ID="ddlStudyLevel" runat="server" CssClass="fc" onchange="validateAgeLevel()" /></div>
+                <div class="fg"><label>Semester</label>
+                    <asp:DropDownList ID="ddlSemester" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Section</label>
+                    <asp:DropDownList ID="ddlSection" runat="server" CssClass="fc" /></div>
+            </div>
+            <span class="fsect">Personal Information</span>
+            <div class="f2">
+                <div class="fg"><label>Full Name *</label>
+                    <asp:TextBox ID="txtFullName" runat="server" CssClass="fc" placeholder="e.g. John Doe" MaxLength="100" />
+                    <div class="em" id="eFullName">Full name required (min 2 chars).</div></div>
+                <div class="fg"><label>Roll Number *</label>
+                    <asp:TextBox ID="txtRollNo" runat="server" CssClass="fc" placeholder="e.g. 24CS001" MaxLength="30" />
+                    <div class="em" id="eRollNo">Roll number is required.</div></div>
+                <div class="fg"><label>Username *</label>
+                    <asp:TextBox ID="txtUsername" runat="server" CssClass="fc" placeholder="Unique login username" MaxLength="50" />
+                    <div class="em" id="eUsername">3–50 chars: letters, numbers, underscore.</div></div>
+                <div class="fg"><label>Email *</label>
+                    <asp:TextBox ID="txtEmail" runat="server" CssClass="fc" placeholder="student@example.com" MaxLength="100" />
+                    <div class="em" id="eEmail">Enter a valid email address.</div></div>
+                <div class="fg"><label>Gender</label>
+                    <asp:DropDownList ID="ddlGender" runat="server" CssClass="fc">
+                        <asp:ListItem Text="Male"   Value="Male" />
+                        <asp:ListItem Text="Female" Value="Female" />
+                        <asp:ListItem Text="Other"  Value="Other" />
+                    </asp:DropDownList></div>
+                <div class="fg"><label>Date of Birth *</label>
+                    <asp:TextBox ID="txtDOB" runat="server" TextMode="Date" CssClass="fc" onchange="validateAgeLevel()" />
+                    <div class="em" id="eDOB">Invalid age for selected class/year.</div></div>
+                <div class="fg"><label>Contact No.</label>
+                    <asp:TextBox ID="txtContact" runat="server" CssClass="fc" placeholder="10–15 digit number" MaxLength="15" />
+                    <div class="em" id="eContact">Enter a valid phone number.</div></div>
+                <div class="fg"><label>Address</label>
+                    <asp:TextBox ID="txtAddress" runat="server" CssClass="fc" placeholder="Optional" MaxLength="200" /></div>
+            </div>
+        </div>
+        <div class="mfoot">
+            <button type="button" class="btn-o" onclick="closeMo('addMo')">Cancel</button>
+            <asp:Button ID="btnSave" runat="server" CssClass="btn-p"
+                Text="Save Student" OnClick="btnSave_Click"
+                OnClientClick="return validateAdd()" />
+        </div>
+    </div>
+</div>
 
-    document.getElementById('<%= txtUsername.ClientID %>').value = "";
-    document.getElementById('<%= txtEmail.ClientID %>').value = "";
-    document.getElementById('<%= txtFullName.ClientID %>').value = "";
-    document.getElementById('<%= txtRollNo.ClientID %>').value = "";
-    document.getElementById('<%= txtContact.ClientID %>').value = "";
+<%-- ══════════ EDIT MODAL ══════════ --%>
+<div class="mo" id="editMo">
+    <div class="mb" style="max-width:700px">
+        <div class="mh green">
+            <h5><i class="fa fa-user-edit me-2"></i>Edit Student</h5>
+            <button type="button" class="mc" onclick="closeMo('editMo')"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="mbody">
+            <span class="fsect">Academic Assignment</span>
+            <div class="f3">
+                <div class="fg"><label>Stream</label>
+                    <asp:DropDownList ID="ddlStreamEdit" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Course</label>
+                    <asp:DropDownList ID="ddlCourseEdit" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Year / Class</label>
+                    <asp:DropDownList ID="ddlStudyLevelEdit" runat="server" CssClass="fc" onchange="validateAgeLevelEdit()" /></div>
+                <div class="fg"><label>Semester</label>
+                    <asp:DropDownList ID="ddlSemesterEdit" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Section</label>
+                    <asp:DropDownList ID="ddlSectionEdit" runat="server" CssClass="fc" /></div>
+            </div>
+            <span class="fsect">Personal Information</span>
+            <div class="f2">
+                <div class="fg"><label>Full Name *</label>
+                    <asp:TextBox ID="txtFullNameEdit" runat="server" CssClass="fc" />
+                    <div class="em" id="eFullNameE">Full name is required.</div></div>
+                <div class="fg"><label>Roll Number *</label>
+                    <asp:TextBox ID="txtRollNumberEdit" runat="server" CssClass="fc" />
+                    <div class="em" id="eRollE">Roll number is required.</div></div>
+                <div class="fg"><label>Email *</label>
+                    <asp:TextBox ID="txtEmailEdit" runat="server" CssClass="fc" />
+                    <div class="em" id="eEmailE">Valid email required.</div></div>
+                <div class="fg"><label>Contact No.</label>
+                    <asp:TextBox ID="txtContactEdit" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Gender</label>
+                    <asp:DropDownList ID="ddlGenderEdit" runat="server" CssClass="fc">
+                        <asp:ListItem Text="Male"   Value="Male" />
+                        <asp:ListItem Text="Female" Value="Female" />
+                        <asp:ListItem Text="Other"  Value="Other" />
+                    </asp:DropDownList></div>
+                <div class="fg"><label>Date of Birth</label>
+                    <asp:TextBox ID="txtDOBEdit" runat="server" TextMode="Date" CssClass="fc" onchange="validateAgeLevelEdit()" />
+                    <div class="em" id="eDOBE">Invalid age for selected class/year.</div></div>
+            </div>
+        </div>
+        <div class="mfoot">
+            <button type="button" class="btn-o" onclick="closeMo('editMo')">Cancel</button>
+            <asp:Button ID="btnUpdate" runat="server" CssClass="btn-g"
+                Text="Update Student" OnClick="btnUpdate_Click"
+                OnClientClick="return validateEdit()" />
+        </div>
+    </div>
+</div>
 
-    new bootstrap.Modal(document.getElementById('CreateModal')).show();
-}
+<%-- ══════════ VIEW PROFILE MODAL ══════════ --%>
+<div class="mo" id="viewMo">
+    <div class="mb" style="max-width:560px">
+        <div class="mh blue">
+            <h5><i class="fa fa-id-card me-2"></i>Student Profile</h5>
+            <button type="button" class="mc" onclick="closeMo('viewMo')"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="mbody">
+            <div class="prof-hdr">
+                <div class="prof-av" id="vAv" style="background:var(--primary)">S</div>
+                <div>
+                    <div class="prof-name" id="vName">—</div>
+                    <div class="prof-meta" id="vRoll">—</div>
+                    <div style="margin-top:6px" id="vBadge"></div>
+                </div>
+            </div>
+            <div class="dg" id="vGrid"></div>
+        </div>
+        <div class="mfoot">
+            <button type="button" class="btn-o" onclick="closeMo('viewMo')">Close</button>
+            <a id="vDashLink" href="#" class="btn-p" target="_blank">
+                <i class="fa fa-external-link-alt me-1"></i>Student Dashboard
+            </a>
+        </div>
+    </div>
+</div>
 
-       function validateStudent() {
+<%-- ══════════ RE-ENROL MODAL ══════════ --%>
+<div class="mo" id="reenrolMo">
+    <div class="mb" style="max-width:580px">
+        <div class="mh purple">
+            <h5><i class="fa fa-sync me-2"></i>Re-enrol Student</h5>
+            <button type="button" class="mc" onclick="closeMo('reenrolMo')"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="mbody">
+            <div class="info-box info-blue">
+                <i class="fa fa-info-circle"></i>
+                <div>Creates a fresh academic record for the student in the chosen session. Attendance and grades start fresh; personal data is retained.</div>
+            </div>
+            <!-- Parent auto re-enroll info -->
+            <div class="info-box info-green" id="parentReEnrollInfo" style="display:none">
+                <i class="fa fa-users"></i>
+                <div id="parentReEnrollMsg">Linked parents will be automatically re-enrolled.</div>
+            </div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:14px" id="reenrolName">Student: —</div>
+            <div class="fg" style="margin-bottom:13px">
+                <label>Target Session *</label>
+                <asp:DropDownList ID="ddlReEnrolSession" runat="server" CssClass="fc" />
+                <div class="em" id="eReSession">Please select a target session.</div>
+            </div>
+            <div class="f3">
+                <div class="fg"><label>Stream</label>
+                    <asp:DropDownList ID="ddlReEnrolStream" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Course</label>
+                    <asp:DropDownList ID="ddlReEnrolCourse" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Year / Class</label>
+                    <asp:DropDownList ID="ddlReEnrolLevel" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Semester</label>
+                    <asp:DropDownList ID="ddlReEnrolSemester" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>Section</label>
+                    <asp:DropDownList ID="ddlReEnrolSection" runat="server" CssClass="fc" /></div>
+                <div class="fg"><label>New Roll No</label>
+                    <asp:TextBox ID="txtReEnrolRoll" runat="server" CssClass="fc" placeholder="Leave blank to keep existing" /></div>
+            </div>
+        </div>
+        <div class="mfoot">
+            <button type="button" class="btn-o" onclick="closeMo('reenrolMo')">Cancel</button>
+            <asp:Button ID="btnReEnrol" runat="server" CssClass="btn-purple"
+                Text="Confirm Re-enrolment" OnClick="btnReEnrol_Click"
+                OnClientClick="return validateReEnrol()" />
+        </div>
+    </div>
+</div>
 
-           let email = document.getElementById('<%= txtEmail.ClientID %>').value;
-    let name = document.getElementById('<%= txtFullName.ClientID %>').value;
-    let roll = document.getElementById('<%= txtRollNo.ClientID %>').value;
-    let dob = document.getElementById('<%= txtDOB.ClientID %>').value;
-    let level = document.getElementById('<%= ddlStudyLevel.ClientID %>').selectedOptions[0].text;
+<%-- ══════════ BULK UPLOAD MODAL ══════════ --%>
+<div class="mo" id="bulkMo">
+    <div class="mb" style="max-width:540px">
+        <div class="mh amber">
+            <h5><i class="fa fa-file-import me-2"></i>Bulk Student Upload</h5>
+            <button type="button" class="mc" onclick="closeMo('bulkMo')"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="mbody">
+            <div class="info-box info-amber">
+                <i class="fa fa-table"></i>
+                <div>
+                    Required columns (CSV / Excel):<br>
+                    <strong>Username, Email, FullName, RollNumber, StreamId, LevelId,
+                    SemesterId, CourseId, SectionId, Gender, DOB, Contact</strong><br>
+                    <span style="font-size:11px;margin-top:3px;display:block">
+                        StreamId/CourseId etc. are optional — leave blank if unknown.
+                        DOB format: YYYY-MM-DD. Duplicates are automatically skipped.
+                    </span>
+                </div>
+            </div>
+            <div class="drop-zone" id="dropZone"
+                 ondragover="event.preventDefault();this.classList.add('drag')"
+                 ondragleave="this.classList.remove('drag')"
+                 ondrop="handleDrop(event)">
+                <i class="fa fa-cloud-upload-alt"></i>
+                <p>Drag &amp; drop your CSV or Excel file here</p>
+                <small>or click to browse</small>
+                <div style="margin-top:12px">
+                    <asp:FileUpload ID="fuBulk" runat="server" CssClass="fc"
+                        style="font-size:12px" Accept=".csv,.xlsx,.xls" />
+                </div>
+                <div class="up-prog" id="upProg">
+                    <div class="up-fill" id="upFill"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mfoot">
+            <button type="button" class="btn-o" onclick="closeMo('bulkMo')">Cancel</button>
+            <asp:Button ID="btnUploadBulk" runat="server" CssClass="btn-warn"
+                Text="Upload &amp; Process" OnClick="btnUploadBulk_Click"
+                OnClientClick="return startUpload()" />
+        </div>
+    </div>
+</div>
 
-    // ✅ Required fields
-    if (!email || !name || !roll) {
-        alert("Please fill all required fields");
-        return false;
+<%-- TOAST ROOT --%>
+<div id="toast-root"></div>
+
+<script>
+    (function () {
+        'use strict';
+
+        /* ══ SUPERADMIN CHECK ══ */
+        var IS_SA = document.getElementById('<%= hfIsSuperAdmin.ClientID %>').value === '1';
+    if (IS_SA) {
+        document.getElementById('saBanner').style.display = 'flex';
+        document.getElementById('btnAddStudent').style.display = 'none';
+        document.getElementById('btnBulkUploadOpen').style.display = 'none';
     }
 
-    // ✅ Email validation
-    let emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
-    if (!email.match(emailPattern)) {
-        alert("Invalid Email");
-        return false;
+    /* ══ TOAST ══ */
+    /* _showToast is called from server startup scripts on postback */
+    function _showToast(msg, type) {
+        if (!msg || !msg.trim()) return;
+        var w = document.getElementById('toast-root');
+        var d = document.createElement('div');
+        d.className = 'toast-item ' + (type || 'inf');
+        var ic = { ok: 'fa-check-circle', err: 'fa-times-circle', warn: 'fa-exclamation-triangle', inf: 'fa-info-circle' };
+        d.innerHTML = '<i class="fa ' + (ic[type] || ic.inf) + '"></i><span>' + msg + '</span>';
+        w.appendChild(d);
+        setTimeout(function () {
+            d.style.opacity = '0';
+            d.style.transition = 'opacity .4s';
+            setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 400);
+        }, 6000);
     }
+    window._showToast = _showToast;
 
-    // ✅ DOB + Age validation
-    if (dob) {
-        let age = new Date().getFullYear() - new Date(dob).getFullYear();
-
-        if (level.includes("Engineering") && age < 16) {
-            alert("Student too young for Engineering!");
-            return false;
-        }
-    }
-
-    return true;
-}
-
-       function toggleStudent(btn, userId) {
-
-           let row = btn.closest("tr");
-
-           fetch('AddStudent.aspx/ToggleStudentAjax', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ userId: userId })
-           })
-               .then(res => res.json())
-               .then(data => {
-
-                   let newStatus = data.d;
-                   let showInactive = "<%= ShowInactive %>" === "True";
-
-        // remove row visually
-        if ((newStatus === "0" && !showInactive) ||
-            (newStatus === "1" && showInactive)) {
-
-            row.style.transition = "0.4s";
-            row.style.opacity = "0";
-
-            setTimeout(() => row.remove(), 400);
+    /* ── Fire server toast on DOMContentLoaded (for hidden-field based toasts) ── */
+    document.addEventListener('DOMContentLoaded', function () {
+        var m = document.getElementById('<%= hfToastMsg.ClientID %>');
+        var t = document.getElementById('<%= hfToastType.ClientID %>');
+        if (m && m.value && m.value.trim()) {
+            _showToast(m.value, t ? t.value : 'inf');
+            m.value = '';
+            if (t) t.value = '';
         }
 
-        // update stats LIVE
-        updateStatsLive(newStatus);
+        /* View data */
+        var vd = document.getElementById('<%= hfViewData.ClientID %>');
+        if (vd && vd.value && vd.value.trim()) {
+            try { showViewModal(JSON.parse(vd.value)); vd.value = ''; } catch (e) { }
+        }
 
-        // reload AFTER everything
-        setTimeout(() => location.reload(), 500);
+        /* Wire header buttons */
+        var addBtn = document.getElementById('btnAddStudent');
+        if (addBtn) {
+            addBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (IS_SA) { _showToast('SuperAdmin has view-only access. Cannot add students.', 'warn'); return; }
+                openAddModal();
+            });
+        }
+        var bulkBtn = document.getElementById('btnBulkUploadOpen');
+        if (bulkBtn) {
+            bulkBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (IS_SA) { _showToast('SuperAdmin has view-only access. Cannot upload.', 'warn'); return; }
+                openMo('bulkMo');
+            });
+        }
     });
 
-           return false;
-       }
+    /* ══ MODAL ══ */
+    function openMo(id) { var el = document.getElementById(id); if (el) el.classList.add('open'); }
+    function closeMo(id) { var el = document.getElementById(id); if (el) el.classList.remove('open'); }
+    window.openMo = openMo;
+    window.closeMo = closeMo;
 
-       function updateStatsLive(status) {
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.mo').forEach(function (m) {
+            m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('open'); });
+        });
+    });
 
-           let active = document.querySelector(".stat-active");
-           let inactive = document.querySelector(".stat-inactive");
+    /* ══ OPEN ADD MODAL ══ */
+    function openAddModal() {
+        var ids = ['<%= txtFullName.ClientID %>','<%= txtUsername.ClientID %>',
+                   '<%= txtEmail.ClientID %>','<%= txtRollNo.ClientID %>',
+                   '<%= txtContact.ClientID %>','<%= txtAddress.ClientID %>'];
+        ids.forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+        var dobEl = document.getElementById('<%= txtDOB.ClientID %>');
+        if (dobEl) dobEl.value = '';
+        clearErrs(['eFullName', 'eUsername', 'eEmail', 'eRollNo', 'eContact', 'eDOB']);
+        document.getElementById('addMoTitle').innerHTML = '<i class="fa fa-user-plus me-2"></i>Add New Student';
+        openMo('addMo');
+    }
+    window.openAddModal = openAddModal;
 
-           let activeCount = parseInt(active.innerText);
-           let inactiveCount = parseInt(inactive.innerText);
+    /* ══ CLIENT SEARCH ══ */
+    function clientSearch(q) {
+        q = (q || '').toLowerCase();
+        document.querySelectorAll('.stu-tbl tbody tr').forEach(function (row) {
+            row.style.display = (!q || row.innerText.toLowerCase().indexOf(q) !== -1) ? '' : 'none';
+        });
+    }
 
-           if (status === "1") {
-               active.innerText = activeCount + 1;
-               inactive.innerText = inactiveCount - 1;
-           } else {
-               active.innerText = activeCount - 1;
-               inactive.innerText = inactiveCount + 1;
-           }
-       }
+    /* ══ PARENT SUGGESTION BANNER ══ */
+    var _parentSuggestionStudentId = 0;
+    function showParentSuggestion(studentName, studentId) {
+        _parentSuggestionStudentId = studentId;
+        var banner = document.getElementById('parentSuggestionBanner');
+        var title = document.getElementById('psbTitle');
+        var msg = document.getElementById('psbMsg');
+        if (!banner) return;
+        if (title) title.textContent = '✅ Student "' + studentName + '" added successfully!';
+        if (msg) msg.textContent = 'Would you like to enroll a parent/guardian for this student to track their academic progress?';
+        banner.style.display = 'block';
+        /* Auto-dismiss after 30 seconds */
+        setTimeout(function () { dismissParentSuggestion(); }, 30000);
+    }
+    window.showParentSuggestion = showParentSuggestion;
 
-       function keepModalOpen() {
-           var modal = new bootstrap.Modal(document.getElementById('CreateModal'));
-           modal.show();
-       }
-   </script>
+    function dismissParentSuggestion() {
+        var banner = document.getElementById('parentSuggestionBanner');
+        if (banner) {
+            banner.style.opacity = '0';
+            banner.style.transition = 'opacity .4s';
+            setTimeout(function () { banner.style.display = 'none'; banner.style.opacity = '1'; }, 400);
+        }
+    }
+    window.dismissParentSuggestion = dismissParentSuggestion;
+
+    function goToParentPage() {
+        /* Redirect to Parent Management page */
+        window.location.href = 'ParentManagement.aspx';
+    }
+    window.goToParentPage = goToParentPage;
+
+    /* ══ VIEW MODAL ══ */
+    function showViewModal(d) {
+        var cols = ['#6366f1', '#059669', '#d97706', '#7c3aed', '#0284c7', '#dc2626'];
+        var c = cols[(d.idx || 0) % cols.length];
+        document.getElementById('vAv').style.background = c;
+        document.getElementById('vAv').textContent = (d.name || '?').charAt(0).toUpperCase();
+        document.getElementById('vName').textContent = d.name || '—';
+        document.getElementById('vRoll').textContent = 'Roll No: ' + (d.roll || '—');
+        document.getElementById('vBadge').innerHTML =
+            (d.active === 'True' || d.active === true)
+                ? "<span class='bdg bdg-on'>Active</span>"
+                : "<span class='bdg bdg-off'>Inactive</span>";
+        var rows = [
+            ['Email', d.email || '—'], ['Contact', d.contact || '—'],
+            ['Stream', d.stream || '—'], ['Course', d.course || '—'],
+            ['Year / Class', d.level || '—'], ['Semester', d.sem || '—'],
+            ['Section', d.section || '—'], ['Gender', d.gender || '—'],
+            ['Date of Birth', d.dob || '—'], ['Enrolled', d.joined || '—']
+        ];
+        document.getElementById('vGrid').innerHTML = rows.map(function (r) {
+            return '<div class="dr"><div class="dr-lbl">' + r[0] + '</div>'
+                + '<div class="dr-val">' + esc(r[1]) + '</div></div>';
+        }).join('');
+        document.getElementById('vDashLink').href = 'StudentDetails.aspx?UserId=' + (d.uid || 0);
+        openMo('viewMo');
+    }
+
+    /* ══ RE-ENROL MODAL ══ */
+    function openReEnrolModal(name, parentCount) {
+        document.getElementById('reenrolName').textContent = 'Student: ' + (name || '—');
+        /* Show parent info box */
+        var infoBox = document.getElementById('parentReEnrollInfo');
+        var infoMsg = document.getElementById('parentReEnrollMsg');
+        if (infoBox && infoMsg) {
+            if (parentCount > 0) {
+                infoMsg.innerHTML = '<strong>' + parentCount + ' linked parent(s)</strong> will be automatically re-enrolled into the selected session. No manual work needed!';
+                infoBox.style.display = 'flex';
+            } else {
+                infoBox.style.display = 'none';
+            }
+        }
+        openMo('reenrolMo');
+    }
+    window.openReEnrolModal = openReEnrolModal;
+
+    /* ══ AGE-LEVEL VALIDATION ══ */
+    var AGE_RULES = [
+        { keywords: ['1st', 'grade 1', 'class 1', 'class i', 'std 1'], minAge: 5 },
+        { keywords: ['2nd', 'grade 2', 'class 2', 'class ii', 'std 2'], minAge: 6 },
+        { keywords: ['3rd', 'grade 3', 'class 3', 'class iii', 'std 3'], minAge: 7 },
+        { keywords: ['4th', 'std 4'], minAge: 8 },
+        { keywords: ['5th', 'std 5'], minAge: 9 },
+        { keywords: ['6th', 'std 6'], minAge: 10 },
+        { keywords: ['7th', 'std 7'], minAge: 11 },
+        { keywords: ['8th', 'std 8'], minAge: 12 },
+        { keywords: ['9th', 'std 9'], minAge: 13 },
+        { keywords: ['10th', 'ssc', 'matric'], minAge: 14 },
+        { keywords: ['11th', 'hsc', 'junior college'], minAge: 15 },
+        { keywords: ['12th', 'senior secondary'], minAge: 16 },
+        { keywords: ['1st year', 'first year', 'fy', 'f.y.', 'year 1'], minAge: 17 },
+        { keywords: ['2nd year', 'second year', 'sy', 's.y.', 'year 2'], minAge: 18 },
+        { keywords: ['3rd year', 'third year', 'ty', 't.y.', 'year 3'], minAge: 19 },
+        { keywords: ['4th year', 'fourth year', 'year 4'], minAge: 20 },
+        { keywords: ['engineering', 'b.tech', 'btech', 'b.e.', 'be '], minAge: 17 },
+        { keywords: ['medical', 'mbbs', 'pharmacy'], minAge: 17 },
+        { keywords: ['mba', 'm.tech', 'mtech', 'm.sc', 'msc', 'postgrad', 'pg '], minAge: 21 },
+        { keywords: ['phd', 'doctorate'], minAge: 23 }
+    ];
+
+    function getMinAgeForLevel(levelText) {
+        if (!levelText) return 4;
+        var lt = levelText.toLowerCase();
+        for (var i = 0; i < AGE_RULES.length; i++) {
+            for (var j = 0; j < AGE_RULES[i].keywords.length; j++) {
+                if (lt.indexOf(AGE_RULES[i].keywords[j]) !== -1) return AGE_RULES[i].minAge;
+            }
+        }
+        return 4;
+    }
+
+    function calcAge(dobVal) {
+        if (!dobVal) return null;
+        var dob = new Date(dobVal);
+        if (isNaN(dob.getTime())) return null;
+        var today = new Date();
+        var age = today.getFullYear() - dob.getFullYear();
+        var m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+        return age;
+    }
+
+    function validateAgeLevel() {
+        var dobEl = document.getElementById('<%= txtDOB.ClientID %>');
+        var levelSel = document.getElementById('<%= ddlStudyLevel.ClientID %>');
+        var dobVal = dobEl ? dobEl.value : '';
+        var levelText = levelSel ? levelSel.options[levelSel.selectedIndex].text : '';
+        var age = calcAge(dobVal);
+        var minAge = getMinAgeForLevel(levelText);
+        var eDOB = document.getElementById('eDOB');
+        if (dobVal && age !== null && age < 4) {
+            eDOB.textContent = 'Age must be at least 4 years.'; eDOB.classList.add('show');
+            if (dobEl) dobEl.classList.add('err'); return false;
+        }
+        if (dobVal && age !== null && levelText && levelText.indexOf('--') === -1 && age < minAge) {
+            eDOB.textContent = 'For "' + levelText + '", student must be at least ' + minAge + ' years old. Current age: ' + age + '.';
+            eDOB.classList.add('show'); if (dobEl) dobEl.classList.add('err'); return false;
+        }
+        eDOB.classList.remove('show'); if (dobEl) dobEl.classList.remove('err');
+        return true;
+    }
+
+    function validateAgeLevelEdit() {
+        var dobEl = document.getElementById('<%= txtDOBEdit.ClientID %>');
+        var levelSel = document.getElementById('<%= ddlStudyLevelEdit.ClientID %>');
+        var dobVal = dobEl ? dobEl.value : '';
+        var levelText = levelSel ? levelSel.options[levelSel.selectedIndex].text : '';
+        var age = calcAge(dobVal);
+        var minAge = getMinAgeForLevel(levelText);
+        var eDOBE = document.getElementById('eDOBE');
+        if (dobVal && age !== null && age < 4) {
+            eDOBE.textContent = 'Age must be at least 4 years.'; eDOBE.classList.add('show');
+            if (dobEl) dobEl.classList.add('err'); return false;
+        }
+        if (dobVal && age !== null && levelText && levelText.indexOf('--') === -1 && age < minAge) {
+            eDOBE.textContent = 'For "' + levelText + '", student must be at least ' + minAge + ' years old.';
+            eDOBE.classList.add('show'); if (dobEl) dobEl.classList.add('err'); return false;
+        }
+        eDOBE.classList.remove('show'); if (dobEl) dobEl.classList.remove('err');
+        return true;
+    }
+
+    /* ══ VALIDATE ADD ══ */
+    function validateAdd() {
+        if (IS_SA) { _showToast('SuperAdmin has view-only access.', 'warn'); return false; }
+        var ok = true;
+        var fn = v('<%= txtFullName.ClientID %>');
+        var rn = v('<%= txtRollNo.ClientID %>');
+        var un = v('<%= txtUsername.ClientID %>');
+        var em = v('<%= txtEmail.ClientID %>');
+        var ct = v('<%= txtContact.ClientID %>');
+
+        if (!fn || fn.length < 2) { showE_('eFullName', true, 'Full name must be at least 2 characters.'); ok = false; } else showE_('eFullName', false);
+        if (!rn) { showE_('eRollNo', true, 'Roll number is required.'); ok = false; } else showE_('eRollNo', false);
+        if (!un || !/^[A-Za-z0-9_]{3,50}$/.test(un)) { showE_('eUsername', true, '3–50 chars: letters, numbers, underscore only.'); ok = false; } else showE_('eUsername', false);
+        if (!em || !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(em)) { showE_('eEmail', true, 'Enter a valid email address.'); ok = false; } else showE_('eEmail', false);
+        if (!validateAgeLevel()) ok = false;
+        if (ct && !/^\d{10,15}$/.test(ct)) { showE_('eContact', true, 'Enter 10–15 digit contact number.'); ok = false; } else showE_('eContact', false);
+
+        if (!ok) openMo('addMo');
+        return ok;
+    }
+
+    /* ══ VALIDATE EDIT ══ */
+    function validateEdit() {
+        if (IS_SA) { _showToast('SuperAdmin has view-only access.', 'warn'); return false; }
+        var ok = true;
+        var fn = v('<%= txtFullNameEdit.ClientID %>');
+        var rn = v('<%= txtRollNumberEdit.ClientID %>');
+        var em = v('<%= txtEmailEdit.ClientID %>');
+
+        if (!fn) { showE_('eFullNameE', true, 'Full name is required.'); ok = false; } else showE_('eFullNameE', false);
+        if (!rn) { showE_('eRollE', true, 'Roll number is required.'); ok = false; } else showE_('eRollE', false);
+        if (!em || !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(em)) { showE_('eEmailE', true, 'Valid email required.'); ok = false; } else showE_('eEmailE', false);
+        if (!validateAgeLevelEdit()) ok = false;
+
+        if (!ok) openMo('editMo');
+        return ok;
+    }
+
+    /* ══ VALIDATE RE-ENROL ══ */
+    function validateReEnrol() {
+        if (IS_SA) { _showToast('SuperAdmin has view-only access.', 'warn'); return false; }
+        var s = document.getElementById('<%= ddlReEnrolSession.ClientID %>');
+        if (!s || !s.value) { showE_('eReSession', true, 'Please select a target session.'); return false; }
+        showE_('eReSession', false);
+        return true;
+    }
+
+    /* ══ BULK UPLOAD ══ */
+    function startUpload() {
+        if (IS_SA) { _showToast('SuperAdmin has view-only access.', 'warn'); return false; }
+        var fu = document.getElementById('<%= fuBulk.ClientID %>');
+        if (!fu || !fu.value) { _showToast('Please select a CSV or Excel file.', 'err'); return false; }
+        var p = document.getElementById('upProg');
+        var f = document.getElementById('upFill');
+        if (p) {
+            p.style.display = 'block'; var w = 0;
+            var t = setInterval(function () { w = Math.min(w + 4, 90); if (f) f.style.width = w + '%'; }, 80);
+            setTimeout(function () { clearInterval(t); }, 3000);
+        }
+        return true;
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        var dz = document.getElementById('dropZone');
+        if (dz) dz.classList.remove('drag');
+        var fu = document.getElementById('<%= fuBulk.ClientID %>');
+            if (fu && e.dataTransfer.files.length) {
+                try { var dt = new DataTransfer(); dt.items.add(e.dataTransfer.files[0]); fu.files = dt.files; } catch (err) { }
+            }
+        }
+
+        /* ══ HELPERS ══ */
+        function v(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
+
+        function showE_(id, show, msg) {
+            var el = document.getElementById(id); if (!el) return;
+            el.classList.toggle('show', show);
+            if (msg) el.textContent = msg;
+            var inp = el.previousElementSibling;
+            if (inp && inp.classList) inp.classList.toggle('err', show);
+        }
+
+        function clearErrs(ids) { ids.forEach(function (id) { showE_(id, false); }); }
+
+        function esc(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        /* ══ SUPERADMIN: block row-level actions ══ */
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!IS_SA) return;
+            document.querySelectorAll('.stu-tbl').forEach(function (tbl) {
+                tbl.addEventListener('click', function (e) {
+                    var lb = e.target.closest('a');
+                    if (!lb) return;
+                    var tt = (lb.getAttribute('title') || '').toLowerCase();
+                    if (tt === 'view profile') return;
+                    var blocked = ['edit', 're-enrol', 'toggle', 'delete'].some(function (c) { return tt.indexOf(c) !== -1; });
+                    if (blocked) { e.preventDefault(); e.stopPropagation(); _showToast('SuperAdmin has view-only access.', 'warn'); }
+                }, true);
+            });
+        });
+
+    })();
+</script>
 
 </asp:Content>
+

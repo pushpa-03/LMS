@@ -8,157 +8,510 @@ namespace LearningManagementSystem.BL
 {
     public class AcademicSessionBL
     {
-        DataLayer dl = new DataLayer();
+        private readonly DataLayer _dl = new DataLayer();
 
-        // ================= INSERT =================
+        // ══════════════════════════════════════════════════════════════════════
+        //  INSERT  — create a new session
+        //  If IsCurrent = true, all other sessions for this institute
+        //  are reset to IsCurrent = 0 in the same transaction.
+        // ══════════════════════════════════════════════════════════════════════
         public void InsertSession(AcademicSessionGC obj)
         {
-            List<SqlCommand> commands = new List<SqlCommand>();
+            var cmds = new List<SqlCommand>();
 
             if (obj.IsCurrent)
             {
-                SqlCommand resetCmd = new SqlCommand();
-                resetCmd.CommandText =
-                    "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId = @InstituteId";
-                resetCmd.Parameters.AddWithValue("@InstituteId", obj.InstituteId);
-                commands.Add(resetCmd);
+                var reset = new SqlCommand(
+                    "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId = @InstId");
+                reset.Parameters.AddWithValue("@InstId", obj.InstituteId);
+                cmds.Add(reset);
             }
 
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandText = @"INSERT INTO AcademicSessions
-                (SocietyId, InstituteId, SessionName, StartDate, EndDate, IsActive, IsCurrent)
+            var cmd = new SqlCommand(@"
+                INSERT INTO AcademicSessions
+                    (SocietyId, InstituteId, SessionName, StartDate, EndDate, IsActive, IsCurrent, CreatedOn)
                 VALUES
-                (@SocietyId, @InstituteId, @SessionName, @StartDate, @EndDate, 1, @IsCurrent)";
+                    (@SocId, @InstId, @Name, @Start, @End, 1, @IsCurrent, GETDATE())");
 
-            cmd.Parameters.AddWithValue("@SocietyId", obj.SocietyId);
-            cmd.Parameters.AddWithValue("@InstituteId", obj.InstituteId);
-            cmd.Parameters.AddWithValue("@SessionName", obj.SessionName);
-            cmd.Parameters.AddWithValue("@StartDate", obj.StartDate);
-            cmd.Parameters.AddWithValue("@EndDate", obj.EndDate);
+            cmd.Parameters.AddWithValue("@SocId", obj.SocietyId);
+            cmd.Parameters.AddWithValue("@InstId", obj.InstituteId);
+            cmd.Parameters.AddWithValue("@Name", obj.SessionName.Trim());
+            cmd.Parameters.AddWithValue("@Start", obj.StartDate);
+            cmd.Parameters.AddWithValue("@End", obj.EndDate);
             cmd.Parameters.AddWithValue("@IsCurrent", obj.IsCurrent);
+            cmds.Add(cmd);
 
-            commands.Add(cmd);
-
-            dl.ExecuteTransaction(commands);
+            _dl.ExecuteTransaction(cmds);
         }
 
-        // ================= UPDATE =================
+        // ══════════════════════════════════════════════════════════════════════
+        //  UPDATE  — edit an existing session
+        // ══════════════════════════════════════════════════════════════════════
         public void UpdateSession(AcademicSessionGC obj)
         {
-            List<SqlCommand> commands = new List<SqlCommand>();
+            var cmds = new List<SqlCommand>();
 
             if (obj.IsCurrent)
             {
-                SqlCommand resetCmd = new SqlCommand();
-                resetCmd.CommandText =
-                    "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId = @InstituteId";
-                resetCmd.Parameters.AddWithValue("@InstituteId", obj.InstituteId);
-                commands.Add(resetCmd);
+                var reset = new SqlCommand(
+                    "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId = @InstId");
+                reset.Parameters.AddWithValue("@InstId", obj.InstituteId);
+                cmds.Add(reset);
             }
 
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandText = @"UPDATE AcademicSessions SET
-                    SessionName=@SessionName,
-                    StartDate=@StartDate,
-                    EndDate=@EndDate,
-                    IsCurrent=@IsCurrent
-                WHERE SessionId=@SessionId";
+            var cmd = new SqlCommand(@"
+                UPDATE AcademicSessions SET
+                    SessionName = @Name,
+                    StartDate   = @Start,
+                    EndDate     = @End,
+                    IsCurrent   = @IsCurrent
+                WHERE SessionId   = @SessionId
+                  AND InstituteId = @InstId");
 
             cmd.Parameters.AddWithValue("@SessionId", obj.SessionId);
-            cmd.Parameters.AddWithValue("@SessionName", obj.SessionName);
-            cmd.Parameters.AddWithValue("@StartDate", obj.StartDate);
-            cmd.Parameters.AddWithValue("@EndDate", obj.EndDate);
+            cmd.Parameters.AddWithValue("@InstId", obj.InstituteId);
+            cmd.Parameters.AddWithValue("@Name", obj.SessionName.Trim());
+            cmd.Parameters.AddWithValue("@Start", obj.StartDate);
+            cmd.Parameters.AddWithValue("@End", obj.EndDate);
             cmd.Parameters.AddWithValue("@IsCurrent", obj.IsCurrent);
+            cmds.Add(cmd);
 
-            commands.Add(cmd);
-
-            dl.ExecuteTransaction(commands);
+            _dl.ExecuteTransaction(cmds);
         }
 
-        // ================= DELETE =================
+        // ══════════════════════════════════════════════════════════════════════
+        //  DELETE  — only allowed if session has no related data
+        // ══════════════════════════════════════════════════════════════════════
         public void Delete(int sessionId, int instituteId)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandText =
-                "DELETE FROM AcademicSessions WHERE SessionId=@Id AND InstituteId=@InstituteId";
+            if (IsSessionInUse(sessionId, instituteId))
+                throw new Exception("SESSION_IN_USE");
 
+            var cmd = new SqlCommand(
+                "DELETE FROM AcademicSessions WHERE SessionId = @Id AND InstituteId = @InstId");
             cmd.Parameters.AddWithValue("@Id", sessionId);
-            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
-
-            dl.ExecuteCMD(cmd);
+            cmd.Parameters.AddWithValue("@InstId", instituteId);
+            _dl.ExecuteCMD(cmd);
         }
 
-        // ================= GET ALL =================
+        // ══════════════════════════════════════════════════════════════════════
+        //  GET ALL  — for a given institute, newest first
+        // ══════════════════════════════════════════════════════════════════════
         public DataTable GetSessionsByInstitute(int instituteId)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandText = @"SELECT * FROM AcademicSessions
-                                WHERE InstituteId=@InstituteId
-                                ORDER BY CreatedOn DESC";
-
-            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
-
-            return dl.GetDataTable(cmd);
+            var cmd = new SqlCommand(@"
+                SELECT
+                    SessionId, SocietyId, InstituteId,
+                    SessionName, StartDate, EndDate,
+                    IsActive, IsCurrent, CreatedOn
+                FROM AcademicSessions
+                WHERE InstituteId = @InstId
+                ORDER BY CreatedOn DESC");
+            cmd.Parameters.AddWithValue("@InstId", instituteId);
+            return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
-        // ================= GET BY ID =================
+        // ══════════════════════════════════════════════════════════════════════
+        //  GET BY ID
+        // ══════════════════════════════════════════════════════════════════════
         public DataTable GetById(int sessionId, int instituteId)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandText = @"SELECT * FROM AcademicSessions
-                                WHERE SessionId=@Id AND InstituteId=@InstituteId";
-
+            var cmd = new SqlCommand(@"
+                SELECT *
+                FROM AcademicSessions
+                WHERE SessionId   = @Id
+                  AND InstituteId = @InstId");
             cmd.Parameters.AddWithValue("@Id", sessionId);
-            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
-
-            return dl.GetDataTable(cmd);
+            cmd.Parameters.AddWithValue("@InstId", instituteId);
+            return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
-        // ================= SET CURRENT =================
-        public void SetCurrentSession(int sessionId, int instituteId)
-        {
-            int oldSessionId = 0;
-
-            SqlCommand getOldCmd = new SqlCommand();
-            getOldCmd.CommandText = @"SELECT TOP 1 SessionId 
-                                     FROM AcademicSessions 
-                                     WHERE InstituteId=@InstituteId AND IsCurrent=1";
-            getOldCmd.Parameters.AddWithValue("@InstituteId", instituteId);
-
-            DataTable dtOld = dl.GetDataTable(getOldCmd);
-
-            if (dtOld.Rows.Count > 0)
-                oldSessionId = Convert.ToInt32(dtOld.Rows[0]["SessionId"]);
-
-            // Reset
-            SqlCommand resetCmd = new SqlCommand();
-            resetCmd.CommandText =
-                "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId=@InstituteId";
-            resetCmd.Parameters.AddWithValue("@InstituteId", instituteId);
-            dl.ExecuteCMD(resetCmd);
-
-            // Set new
-            SqlCommand setCmd = new SqlCommand();
-            setCmd.CommandText =
-                "UPDATE AcademicSessions SET IsCurrent=1 WHERE SessionId=@SessionId";
-            setCmd.Parameters.AddWithValue("@SessionId", sessionId);
-            dl.ExecuteCMD(setCmd);
-
-            // Clone data
-            if (oldSessionId > 0 && oldSessionId != sessionId)
-            {
-                AssignLevelSubjectBL assign = new AssignLevelSubjectBL();
-                assign.CloneLevelSubjects(instituteId, oldSessionId, sessionId);
-            }
-        }
-
+        // ══════════════════════════════════════════════════════════════════════
+        //  GET CURRENT SESSION  — used by BasePage to set SessionId
+        // ══════════════════════════════════════════════════════════════════════
         public DataTable GetCurrentSession(int instituteId)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandText = "SELECT * FROM AcademicSessions WHERE InstituteId = @InstituteId AND IsCurrent = 1";
-            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            var cmd = new SqlCommand(@"
+                SELECT TOP 1 *
+                FROM AcademicSessions
+                WHERE InstituteId = @InstId AND IsCurrent = 1");
+            cmd.Parameters.AddWithValue("@InstId", instituteId);
+            return _dl.GetDataTable(cmd) ?? new DataTable();
+        }
 
-            return dl.GetDataTable(cmd);
+        // ══════════════════════════════════════════════════════════════════════
+        //  SET CURRENT SESSION
+        //  Resets all → sets the chosen one → optionally copies level-subjects
+        // ══════════════════════════════════════════════════════════════════════
+        public void SetCurrentSession(int sessionId, int instituteId)
+        {
+            // Get the previous current session id
+            int oldSessionId = 0;
+            var getOld = new SqlCommand(@"
+                SELECT TOP 1 SessionId
+                FROM AcademicSessions
+                WHERE InstituteId = @InstId AND IsCurrent = 1");
+            getOld.Parameters.AddWithValue("@InstId", instituteId);
+            DataTable dtOld = _dl.GetDataTable(getOld);
+            if (dtOld != null && dtOld.Rows.Count > 0)
+                oldSessionId = Convert.ToInt32(dtOld.Rows[0]["SessionId"]);
+
+            var cmds = new List<SqlCommand>();
+
+            // Reset all
+            var reset = new SqlCommand(
+                "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId = @InstId");
+            reset.Parameters.AddWithValue("@InstId", instituteId);
+            cmds.Add(reset);
+
+            // Set new
+            var setNew = new SqlCommand(
+                "UPDATE AcademicSessions SET IsCurrent = 1 WHERE SessionId = @Id");
+            setNew.Parameters.AddWithValue("@Id", sessionId);
+            cmds.Add(setNew);
+
+            _dl.ExecuteTransaction(cmds);
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  IS SESSION NAME EXISTS  — duplicate check (excludes self on edit)
+        // ══════════════════════════════════════════════════════════════════════
+        public bool IsSessionNameExists(int instituteId, string sessionName, int excludeSessionId = 0)
+        {
+            var cmd = new SqlCommand(@"
+                SELECT COUNT(*)
+                FROM AcademicSessions
+                WHERE InstituteId   = @InstId
+                  AND SessionName   = @Name
+                  AND SessionId    <> @ExcludeId");
+            cmd.Parameters.AddWithValue("@InstId", instituteId);
+            cmd.Parameters.AddWithValue("@Name", sessionName.Trim());
+            cmd.Parameters.AddWithValue("@ExcludeId", excludeSessionId);
+            DataTable dt = _dl.GetDataTable(cmd);
+            return dt != null && dt.Rows.Count > 0 && Convert.ToInt32(dt.Rows[0][0]) > 0;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  IS SESSION IN USE  — check if any related data exists
+        //  Used before allowing delete
+        // ══════════════════════════════════════════════════════════════════════
+        public bool IsSessionInUse(int sessionId, int instituteId)
+        {
+            var cmd = new SqlCommand(@"
+                SELECT
+                (
+                    (SELECT COUNT(*) FROM Streams               WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM Courses               WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM Subjects              WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM StudyLevels           WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM Semesters             WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM Sections              WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM Chapters              WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM Videos                WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM Attendance            WHERE SessionId=@Id AND InstituteId=@Inst) +
+                    (SELECT COUNT(*) FROM Users                 WHERE SessionId=@Id AND InstituteId=@Inst)
+                ) AS TotalCount");
+            cmd.Parameters.AddWithValue("@Id", sessionId);
+            cmd.Parameters.AddWithValue("@Inst", instituteId);
+            DataTable dt = _dl.GetDataTable(cmd);
+            if (dt == null || dt.Rows.Count == 0) return false;
+            return Convert.ToInt32(dt.Rows[0]["TotalCount"]) > 0;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  SESSION HAS DATA  — lighter check: does target session already
+        //  have any streams copied? Used to warn before re-running copy.
+        // ══════════════════════════════════════════════════════════════════════
+        public bool SessionHasData(int sessionId, int instituteId)
+        {
+            var cmd = new SqlCommand(@"
+                SELECT COUNT(*) FROM Streams
+                WHERE SessionId = @Id AND InstituteId = @Inst");
+            cmd.Parameters.AddWithValue("@Id", sessionId);
+            cmd.Parameters.AddWithValue("@Inst", instituteId);
+            DataTable dt = _dl.GetDataTable(cmd);
+            return dt != null && dt.Rows.Count > 0 && Convert.ToInt32(dt.Rows[0][0]) > 0;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  START NEW SESSION  — calls the stored procedure that copies
+        //  Streams, Courses, Levels, Semesters, Sections, Subjects,
+        //  LevelSemesterSubjects, Chapters, Videos, VideoTopics.
+        //  Attendance / Progress / Views / Enrollments start FRESH.
+        //
+        //  ⚠ Make sure you have run SessionManagement.sql first to create
+        //    the sp_StartNewSession stored procedure in your database.
+        // ══════════════════════════════════════════════════════════════════════
+        public void StartNewSession(int fromSessionId, int toSessionId,
+            int instituteId, int societyId)
+        {
+            var cmd = new SqlCommand("sp_StartNewSession")
+            {
+                CommandType = System.Data.CommandType.StoredProcedure,
+                CommandTimeout = 120  // give it 2 min for large data sets
+            };
+            cmd.Parameters.AddWithValue("@NewSessionId", toSessionId);
+            cmd.Parameters.AddWithValue("@OldSessionId", fromSessionId);
+            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+            cmd.Parameters.AddWithValue("@SocietyId", societyId);
+            _dl.ExecuteCMD(cmd);
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  GET SESSION SUMMARY  — counts for the analysis panel
+        //  Returns: Streams, Courses, Subjects, Students, Videos, Attendance
+        // ══════════════════════════════════════════════════════════════════════
+        public DataTable GetSessionSummary(int sessionId, int instituteId)
+        {
+            var cmd = new SqlCommand(@"
+                SELECT
+                    (SELECT COUNT(*) FROM Streams
+                     WHERE SessionId=@SessId AND InstituteId=@InstId AND IsActive=1)  AS Streams,
+
+                    (SELECT COUNT(*) FROM Courses
+                     WHERE SessionId=@SessId AND InstituteId=@InstId AND IsActive=1)  AS Courses,
+
+                    (SELECT COUNT(*) FROM Subjects
+                     WHERE SessionId=@SessId AND InstituteId=@InstId AND IsActive=1)  AS Subjects,
+
+                    (SELECT COUNT(*) FROM Users
+                     WHERE SessionId=@SessId AND InstituteId=@InstId
+                       AND RoleId=(SELECT RoleId FROM Roles WHERE RoleName='Student')
+                       AND IsActive=1)                                                 AS Students,
+
+                    (SELECT COUNT(*) FROM Videos
+                     WHERE SessionId=@SessId AND InstituteId=@InstId AND IsActive=1)  AS Videos,
+
+                    (SELECT COUNT(*) FROM Attendance
+                     WHERE SessionId=@SessId AND InstituteId=@InstId)                 AS Attendance");
+
+            cmd.Parameters.AddWithValue("@SessId", sessionId);
+            cmd.Parameters.AddWithValue("@InstId", instituteId);
+            return _dl.GetDataTable(cmd) ?? new DataTable();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  GET SESSIONS FOR DROPDOWN  — used in header session switcher
+        // ══════════════════════════════════════════════════════════════════════
+        public DataTable GetSessionsForDropdown(int instituteId)
+        {
+            var cmd = new SqlCommand(@"
+                SELECT SessionId, SessionName, IsCurrent
+                FROM AcademicSessions
+                WHERE InstituteId = @InstId
+                ORDER BY StartDate DESC");
+            cmd.Parameters.AddWithValue("@InstId", instituteId);
+            return _dl.GetDataTable(cmd) ?? new DataTable();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  CHECK DEADLINE  — returns days left for current session
+        //  Returns: negative = overdue, 0-30 = urgent, 31-60 = warning
+        // ══════════════════════════════════════════════════════════════════════
+        public int GetCurrentSessionDaysLeft(int instituteId)
+        {
+            DataTable dt = GetCurrentSession(instituteId);
+            if (dt == null || dt.Rows.Count == 0) return int.MaxValue;
+            DateTime endDate = Convert.ToDateTime(dt.Rows[0]["EndDate"]);
+            return (endDate.Date - DateTime.Today).Days;
         }
     }
 }
+
+
+//---------------------------------------------------------------------------------------------------------------------------------
+
+//using System;
+//using System.Collections.Generic;
+//using System.Data;
+//using System.Data.SqlClient;
+//using LearningManagementSystem.GC;
+
+//namespace LearningManagementSystem.BL
+//{
+//    public class AcademicSessionBL
+//    {
+//        DataLayer dl = new DataLayer();
+
+//        // ================= INSERT =================
+//        public void InsertSession(AcademicSessionGC obj)
+//        {
+//            List<SqlCommand> commands = new List<SqlCommand>();
+
+//            if (obj.IsCurrent)
+//            {
+//                SqlCommand resetCmd = new SqlCommand();
+//                resetCmd.CommandText =
+//                    "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId = @InstituteId";
+//                resetCmd.Parameters.AddWithValue("@InstituteId", obj.InstituteId);
+//                commands.Add(resetCmd);
+//            }
+
+//            SqlCommand cmd = new SqlCommand();
+//            cmd.CommandText = @"INSERT INTO AcademicSessions
+//                (SocietyId, InstituteId, SessionName, StartDate, EndDate, IsActive, IsCurrent)
+//                VALUES
+//                (@SocietyId, @InstituteId, @SessionName, @StartDate, @EndDate, 1, @IsCurrent)";
+
+//            cmd.Parameters.AddWithValue("@SocietyId", obj.SocietyId);
+//            cmd.Parameters.AddWithValue("@InstituteId", obj.InstituteId);
+//            cmd.Parameters.AddWithValue("@SessionName", obj.SessionName);
+//            cmd.Parameters.AddWithValue("@StartDate", obj.StartDate);
+//            cmd.Parameters.AddWithValue("@EndDate", obj.EndDate);
+//            cmd.Parameters.AddWithValue("@IsCurrent", obj.IsCurrent);
+
+//            commands.Add(cmd);
+
+//            dl.ExecuteTransaction(commands);
+//        }
+
+//        // ================= UPDATE =================
+//        public void UpdateSession(AcademicSessionGC obj)
+//        {
+//            List<SqlCommand> commands = new List<SqlCommand>();
+
+//            if (obj.IsCurrent)
+//            {
+//                SqlCommand resetCmd = new SqlCommand();
+//                resetCmd.CommandText =
+//                    "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId = @InstituteId";
+//                resetCmd.Parameters.AddWithValue("@InstituteId", obj.InstituteId);
+//                commands.Add(resetCmd);
+//            }
+
+//            SqlCommand cmd = new SqlCommand();
+//            cmd.CommandText = @"UPDATE AcademicSessions SET
+//                    SessionName=@SessionName,
+//                    StartDate=@StartDate,
+//                    EndDate=@EndDate,
+//                    IsCurrent=@IsCurrent
+//                WHERE SessionId=@SessionId";
+
+//            cmd.Parameters.AddWithValue("@SessionId", obj.SessionId);
+//            cmd.Parameters.AddWithValue("@SessionName", obj.SessionName);
+//            cmd.Parameters.AddWithValue("@StartDate", obj.StartDate);
+//            cmd.Parameters.AddWithValue("@EndDate", obj.EndDate);
+//            cmd.Parameters.AddWithValue("@IsCurrent", obj.IsCurrent);
+
+//            commands.Add(cmd);
+
+//            dl.ExecuteTransaction(commands);
+//        }
+
+//        public bool IsSessionInUse(int sessionId, int instituteId)
+//        {
+//            SqlCommand cmd = new SqlCommand(@"
+//        SELECT 
+//        (
+//            (SELECT COUNT(*) FROM StudyLevels WHERE SessionId=@Id AND InstituteId=@Inst) +
+//            (SELECT COUNT(*) FROM Semesters WHERE SessionId=@Id AND InstituteId=@Inst) +
+//            (SELECT COUNT(*) FROM Sections WHERE SessionId=@Id AND InstituteId=@Inst) +
+//            (SELECT COUNT(*) FROM Videos WHERE SessionId=@Id AND InstituteId=@Inst) +
+//            (SELECT COUNT(*) FROM AssignLevelSubjects WHERE SessionId=@Id AND InstituteId=@Inst)
+//        ) AS TotalCount
+//    ");
+
+//            cmd.Parameters.AddWithValue("@Id", sessionId);
+//            cmd.Parameters.AddWithValue("@Inst", instituteId);
+
+//            DataTable dt = dl.GetDataTable(cmd);
+
+//            if (dt.Rows.Count > 0)
+//            {
+//                int count = Convert.ToInt32(dt.Rows[0]["TotalCount"]);
+//                return count > 0;
+//            }
+
+//            return false;
+//        }
+
+//        // ================= DELETE =================
+//        public void Delete(int sessionId, int instituteId)
+//        {
+//            if (IsSessionInUse(sessionId, instituteId))
+//                throw new Exception("SESSION_IN_USE");
+
+//            SqlCommand cmd = new SqlCommand();
+//            cmd.CommandText =
+//                "DELETE FROM AcademicSessions WHERE SessionId=@Id AND InstituteId=@InstituteId";
+
+//            cmd.Parameters.AddWithValue("@Id", sessionId);
+//            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+
+//            dl.ExecuteCMD(cmd);
+//        }
+
+//        // ================= GET ALL =================
+//        public DataTable GetSessionsByInstitute(int instituteId)
+//        {
+//            SqlCommand cmd = new SqlCommand();
+//            cmd.CommandText = @"SELECT * FROM AcademicSessions
+//                                WHERE InstituteId=@InstituteId
+//                                ORDER BY CreatedOn DESC";
+
+//            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+
+//            return dl.GetDataTable(cmd);
+//        }
+
+//        // ================= GET BY ID =================
+//        public DataTable GetById(int sessionId, int instituteId)
+//        {
+//            SqlCommand cmd = new SqlCommand();
+//            cmd.CommandText = @"SELECT * FROM AcademicSessions
+//                                WHERE SessionId=@Id AND InstituteId=@InstituteId";
+
+//            cmd.Parameters.AddWithValue("@Id", sessionId);
+//            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+
+//            return dl.GetDataTable(cmd);
+//        }
+
+//        // ================= SET CURRENT =================
+//        public void SetCurrentSession(int sessionId, int instituteId)
+//        {
+//            int oldSessionId = 0;
+
+//            SqlCommand getOldCmd = new SqlCommand();
+//            getOldCmd.CommandText = @"SELECT TOP 1 SessionId 
+//                                     FROM AcademicSessions 
+//                                     WHERE InstituteId=@InstituteId AND IsCurrent=1";
+//            getOldCmd.Parameters.AddWithValue("@InstituteId", instituteId);
+
+//            DataTable dtOld = dl.GetDataTable(getOldCmd);
+
+//            if (dtOld.Rows.Count > 0)
+//                oldSessionId = Convert.ToInt32(dtOld.Rows[0]["SessionId"]);
+
+//            // Reset
+//            SqlCommand resetCmd = new SqlCommand();
+//            resetCmd.CommandText =
+//                "UPDATE AcademicSessions SET IsCurrent = 0 WHERE InstituteId=@InstituteId";
+//            resetCmd.Parameters.AddWithValue("@InstituteId", instituteId);
+//            dl.ExecuteCMD(resetCmd);
+
+//            // Set new
+//            SqlCommand setCmd = new SqlCommand();
+//            setCmd.CommandText =
+//                "UPDATE AcademicSessions SET IsCurrent=1 WHERE SessionId=@SessionId";
+//            setCmd.Parameters.AddWithValue("@SessionId", sessionId);
+//            dl.ExecuteCMD(setCmd);
+
+//            // Clone data
+//            if (oldSessionId > 0 && oldSessionId != sessionId)
+//            {
+//                AssignLevelSubjectBL assign = new AssignLevelSubjectBL();
+//                assign.CloneLevelSubjects(instituteId, oldSessionId, sessionId);
+//            }
+//        }
+
+//        public DataTable GetCurrentSession(int instituteId)
+//        {
+//            SqlCommand cmd = new SqlCommand();
+//            cmd.CommandText = "SELECT * FROM AcademicSessions WHERE InstituteId = @InstituteId AND IsCurrent = 1";
+//            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+
+//            return dl.GetDataTable(cmd);
+//        }
+//    }
+//}

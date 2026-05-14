@@ -240,33 +240,6 @@ namespace LearningManagementSystem.Admin.Dashboards
         protected global::System.Web.UI.WebControls.Label lblBAtt;
 
         /// <summary>
-        /// fuBanner control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.FileUpload fuBanner;
-
-        /// <summary>
-        /// btnUploadBanner control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnUploadBanner;
-
-        /// <summary>
-        /// btnRemoveBanner control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnRemoveBanner;
-
-        /// <summary>
         /// lblStudents control.
         /// </summary>
         /// <remarks>

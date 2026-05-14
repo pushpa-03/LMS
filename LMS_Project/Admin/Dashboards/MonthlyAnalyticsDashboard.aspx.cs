@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Data;
-using System.IO;
 using System.Text;
-using System.Web.UI;
+
 
 namespace LearningManagementSystem.Admin.Dashboards
 {
@@ -132,53 +131,6 @@ namespace LearningManagementSystem.Admin.Dashboards
 
             rptEvents.DataSource = bl.GetMonthlyEvents(InstituteId, SessionId, SelectedMonth, SelectedYear);
             rptEvents.DataBind();
-        }
-
-        // ───── Banner Upload ─────
-        protected void btnUploadBanner_Click(object sender, EventArgs e)
-        {
-            int SelectedMonth = Convert.ToInt32(ddlMonth.SelectedValue);
-            int SelectedYear = Convert.ToInt32(ddlYear.SelectedValue);
-
-            if (!fuBanner.HasFile)
-            {
-                ShowAlert("Select a file first", "warning");
-                return;
-            }
-
-            string ext = Path.GetExtension(fuBanner.FileName).ToLower();
-            string[] allowed = { ".jpg", ".jpeg", ".png", ".webp" };
-
-            if (Array.IndexOf(allowed, ext) < 0)
-            {
-                ShowAlert("Invalid file type", "danger");
-                return;
-            }
-
-            string folder = Server.MapPath("~/Uploads/MonthlyBanners/");
-            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-
-            string fileName = $"banner_{InstituteId}_{SelectedMonth}_{SelectedYear}{ext}";
-            string path = Path.Combine(folder, fileName);
-
-            fuBanner.SaveAs(path);
-
-            imgBannerPreview.ImageUrl = "~/Uploads/MonthlyBanners/" + fileName;
-            imgBannerPreview.Visible = true;
-
-            ShowAlert("Uploaded successfully", "success");
-        }
-
-        protected void btnRemoveBanner_Click(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrEmpty(imgBannerPreview.ImageUrl))
-            {
-                string path = Server.MapPath(imgBannerPreview.ImageUrl);
-                if (File.Exists(path)) File.Delete(path);
-
-                imgBannerPreview.Visible = false;
-                ShowAlert("Banner removed", "info");
-            }
         }
 
         // ───── Helpers ─────

@@ -99,7 +99,7 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
 .b-divider{width:1px;background:rgba(255,255,255,.25);align-self:stretch;margin:0 4px;}
 
 /* Upload zone */
-.up-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:195px;}
+/*.up-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:195px;}
 .dz{
   width:195px;border:2px dashed rgba(255,255,255,.38);border-radius:10px;
   padding:14px 10px;text-align:center;cursor:pointer;
@@ -121,7 +121,7 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
 }
 .btn-rm:hover{background:rgba(255,255,255,.26);}
 .up-prog{width:195px;height:3px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden;margin-top:2px;}
-.up-bar {height:3px;background:#fff;width:0%;transition:width .35s;border-radius:2px;}
+.up-bar {height:3px;background:#fff;width:0%;transition:width .35s;border-radius:2px;}*/
 
 /* ─── KPI GRID ─── */
 .kpi-grid{
@@ -337,7 +337,7 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
 <asp:HiddenField ID="hdnAssignRate"     runat="server"/>
 <asp:HiddenField ID="hdnAssignTotal"    runat="server"/>
 <asp:HiddenField ID="hdnAssignSubmitted" runat="server"/>
-<asp:HiddenField ID="hdnBannerPath"     runat="server"/>
+
 
 <div class="wrap">
 
@@ -411,7 +411,7 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
       </div>
 
       <%-- Upload column --%>
-      <div class="up-col">
+      <%--<div class="up-col">
         <div class="dz" onclick="document.getElementById('fpick').click();">
           <i class="fa fa-cloud-arrow-up"></i>
           <div class="dz-txt" id="dzTxt">
@@ -419,7 +419,7 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
             <small style="opacity:.7;">JPG · PNG · WebP &nbsp;|&nbsp; Max 5 MB</small>
           </div>
         </div>
-        <%-- Hidden real file input; syncs file to ASP FileUpload via JS --%>
+       
         <input type="file" id="fpick" accept="image/jpeg,image/png,image/webp,image/gif"
                style="display:none;" onchange="onBannerPick(this)"/>
         <asp:FileUpload ID="fuBanner" runat="server" Style="display:none;"/>
@@ -429,7 +429,7 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
           OnClientClick="return syncFileToAsp();"/>
         <asp:Button ID="btnRemoveBanner" runat="server" Text="✕  Remove Banner"
           CssClass="btn-rm" OnClick="btnRemoveBanner_Click"/>
-      </div>
+      </div>--%>
     </div>
   </div>
 
@@ -807,12 +807,12 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
 
         /* Push KPI values from banner labels into card divs */
         document.getElementById('kStudents').innerText = lbl('<%= lblStudents.ClientID %>');
-document.getElementById('kAtt'     ).innerText = lbl('<%= lblAttPct.ClientID %>');
-document.getElementById('kSubj'    ).innerText = lbl('<%= lblSubjects.ClientID %>');
-document.getElementById('kSec'     ).innerText = lbl('<%= lblSections.ClientID %>');
-document.getElementById('kAssign'  ).innerText = lbl('<%= lblAssignSub.ClientID %>');
-document.getElementById('kQuiz'    ).innerText = lbl('<%= lblQuizAttempts.ClientID %>');
-document.getElementById('kAvgQ'    ).innerText = lbl('<%= lblAvgQuiz.ClientID %>');
+        document.getElementById('kAtt'     ).innerText = lbl('<%= lblAttPct.ClientID %>');
+        document.getElementById('kSubj'    ).innerText = lbl('<%= lblSubjects.ClientID %>');
+        document.getElementById('kSec'     ).innerText = lbl('<%= lblSections.ClientID %>');
+        document.getElementById('kAssign'  ).innerText = lbl('<%= lblAssignSub.ClientID %>');
+        document.getElementById('kQuiz'    ).innerText = lbl('<%= lblQuizAttempts.ClientID %>');
+        document.getElementById('kAvgQ'    ).innerText = lbl('<%= lblAvgQuiz.ClientID %>');
 
 /* Sync banner session label */
 const sLbl = document.getElementById('<%= lblSessionBadge2.ClientID %>');
@@ -1111,60 +1111,7 @@ function empty(id, msg) {
     }, 350);
 })();
 
-/* ────────────────────────────────────────────────────
-   Banner file picker — client-side preview + fake progress
-──────────────────────────────────────────────────── */
-window.onBannerPick = function (input) {
-    if (!input.files || !input.files[0]) return;
-    const f = input.files[0];
 
-    // Validate size client-side (5MB)
-    if (f.size > 5 * 1024 * 1024) {
-        alert('File too large. Maximum allowed size is 5 MB.');
-        input.value = '';
-        return;
-    }
-
-    // Update label
-    document.getElementById('dzTxt').innerHTML =
-        `<strong style="font-size:12px;">${f.name}</strong><br/>
-         <small style="opacity:.75;">${(f.size/1048576).toFixed(2)} MB — click Upload ⬆</small>`;
-
-    // Fake progress bar
-    const bar = document.getElementById('upBar');
-    let w = 0;
-    const iv = setInterval(() => { w += 5; bar.style.width = w + '%'; if (w >= 80) clearInterval(iv); }, 40);
-
-    // Live preview
-    const rdr = new FileReader();
-    rdr.onload = e => {
-        const img = document.getElementById('<%= imgBanner.ClientID %>');
-        if (img) { img.src = e.target.result; img.style.display = 'block'; }
-    };
-    rdr.readAsDataURL(f);
-};
-
-/* Sync JS file picker → ASP FileUpload control via DataTransfer */
-window.syncFileToAsp = function () {
-    const localInput = document.getElementById('fpick');
-    const aspInput   = document.getElementById('<%= fuBanner.ClientID %>');
-            if (!localInput.files || !localInput.files[0]) {
-                // If no file chosen yet, warn user
-                if (!aspInput.files || !aspInput.files[0]) {
-                    alert('Please choose an image file first.');
-                    return false;
-                }
-            }
-            // Try DataTransfer assignment (modern browsers)
-            try {
-                const dt = new DataTransfer();
-                dt.items.add(localInput.files[0]);
-                aspInput.files = dt.files;
-            } catch (e) {
-                // DataTransfer not supported — let ASP handle its own input
-            }
-            return true;
-        };
 
     })(); // end IIFE
 </script>

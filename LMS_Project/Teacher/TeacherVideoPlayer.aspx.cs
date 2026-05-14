@@ -154,7 +154,7 @@ namespace LMS_Project.Teacher
             int societyId = Convert.ToInt32(HttpContext.Current.Session["SocietyId"]);
             int instituteId = Convert.ToInt32(HttpContext.Current.Session["InstituteId"]);
 
-            bl.SaveComment(vid, sessionId, userId, msg, societyId, instituteId);
+            bl.SaveCommentWithoutReply(vid, sessionId, userId, msg, societyId, instituteId);
         }
 
         [WebMethod]

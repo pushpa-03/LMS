@@ -190,6 +190,7 @@ namespace LMS_Project.Student
                     _userId,
                     _societyId,
                     _instituteId,
+                    _sessionId,
                     fuAssignment.PostedFile,
                     txtRemarks.Text.Trim(),
                     Server

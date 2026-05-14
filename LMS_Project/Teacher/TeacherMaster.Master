@@ -300,6 +300,13 @@ body {
             </a>
         </li>
 
+        <li>
+            <a href="Teacher_Notifications.aspx" class="sidebar-link">
+                <i class="fas fa-bell sidebar-icon"></i>
+                <span>Notifiactions</span>
+            </a>
+        </li>
+
         <li class="sidebar-section-label">Account</li>
         <li>
             <a href="TeacherProfile.aspx" class="sidebar-link">

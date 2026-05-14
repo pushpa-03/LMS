@@ -12,56 +12,100 @@ public class StudentSubjectsBL
     public DataTable GetMySubjects(int userId, int instituteId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
-        SELECT
-            S.SubjectId,
-            S.SubjectCode,
-            S.SubjectName,
-            S.Description,
-            S.Duration,
-            ST.StreamName,
-            C.CourseName,
-            SL.LevelName,
-            SM.SemesterName,
 
-            -- Assigned teacher
-            ISNULL(UP.FullName,  'Not Assigned') AS TeacherName,
-            ISNULL(U.Email,      '')             AS TeacherEmail,
+    SELECT DISTINCT
+        S.SubjectId,
+        S.SubjectCode,
+        S.SubjectName,
+        S.Description,
+        S.Duration,
 
-            -- Content counts
-            (SELECT COUNT(*) FROM Chapters CH
-            WHERE CH.SubjectId = S.SubjectId) AS ChapterCount,
+        ST.StreamName,
+        C.CourseName,
+        SL.LevelName,
+        SM.SemesterName,
 
-            (SELECT COUNT(*) FROM Videos VD
-            JOIN Chapters CH2 ON VD.ChapterId = CH2.ChapterId
-            WHERE CH2.SubjectId = S.SubjectId) AS VideoCount,
+        ISNULL(T.TeacherName, 'Not Assigned') AS TeacherName,
+        ISNULL(T.TeacherEmail, '') AS TeacherEmail,
 
-            (SELECT COUNT(*) FROM Materials MT
-            JOIN Chapters CH3 ON MT.ChapterId = CH3.ChapterId
-            WHERE CH3.SubjectId = S.SubjectId) AS MaterialCount
+        -- Chapter count
+        (
+            SELECT COUNT(*)
+            FROM Chapters CH
+            WHERE CH.SubjectId = S.SubjectId
+        ) AS ChapterCount,
 
-        FROM AssignStudentSubject ASS
-        JOIN Subjects       S   ON ASS.SubjectId   = S.SubjectId
-        JOIN LevelSemesterSubjects  LS  ON ASS.SubjectId  = LS.SubjectId
-        LEFT JOIN Streams    ST  ON LS.StreamId      = ST.StreamId
-        LEFT JOIN Courses    C   ON LS.CourseId      = C.CourseId
-        LEFT JOIN StudyLevels SL ON LS.LevelId       = SL.LevelId
-        LEFT JOIN Semesters  SM  ON LS.SemesterId    = SM.SemesterId
+        -- Video count
+        (
+            SELECT COUNT(*)
+            FROM Videos VD
+            INNER JOIN Chapters CH2
+                ON VD.ChapterId = CH2.ChapterId
+            WHERE CH2.SubjectId = S.SubjectId
+        ) AS VideoCount,
 
-        -- Teacher assigned to this subject for this session
-        LEFT JOIN SubjectFaculty SF
-               ON SF.SubjectId   = S.SubjectId
-              AND SF.InstituteId = @InstId
-              AND SF.SessionId   = @SessId
-              AND SF.IsActive    = 1
-        LEFT JOIN Users      U   ON SF.TeacherId    = U.UserId
-        LEFT JOIN UserProfile UP ON U.UserId        = UP.UserId
+        -- Material count
+        (
+            SELECT COUNT(*)
+            FROM Materials MT
+            INNER JOIN Chapters CH3
+                ON MT.ChapterId = CH3.ChapterId
+            WHERE CH3.SubjectId = S.SubjectId
+        ) AS MaterialCount
 
-        WHERE ASS.UserId      = @UserId
-          AND ASS.InstituteId = @InstId
-          AND ASS.SessionId   = @SessId
-          AND S.IsActive      = 1
+    FROM AssignStudentSubject ASS
 
-        ORDER BY S.SubjectName");
+    INNER JOIN Subjects S
+        ON ASS.SubjectId = S.SubjectId
+
+    LEFT JOIN StudentAcademicDetails SAD
+        ON SAD.UserId = ASS.UserId
+       AND SAD.SessionId = ASS.SessionId
+
+    LEFT JOIN LevelSemesterSubjects LS
+        ON LS.SubjectId = ASS.SubjectId
+       AND LS.StreamId = SAD.StreamId
+       AND LS.CourseId = SAD.CourseId
+       AND LS.LevelId = SAD.LevelId
+       AND LS.SemesterId = SAD.SemesterId
+       AND LS.SessionId = ASS.SessionId
+
+    LEFT JOIN Streams ST
+        ON LS.StreamId = ST.StreamId
+
+    LEFT JOIN Courses C
+        ON LS.CourseId = C.CourseId
+
+    LEFT JOIN StudyLevels SL
+        ON LS.LevelId = SL.LevelId
+
+    LEFT JOIN Semesters SM
+        ON LS.SemesterId = SM.SemesterId
+
+    -- ONLY ONE teacher per subject
+    OUTER APPLY
+    (
+        SELECT TOP 1
+            UP.FullName AS TeacherName,
+            U.Email AS TeacherEmail
+        FROM SubjectFaculty SF
+        INNER JOIN Users U
+            ON SF.TeacherId = U.UserId
+        LEFT JOIN UserProfile UP
+            ON U.UserId = UP.UserId
+        WHERE SF.SubjectId = S.SubjectId
+          AND SF.InstituteId = @InstId
+          AND SF.SessionId = @SessId
+          AND SF.IsActive = 1
+    ) T
+
+    WHERE ASS.UserId = @UserId
+      AND ASS.InstituteId = @InstId
+      AND ASS.SessionId = @SessId
+      AND S.IsActive = 1
+
+    ORDER BY S.SubjectName
+    ");
 
         cmd.Parameters.AddWithValue("@UserId", userId);
         cmd.Parameters.AddWithValue("@InstId", instituteId);

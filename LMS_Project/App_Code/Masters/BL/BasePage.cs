@@ -17,16 +17,6 @@ public class BasePage : System.Web.UI.Page
             return Convert.ToInt32(Session["InstituteId"]);
         }
     }
-    //protected override void OnLoad(EventArgs e)
-    //{
-    //    if (Session["InstituteId"] == null)
-    //    {
-    //        Response.Redirect("~/Default.aspx");
-    //        return;
-    //    }
-
-    //    base.OnLoad(e);
-    //}
 
     protected override void OnLoad(EventArgs e)
     {
@@ -149,5 +139,25 @@ public class BasePage : System.Web.UI.Page
             Session["CurrentSessionId"] = dt.Rows[0]["SessionId"];
             Session["SessionName"] = dt.Rows[0]["SessionName"];
         }
+    }
+
+     //to track User Activity
+    public void LogActivity(int userId, int societyId, int instituteId, int sessionId,
+                       string activity, int refId)
+    {
+        DataLayer dl = new DataLayer();
+        SqlCommand cmd = new SqlCommand(@"
+        INSERT INTO UserActivityLog
+        (UserId, SocietyId, InstituteId, SessionId, ActivityType, ReferenceId)
+        VALUES (@U,@S,@I,@SessionId,@A,@R)");
+
+        cmd.Parameters.AddWithValue("@U", userId);
+        cmd.Parameters.AddWithValue("@S", societyId);
+        cmd.Parameters.AddWithValue("@I", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+        cmd.Parameters.AddWithValue("@A", activity);
+        cmd.Parameters.AddWithValue("@R", refId);
+
+        dl.ExecuteCMD(cmd);
     }
 }

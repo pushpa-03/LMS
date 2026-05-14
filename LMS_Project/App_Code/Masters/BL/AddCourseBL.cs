@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Web.Services.Description;
 
 namespace LearningManagementSystem.BL
 {
@@ -112,17 +113,36 @@ namespace LearningManagementSystem.BL
         }
 
         // ================= DELETE =================
-        public void Delete(int id, int instituteId,int SessionId)
+        public bool Delete(int id, int instituteId,int SessionId, out string message)
         {
-            SqlCommand cmd = new SqlCommand(@"
+            try
+            {
+                SqlCommand cmd = new SqlCommand(@"
                 DELETE FROM Courses
                 WHERE CourseId=@Id AND InstituteId=@InstId  AND SessionId = @SessionId");
 
-            cmd.Parameters.AddWithValue("@Id", id);
-            cmd.Parameters.AddWithValue("@InstId", instituteId);
-            cmd.Parameters.AddWithValue("@SessionId", SessionId);
+                cmd.Parameters.AddWithValue("@Id", id);
+                cmd.Parameters.AddWithValue("@InstId", instituteId);
+                cmd.Parameters.AddWithValue("@SessionId", SessionId);
 
-            dl.ExecuteCMD(cmd);
+                dl.ExecuteCMD(cmd);
+
+                message = "Course deleted successfully.";
+                return true;
+            }
+
+            catch (SqlException ex)
+            {
+                // FK constraint error number = 547
+                if (ex.Number == 547)
+                {
+                    message = "This Course is already used. You can deactivate it instead.";
+                    return false;
+                }
+
+                throw; // other errors
+            }
+
         }
 
         // ================= GET BY ID =================
@@ -186,60 +206,6 @@ namespace LearningManagementSystem.BL
             dl.ExecuteCMD(cmd);
         }
 
-        // ================= GET COURSES BY SESSION (FOR MAPPING) =================
-        public DataTable GetCoursesForMapping(int instituteId, int sessionId)
-        {
-            SqlCommand cmd = new SqlCommand(@"
-                SELECT CourseId, CourseName, CourseCode, StreamId
-                FROM Courses
-                WHERE InstituteId=@I AND SessionId=@S");
-
-            cmd.Parameters.AddWithValue("@I", instituteId);
-            cmd.Parameters.AddWithValue("@S", sessionId);
-
-            return dl.GetDataTable(cmd);
-        }
-
-        public void CopySelectedCourses(List<int> courseIds, int instituteId, int fromSessionId, int toSessionId)
-        {
-            foreach (int id in courseIds)
-            {
-                SqlCommand cmd = new SqlCommand(@"
-                INSERT INTO Courses (SocietyId, InstituteId, SessionId, StreamId, CourseName, CourseCode, IsActive)
-                SELECT SocietyId, InstituteId, @ToSession, StreamId, CourseName, CourseCode, 1
-                FROM Courses C
-                WHERE CourseId=@Id
-                AND NOT EXISTS (
-                    SELECT 1 FROM Courses
-                    WHERE SessionId=@ToSession
-                    AND CourseName=C.CourseName
-                    AND StreamId=C.StreamId
-                    AND InstituteId=@InstituteId
-                )");
-
-                cmd.Parameters.AddWithValue("@Id", id);
-                cmd.Parameters.AddWithValue("@ToSession", toSessionId);
-                cmd.Parameters.AddWithValue("@InstituteId", instituteId);
-
-                dl.ExecuteCMD(cmd);
-            }
-        }
-
-        public void LogActivity(int userId, int societyId, int instituteId, int sessionId, string type, int refId = 0)
-        {
-            SqlCommand cmd = new SqlCommand(@"
-            INSERT INTO UserActivityLog(UserId, SocietyId, InstituteId, SessionId, ActivityType, ReferenceId)
-            VALUES(@U,@S,@I,@Session,@Type,@Ref)");
-
-            cmd.Parameters.AddWithValue("@U", userId);
-            cmd.Parameters.AddWithValue("@S", societyId);
-            cmd.Parameters.AddWithValue("@I", instituteId);
-            cmd.Parameters.AddWithValue("@Session", sessionId);
-            cmd.Parameters.AddWithValue("@Type", type);
-            cmd.Parameters.AddWithValue("@Ref", refId);
-
-            dl.ExecuteCMD(cmd);
-        }
 
     }
 }

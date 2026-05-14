@@ -137,7 +137,19 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
   display:flex;align-items:center;gap:6px;white-space:nowrap;}
 .tab-btn.active{background:var(--bg);color:var(--p);box-shadow:var(--sh);}
 .tab-btn:hover:not(.active){background:rgba(255,255,255,.6);color:var(--tx);}
-.tab-pane{display:none;} .tab-pane.active{display:block;}
+
+.tab-pane {
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tab-pane.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
 
 /* ── Student Table ── */
 .tbl-wrap{overflow-x:auto;}
@@ -374,16 +386,16 @@ body{background:var(--pg);font-family:'Inter','Segoe UI',system-ui,sans-serif;co
 
 <%-- TABS --%>
 <div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('overview',this)">
+  <button class="tab-btn active" onclick="switchTab('overview', this); return false;">
     <i class="fa fa-chart-pie"></i>Overview
   </button>
-  <button class="tab-btn" onclick="switchTab('students',this)">
+  <button class="tab-btn" onclick="switchTab('students', this); return false;">
     <i class="fa fa-users"></i>Student Records
   </button>
-  <button class="tab-btn" onclick="switchTab('performance',this)">
+  <button class="tab-btn" onclick="switchTab('performance', this); return false;">
     <i class="fa fa-trophy"></i>Performance
   </button>
-  <button class="tab-btn" onclick="switchTab('atrisk',this)">
+  <button class="tab-btn" onclick="switchTab('atrisk', this); return false;">
     <i class="fa fa-triangle-exclamation"></i>At-Risk
   </button>
 </div>
@@ -1211,12 +1223,21 @@ function renderAtRisk(data) {
 /* ════════════════════════════════════════════════════════
    TABS
 ════════════════════════════════════════════════════════ */
-window.switchTab = function (name, btn) {
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-'+name)?.classList.add('active');
-    btn.classList.add('active');
-};
+    window.switchTab = function (name, btn) {
+        // 1. Remove active class from all panes and buttons
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+        // 2. Add active class to the selected pane and button
+        const activePane = document.getElementById('tab-' + name);
+        if (activePane) {
+            activePane.classList.add('active');
+        }
+        btn.classList.add('active');
+
+        // 3. Optional: Smooth scroll back to top of the dashboard content
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
 /* ════════════════════════════════════════════════════════
    CSV EXPORT

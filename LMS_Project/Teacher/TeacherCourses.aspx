@@ -218,16 +218,21 @@
                             </span>
                         </div>
 
-                        <div class="card-footer-row">
-                            <span class="pill pill-lime">
-                                <i class="fas fa-calendar me-1"></i><%# Eval("SessionName") %>
-                            </span>
-                            <a href='Subjects_T_Side.aspx?SubjectId=<%# Eval("SubjectId") %>'
-                               class="btn-manage">
-                                <i class="fas fa-play-circle me-1"></i>Manage
-                            </a>
-                        </div>
-
+                      <div class="card-footer-row">
+    <span class="pill pill-lime">
+        <i class="fas fa-calendar me-1"></i><%# Eval("SessionName") %>
+    </span>
+    <div class="d-flex gap-2">
+       <%--  <a href='SubjectDetails.aspx?SubjectId=<%# Eval("SubjectId") %>'
+           class="btn-manage">
+            <i class="fas fa-play-circle me-1"></i>Manage
+        </a>--%>
+        <a href='SubjectAnalytics.aspx?SubjectId=<%# Eval("SubjectId") %>'
+           class="btn-manage" style="background:#e8f5e9;color:#2e7d32;">
+            <i class="fa-solid fa-chart-line me-1"></i>Analytics
+        </a>
+    </div>
+</div>
                     </div>
                 </div>
             </ItemTemplate>

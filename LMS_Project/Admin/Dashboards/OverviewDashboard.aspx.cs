@@ -3,7 +3,7 @@ using System;
 using System.Data;
 using System.Web.UI;
 
-namespace LMS_Project.Admin
+namespace LearningManagementSystem.Admin
 {
     public partial class OverviewDashboard : BasePage
     {
@@ -24,6 +24,7 @@ namespace LMS_Project.Admin
 
             if (ds != null && ds.Tables.Count > 0)
             {
+                
                 if (ds.Tables[0].Rows.Count > 0)
                 {
                     DataRow r = ds.Tables[0].Rows[0];
@@ -41,7 +42,7 @@ namespace LMS_Project.Admin
                 }
 
                 if (ds.Tables.Count > 1)
-                    hdnMonthlyGrowth.Value = DataTableToJson(ds.Tables[1], "Month", "NewStudents");
+                    hdnMonthlyGrowth.Value = DataTableToJson(ds.Tables[1], "MonthNum", "NewStudents");
 
                 if (ds.Tables.Count > 2)
                     hdnTopCourses.Value = DataTableToJson(ds.Tables[2], "CourseName", "StudentCount");
@@ -49,7 +50,7 @@ namespace LMS_Project.Admin
                 if (ds.Tables.Count > 3 && ds.Tables[3].Rows.Count > 0)
                 {
                     decimal att = Convert.ToDecimal(ds.Tables[3].Rows[0]["OverallAttendance"]);
-                    lblAttendance.Text = att.ToString("0.##");
+                    lblAttendance.Text = att.ToString("0.##") + "%";
                 }
 
                 if (ds.Tables.Count > 4)

@@ -6,7 +6,7 @@ using System.Web.UI.WebControls;
 
 namespace LMS_Project.Teacher
 {
-    public partial class TeacherCalendar : BasePage
+    public partial class TeacherCalendar : System.Web.UI.Page
     {
         CalendarBL bl = new CalendarBL();
 
@@ -16,9 +16,9 @@ namespace LMS_Project.Teacher
             {
                 // TEMPORARY: Set default session values for testing
                 // IMPORTANT: Remove these 3 lines after your login page is properly set up
-                if (Session["UserId"] == null) Session["UserId"] = UserId;  // Change to a valid teacher ID from your database
-                if (Session["InstituteId"] == null) Session["InstituteId"] = InstituteId;  // Change to a valid institute ID
-                if (Session["SessionId"] == null) Session["SessionId"] = SessionId;  // Change to a valid session ID
+                if (Session["UserId"] == null) Session["UserId"] = 1;  // Change to a valid teacher ID from your database
+                if (Session["InstituteId"] == null) Session["InstituteId"] = 1;  // Change to a valid institute ID
+                if (Session["SessionId"] == null) Session["SessionId"] = 1;  // Change to a valid session ID
 
                 // Check if user is logged in
                 if (Session["UserId"] == null || Session["InstituteId"] == null || Session["SessionId"] == null)
@@ -46,8 +46,8 @@ namespace LMS_Project.Teacher
 
             try
             {
-                int teacherUserId = UserId;
-                int instituteId = InstituteId;
+                int teacherUserId = Convert.ToInt32(Session["UserId"]);
+                int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
                 DataTable subjects = bl.GetTeacherSubjects(teacherUserId, instituteId);
 
@@ -106,8 +106,8 @@ namespace LMS_Project.Teacher
                     return;
                 }
 
-                int teacherUserId = UserId;
-                int instituteId = InstituteId;
+                int teacherUserId = Convert.ToInt32(Session["UserId"]);
+                int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
                 DataTable events = bl.GetEventsByMonthForTeacher(dt.Year, dt.Month, instituteId, teacherUserId);
 
@@ -162,8 +162,8 @@ namespace LMS_Project.Teacher
 
             try
             {
-                int teacherUserId = UserId;
-                int instituteId = InstituteId;
+                int teacherUserId = Convert.ToInt32(Session["UserId"]);
+                int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
                 DataTable dt = bl.GetEventsForTeacher(e.Day.Date, instituteId, teacherUserId);
 
@@ -227,10 +227,10 @@ namespace LMS_Project.Teacher
             {
                 CalendarGC obj = new CalendarGC
                 {
-                    InstituteId = InstituteId,
-                    UserId = UserId,
-                    SessionId = SessionId,
-                    SocietyId = SocietyId,
+                    InstituteId = Convert.ToInt32(Session["InstituteId"]),
+                    UserId = Convert.ToInt32(Session["UserId"]),
+                    SessionId = Convert.ToInt32(Session["SessionId"]),
+                    SocietyId = null,
                     SubjectId = Convert.ToInt32(ddlSubject.SelectedValue),
                     Title = txtTitle.Text.Trim(),
                     EventType = ddlEventType.SelectedValue,
@@ -266,7 +266,7 @@ namespace LMS_Project.Teacher
             try
             {
                 int eventId = Convert.ToInt32(e.CommandArgument);
-                int instituteId = InstituteId;
+                int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
                 if (e.CommandName == "EditEvent")
                 {
@@ -317,7 +317,27 @@ namespace LMS_Project.Teacher
                 ShowMsg(lblMessage, $"Error: {ex.Message}", false);
             }
         }
+        public string GetEventBadgeStyle(string eventType)
+        {
+            switch (eventType.ToLower())
+            {
+                case "holiday": return "background:#ffebee;color:#c62828;";
+                case "exam": return "background:#fff3e0;color:#ef6c00;";
+                case "assignment": return "background:#e3f2fd;color:#1976d2;";
+                default: return "background:#e8f5e9;color:#2e7d32;";
+            }
+        }
 
+        public string GetEventIcon(string eventType)
+        {
+            switch (eventType.ToLower())
+            {
+                case "holiday": return "🎉";
+                case "exam": return "📝";
+                case "assignment": return "📚";
+                default: return "📌";
+            }
+        }
         protected void btnUpdate_Click(object sender, EventArgs e)
         {
             hfReopenModal.Value = "editEventModal";
@@ -352,16 +372,16 @@ namespace LMS_Project.Teacher
             try
             {
                 int eventId = Convert.ToInt32(hfEditEventId.Value);
-                int instituteId = InstituteId;
+                int instituteId = Convert.ToInt32(Session["InstituteId"]);
 
                 bl.DeleteEventGroup(eventId, instituteId);
 
                 CalendarGC obj = new CalendarGC
                 {
                     InstituteId = instituteId,
-                    UserId = UserId,
-                    SessionId = SessionId,
-                    SocietyId = SocietyId,
+                    UserId = Convert.ToInt32(Session["UserId"]),
+                    SessionId = Convert.ToInt32(Session["SessionId"]),
+                    SocietyId = null,
                     SubjectId = Convert.ToInt32(ddlEditSubject.SelectedValue),
                     Title = txtEditTitle.Text.Trim(),
                     EventType = ddlEditEventType.SelectedValue,

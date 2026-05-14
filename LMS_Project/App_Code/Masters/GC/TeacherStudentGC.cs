@@ -42,10 +42,12 @@ namespace LMS_Project.GC
         public string Skills { get; set; }
         public string Hobbies { get; set; }
         public string ProfileImage { get; set; }
+        public int AssignmentsOverdue { get; set; }
 
         // ── Attendance Summary ────────────────────────────
         public int Present { get; set; }
         public int Absent { get; set; }
+        public int Leave { get; set; }
         public double AttendancePercent =>
             (Present + Absent) == 0 ? 0 :
             Math.Round((double)Present / (Present + Absent) * 100, 1);
@@ -54,6 +56,9 @@ namespace LMS_Project.GC
         public int VideosCompleted { get; set; }
         public int AssignmentsSubmitted { get; set; }
         public int QuizAttempts { get; set; }
+        public string SectionName { get; set; }
+        public string SessionName { get; set; }
+        public int AssignmentsPending { get; set; }
     }
 
     public class TeacherStudentSubjectGC
@@ -68,5 +73,6 @@ namespace LMS_Project.GC
     {
         public string ActivityType { get; set; }
         public DateTime ActionTime { get; set; }
+        public string SubjectName { get; set; }
     }
 }

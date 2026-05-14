@@ -366,7 +366,6 @@
 </asp:Content>--%>
 
 <%-- ------------------------------------------------------------------------------------------------------------------------------ --%>
-
 <%@ Page Title="Subject Details" Language="C#" MasterPageFile="~/Admin/AdminMaster.master"
     AutoEventWireup="true" CodeBehind="SubjectDetails.aspx.cs"
     Inherits="LearningManagementSystem.Admin.SubjectDetails" %>
@@ -380,23 +379,23 @@
 <style>
 :root {
     --ink:#0d0f1a; --ink-soft:#4a4f6a; --surface:#f5f6fa; --card-bg:#fff;
-    --border:#e4e7f0; --accent:#4f46e5; --accent-2:#7c3aed;
+    --border:#e4e7f0; --accent:#1565c0; --accent-2:#7c3aed;
     --success:#059669; --danger:#dc2626; --warn:#d97706;
     --radius:16px; --shadow:0 4px 24px rgba(13,15,26,.07);
     --shadow-lg:0 12px 48px rgba(13,15,26,.13);
 }
-* { box-sizing:border-box; }
-body { font-family:'DM Sans',sans-serif; background:var(--surface); color:var(--ink); }
+* {  box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background:var(--surface); color:var(--ink); }
 
 /* ── TOP NAV ── */
 .top-nav { display:flex; align-items:center; gap:14px; margin-bottom:24px; flex-wrap:wrap; }
 .btn-back { display:inline-flex; align-items:center; gap:8px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:8px 16px; font-size:.85rem; font-weight:600; color:var(--ink-soft); text-decoration:none; transition:.2s; }
 .btn-back:hover { border-color:var(--accent); color:var(--accent); }
-.top-nav h2 { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; flex:1; }
+.top-nav h2 { font-family:'Syne',sans-serif; font-weight:900; font-size:1.4rem; flex:1; color:var(--accent);}
 
 /* ── INFO CARD ── */
 .info-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:24px; }
-.info-card-header { background:linear-gradient(135deg,var(--accent),var(--accent-2)); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.info-card-header { background:linear-gradient(135deg,#1565c0,var(--accent-2)); padding:24px 28px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;}
 .info-card-header h4 { font-family:'Syne',sans-serif; font-weight:700; color:#fff; margin:0; }
 .info-card-header .actions { display:flex; gap:10px; }
 .btn-hdr { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.18); backdrop-filter:blur(4px); color:#fff; border:1px solid rgba(255,255,255,.35); border-radius:9px; padding:7px 16px; font-size:.82rem; font-weight:600; cursor:pointer; transition:.2s; text-decoration:none; }
@@ -416,6 +415,24 @@ body { font-family:'DM Sans',sans-serif; background:var(--surface); color:var(--
 .sidebar-item { display:flex; align-items:center; gap:10px; padding:11px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:.2s; font-size:.83rem; }
 .sidebar-item:hover { background:var(--surface); color:var(--accent); }
 .sidebar-item .num { width:22px; height:22px; border-radius:6px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; flex-shrink:0; }
+
+.modal {
+    z-index: 9999 !important;
+}
+
+.modal-backdrop {
+    z-index: 9990 !important;
+}
+
+/* center modal properly */
+.modal-dialog {
+    margin-top: 100px;
+}
+
+/* fix header overlap */
+body.modal-open {
+    padding-right: 0 !important;
+}
 
 /* ── CHAPTER ACCORDION ── */
 .chapter-wrap { margin-bottom:10px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); box-shadow:var(--shadow); }
@@ -459,7 +476,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--surface); color:var(--
 
 /* ── ASSIGNMENT SECTION ── */
 .section-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-.section-hdr h4 { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; }
+.section-hdr h4 { font-family:'Syne',sans-serif; font-weight:900; font-size:20px; }
 .asgn-card { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:10px; transition:.2s; }
 .asgn-card:hover { border-color:var(--warn); box-shadow:var(--shadow); }
 .asgn-title { font-weight:700; font-size:.9rem; margin-bottom:4px; }
@@ -520,7 +537,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--surface); color:var(--
 <!-- TOP NAV -->
 <div class="top-nav">
     <a href="Subjects.aspx" class="btn-back"><i class="fa fa-arrow-left"></i> Back</a>
-    <h2><i class="fa fa-book-open me-2" style="color:var(--accent)"></i>
+    <h2><i class="fa fa-book-open me-2" style="color:#1565c0; font-weight:900;"></i>
         <asp:Literal ID="litSubjectName" runat="server" /></h2>
 </div>
 
@@ -580,8 +597,8 @@ body { font-family:'DM Sans',sans-serif; background:var(--surface); color:var(--
     <div>
         <!-- CHAPTERS ACCORDION -->
         <div class="section-hdr">
-            <h4><i class="fa fa-book me-2" style="color:var(--accent)"></i>Course Content</h4>
-            <span id="chapterCountBadge" style="background:#eef2ff;color:var(--accent);border-radius:8px;padding:4px 12px;font-size:.78rem;font-weight:700;"></span>
+            <h4><i class="fa fa-book me-2" style="color:#1565c0"></i>Course Content</h4>
+            <span id="chapterCountBadge" style="background:#eef2ff;color:var(--accent);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;"></span>
         </div>
 
         <div id="chaptersContainer">
@@ -845,19 +862,19 @@ body { font-family:'DM Sans',sans-serif; background:var(--surface); color:var(--
 <div id="toast-wrap"></div>
 
 <script>
-// ── Toast ──
-function showToast(msg, type) {
-    const wrap = document.getElementById('toast-wrap');
-    const t = document.createElement('div');
-    t.className = 'toast-msg ' + (type || 'success');
-    t.innerHTML = `<i class="fa fa-${type==='danger'?'times-circle':type==='info'?'info-circle':'check-circle'} me-2"></i>${msg}`;
-    wrap.appendChild(t);
-    setTimeout(() => t.remove(), 5000);
-}
+    // ── Toast ──
+    function showToast(msg, type) {
+        const wrap = document.getElementById('toast-wrap');
+        const t = document.createElement('div');
+        t.className = 'toast-msg ' + (type || 'success');
+        t.innerHTML = `<i class="fa fa-${type === 'danger' ? 'times-circle' : type === 'info' ? 'info-circle' : 'check-circle'} me-2"></i>${msg}`;
+        wrap.appendChild(t);
+        setTimeout(() => t.remove(), 5000);
+    }
 
-window.addEventListener('DOMContentLoaded', () => {
-    // Server toast
-    const hfMsg  = document.getElementById('<%= hfToastMsg.ClientID %>');
+    window.addEventListener('DOMContentLoaded', () => {
+        // Server toast
+        const hfMsg = document.getElementById('<%= hfToastMsg.ClientID %>');
     const hfType = document.getElementById('<%= hfToastType.ClientID %>');
     if (hfMsg && hfMsg.value) { showToast(hfMsg.value, hfType.value || 'success'); hfMsg.value = ''; }
 
@@ -870,100 +887,139 @@ window.addEventListener('DOMContentLoaded', () => {
     if (badge) badge.textContent = items.length + ' Chapter' + (items.length !== 1 ? 's' : '');
 });
 
-// ── Sidebar ──
-function buildSidebar() {
-    const items = document.querySelectorAll('.chapter-item');
-    const list  = document.getElementById('sidebarList');
-    if (!list) return;
-    if (items.length === 0) {
-        list.innerHTML = '<div class="mini-empty"><i class="fa fa-book"></i>No chapters yet</div>';
-        return;
+    // ── Sidebar ──
+    function buildSidebar() {
+        const items = document.querySelectorAll('.chapter-item');
+        const list = document.getElementById('sidebarList');
+        if (!list) return;
+        if (items.length === 0) {
+            list.innerHTML = '<div class="mini-empty"><i class="fa fa-book"></i>No chapters yet</div>';
+            return;
+        }
+        items.forEach((item, i) => {
+            const title = item.getAttribute('data-title');
+            const div = document.createElement('div');
+            div.className = 'sidebar-item';
+            div.innerHTML = `<span class="num">${i + 1}</span>${title}`;
+            div.onclick = () => {
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const body = item.querySelector('.chapter-body');
+                if (body && body.style.display === 'none') {
+                    body.style.display = 'block';
+                    const icon = item.querySelector('.chapter-hdr .fa-chevron-down');
+                    if (icon) icon.style.transform = 'rotate(180deg)';
+                }
+            };
+            list.appendChild(div);
+        });
     }
-    items.forEach((item, i) => {
-        const title = item.getAttribute('data-title');
-        const div   = document.createElement('div');
-        div.className = 'sidebar-item';
-        div.innerHTML = `<span class="num">${i + 1}</span>${title}`;
-        div.onclick = () => {
-            item.scrollIntoView({ behavior:'smooth', block:'center' });
-            const body = item.querySelector('.chapter-body');
-            if (body && body.style.display === 'none') {
-                body.style.display = 'block';
-                const icon = item.querySelector('.chapter-hdr .fa-chevron-down');
-                if (icon) icon.style.transform = 'rotate(180deg)';
-            }
-        };
-        list.appendChild(div);
-    });
-}
 
-// ── Chapter accordion ──
-function toggleChapter(hdr) {
-    const body = hdr.nextElementSibling;
-    const icon = hdr.querySelector('.fa-chevron-down');
-    const open = body.style.display !== 'none';
-    body.style.display = open ? 'none' : 'block';
-    if (icon) icon.style.transform = open ? '' : 'rotate(180deg)';
-}
+    // ── Chapter accordion ──
+    function toggleChapter(hdr) {
+        const body = hdr.nextElementSibling;
+        const icon = hdr.querySelector('.fa-chevron-down');
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'block';
+        if (icon) icon.style.transform = open ? '' : 'rotate(180deg)';
+    }
 
-// ── Tab switching ──
-function switchTab(tabEl, paneId) {
-    const wrapper = tabEl.closest('.chapter-body');
-    wrapper.querySelectorAll('.ch-tab').forEach(t => t.classList.remove('active'));
-    wrapper.querySelectorAll('.ch-tab-pane').forEach(p => p.classList.remove('active'));
-    tabEl.classList.add('active');
-    const pane = document.getElementById(paneId);
-    if (pane) pane.classList.add('active');
-}
+    // ── Tab switching ──
+    function switchTab(tabEl, paneId) {
+        const wrapper = tabEl.closest('.chapter-body');
+        wrapper.querySelectorAll('.ch-tab').forEach(t => t.classList.remove('active'));
+        wrapper.querySelectorAll('.ch-tab-pane').forEach(p => p.classList.remove('active'));
+        tabEl.classList.add('active');
+        const pane = document.getElementById(paneId);
+        if (pane) pane.classList.add('active');
+    }
 
-// ── Modal helpers ──
-function openModal(id) { new bootstrap.Modal(document.getElementById(id)).show(); }
-function showChapterModal() { openModal('ChapterModal'); }
+    // ── Modal helpers ──
+    function openModal(id) { new bootstrap.Modal(document.getElementById(id)).show(); }
+    function showChapterModal() { openModal('ChapterModal'); }
 
-// ── Content type toggle ──
-function toggleContentFields() {
-    const sel = document.getElementById('<%= ddlContentType.ClientID %>').value;
-    document.getElementById('videoFields').style.display = sel === 'Video' ? 'block' : 'none';
-}
+    // ── Content type toggle ──
+    function toggleContentFields() {
+        const sel = document.getElementById('<%= ddlContentType.ClientID %>').value;
+        document.getElementById('videoFields').style.display = sel === 'Video' ? 'block' : 'none';
+    }
 
-// ── Teacher search (AJAX) ──
-let selectedTeacherId = null;
-function searchTeachers(q) {
-    const drop = document.getElementById('teacherDropdown');
-    if (!q || q.length < 2) { drop.style.display = 'none'; return; }
-    const subjectId = document.getElementById('<%= hfSubjectId.ClientID %>').value;
-    fetch(`SubjectDetails.aspx/SearchTeachers?q=${encodeURIComponent(q)}&subjectId=${subjectId}`)
-        .then(r => r.json())
-        .then(data => {
-            drop.innerHTML = '';
-            if (!data || data.length === 0) {
-                drop.innerHTML = '<div class="teacher-option" style="color:var(--ink-soft)">No assigned teachers found</div>';
-            } else {
-                data.forEach(t => {
-                    const d = document.createElement('div');
-                    d.className = 'teacher-option';
-                    d.innerHTML = `<div class="teacher-avatar">${t.Name.charAt(0).toUpperCase()}</div><div><strong>${t.Name}</strong><br><small style="color:var(--ink-soft)">${t.Designation || ''}</small></div>`;
-                    d.onclick = () => selectTeacher(t.UserId, t.Name);
-                    drop.appendChild(d);
-                });
-            }
-            drop.style.display = 'block';
+    // ── Teacher search (AJAX) ──
+    let selectedTeacherId = null;
+    // ── Teacher search — uses WebMethod POST (not GET query string) ──
+    let teacherSearchTimer = null;
+    function searchTeachers(q) {
+        const drop = document.getElementById('teacherDropdown');
+        if (!q || q.trim().length < 1) { drop.style.display = 'none'; return; }
+
+        // Debounce: wait 300ms after user stops typing
+        clearTimeout(teacherSearchTimer);
+        teacherSearchTimer = setTimeout(() => doTeacherSearch(q.trim()), 300);
+    }
+
+    function doTeacherSearch(q) {
+        const drop = document.getElementById('teacherDropdown');
+        const subjectId = parseInt(document.getElementById('<%= hfSubjectId.ClientID %>').value) || 0;
+
+        drop.innerHTML = '<div class="teacher-option" style="color:var(--ink-soft)"><i class="fa fa-spinner fa-spin me-2"></i>Searching…</div>';
+        drop.style.display = 'block';
+
+        fetch('SubjectDetails.aspx/SearchTeachers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            body: JSON.stringify({ q: q, subjectId: subjectId })
         })
-        .catch(() => { drop.innerHTML = '<div class="teacher-option" style="color:var(--danger)">Search failed. Try again.</div>'; drop.style.display = 'block'; });
-}
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(res => {
+                // ASP.NET WebMethod wraps response in { d: "..." }
+                const raw = typeof res.d !== 'undefined' ? res.d : res;
+                const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
-function selectTeacher(id, name) {
-    selectedTeacherId = id;
-    document.getElementById('<%= hfInstructorId.ClientID %>').value = id;
-    document.getElementById('selTeacherName').textContent = name;
-    document.getElementById('selTeacherInitial').textContent = name.charAt(0).toUpperCase();
-    document.getElementById('selectedTeacherWrap').style.display = 'block';
-    document.getElementById('teacherDropdown').style.display = 'none';
-    document.getElementById('txtTeacherSearch').value = '';
-}
-function clearTeacher() {
-    selectedTeacherId = null;
-    document.getElementById('<%= hfInstructorId.ClientID %>').value = '';
+                drop.innerHTML = '';
+                if (!data || data.length === 0) {
+                    drop.innerHTML = '<div class="teacher-option" style="color:var(--ink-soft)">No teachers found matching "' + q + '"</div>';
+                } else {
+                    data.forEach(t => {
+                        if (!t.UserId || t.UserId === 0) return; // skip error rows
+                        const d = document.createElement('div');
+                        d.className = 'teacher-option';
+                        d.innerHTML = `
+                    <div class="teacher-avatar">${t.Name.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <strong>${escHtml(t.Name)}</strong><br>
+                        <small style="color:var(--ink-soft)">${escHtml(t.Designation || 'Teacher')}</small>
+                    </div>`;
+                        d.onclick = () => selectTeacher(t.UserId, t.Name);
+                        drop.appendChild(d);
+                    });
+                }
+                drop.style.display = 'block';
+            })
+            .catch(err => {
+                drop.innerHTML = '<div class="teacher-option" style="color:var(--danger)"><i class="fa fa-exclamation-triangle me-2"></i>Search error. Check console.</div>';
+                drop.style.display = 'block';
+                console.error('Teacher search error:', err);
+            });
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function selectTeacher(id, name) {
+        selectedTeacherId = id;
+        document.getElementById('<%= hfInstructorId.ClientID %>').value = id;
+        document.getElementById('selTeacherName').textContent = name;
+        document.getElementById('selTeacherInitial').textContent = name.charAt(0).toUpperCase();
+        document.getElementById('selectedTeacherWrap').style.display = 'block';
+        document.getElementById('teacherDropdown').style.display = 'none';
+        document.getElementById('txtTeacherSearch').value = '';
+    }
+    function clearTeacher() {
+        selectedTeacherId = null;
+        document.getElementById('<%= hfInstructorId.ClientID %>').value = '';
         document.getElementById('selectedTeacherWrap').style.display = 'none';
     }
 

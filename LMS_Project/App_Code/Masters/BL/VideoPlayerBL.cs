@@ -2,47 +2,51 @@
 using System.Data;
 using System.Data.SqlClient;
 
+
     public class VideoPlayerBL
     {
         private readonly DataLayer _dl = new DataLayer();
 
-        // ── Video Details ──────────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════
+        //  VIDEO DETAILS  — includes UniqueStudentViews (students only, RoleId=4)
+        // ══════════════════════════════════════════════════════════════════════
         public DataTable GetVideoDetails(int videoId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
                 SELECT
-                    V.VideoId, V.Title, V.Description, V.VideoPath,
-                    V.ViewCount, V.UploadedOn, V.IsActive, V.Duration,
-                    ISNULL(UP.FullName, U.Username) AS InstructorName
+                    V.VideoId,
+                    V.Title,
+                    V.Description,
+                    V.VideoPath,
+                    V.ViewCount,
+                    V.UploadedOn,
+                    V.IsActive,
+                    V.Duration,
+                    ISNULL(UP.FullName, U.Username) AS InstructorName,
+                    -- Only count STUDENT views (RoleId = 4), counted once per student
+                    (SELECT COUNT(DISTINCT VV.UserId)
+                     FROM VideoViews VV
+                     INNER JOIN Users US ON VV.UserId = US.UserId
+                     WHERE VV.VideoId    = V.VideoId
+                       AND VV.SessionId = @SessionId
+                       AND US.RoleId    = 4
+                    ) AS UniqueStudentViews
                 FROM Videos V
                 LEFT JOIN Users       U  ON V.InstructorId = U.UserId
                 LEFT JOIN UserProfile UP ON V.InstructorId = UP.UserId
-                WHERE V.VideoId = @Vid AND V.SessionId = @SessionId AND V.IsActive = 1");
+                WHERE V.VideoId    = @Vid
+                  AND V.SessionId  = @SessionId
+                  AND V.IsActive   = 1");
+
             cmd.Parameters.AddWithValue("@Vid", videoId);
             cmd.Parameters.AddWithValue("@SessionId", sessionId);
             return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
-        public double GetAverageRating(int videoId)
-        {
-            // 1. Create the Command
-            SqlCommand cmd = new SqlCommand("SELECT ISNULL(AVG(CAST(Rating AS FLOAT)), 4.5) AS AvgRating FROM VideoRatings WHERE VideoId = @vid");
-            cmd.Parameters.AddWithValue("@vid", videoId);
-
-            // 2. Use GetDataTable from your DataLayer
-            DataTable dt = _dl.GetDataTable(cmd);
-
-            // 3. Extract the value safely
-            if (dt != null && dt.Rows.Count > 0)
-            {
-                return Convert.ToDouble(dt.Rows[0]["AvgRating"]);
-            }
-
-            return 4.5; // Default fallback if something goes wrong
-        }
-
-    // ── Rating Summary ─────────────────────────────────────────────────────
-    public DataRow GetRatingSummary(int videoId)
+        // ══════════════════════════════════════════════════════════════════════
+        //  RATING
+        // ══════════════════════════════════════════════════════════════════════
+        public DataRow GetRatingSummary(int videoId)
         {
             SqlCommand cmd = new SqlCommand(@"
                 SELECT
@@ -55,7 +59,16 @@ using System.Data.SqlClient;
             return (dt != null && dt.Rows.Count > 0) ? dt.Rows[0] : null;
         }
 
-        // ── Topics ─────────────────────────────────────────────────────────────
+        public double GetAverageRating(int videoId)
+        {
+            DataRow r = GetRatingSummary(videoId);
+            if (r == null) return 0;
+            return r["AvgRating"] != DBNull.Value ? Convert.ToDouble(r["AvgRating"]) : 0;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  TOPICS
+        // ══════════════════════════════════════════════════════════════════════
         public DataTable GetVideoTopics(int videoId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
@@ -68,11 +81,23 @@ using System.Data.SqlClient;
             return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
-        // ── Playlist (same subject) ────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════
+        //  PLAYLIST  — shows UniqueViews per video (student-only)
+        // ══════════════════════════════════════════════════════════════════════
         public DataTable GetPlaylist(int videoId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
-                SELECT V.VideoId, V.Title, V.ViewCount
+                SELECT
+                    V.VideoId,
+                    V.Title,
+                    V.ViewCount,
+                    (SELECT COUNT(DISTINCT VV.UserId)
+                     FROM VideoViews VV
+                     INNER JOIN Users US ON VV.UserId = US.UserId
+                     WHERE VV.VideoId   = V.VideoId
+                       AND VV.SessionId = @SessionId
+                       AND US.RoleId   = 4
+                    ) AS UniqueViews
                 FROM Videos V
                 WHERE V.SessionId = @SessionId
                   AND V.IsActive  = 1
@@ -85,32 +110,80 @@ using System.Data.SqlClient;
             return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
-        // ── Student engagement (watch progress) ────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════
+        //  ENGAGEMENT — student watch progress (students only)
+        // ══════════════════════════════════════════════════════════════════════
         public DataTable GetEngagement(int videoId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
                 SELECT
-                    ISNULL(UP.FullName, U.Username) AS UserName,
-                    ISNULL(P.WatchedPercent, 0)      AS WatchedPercent
+                    ISNULL(UP.FullName, U.Username)  AS UserName,
+                    ISNULL(P.WatchedPercent, 0)       AS WatchedPercent
                 FROM VideoViews VV
                 INNER JOIN Users       U  ON VV.UserId = U.UserId
                 LEFT  JOIN UserProfile UP ON VV.UserId = UP.UserId
                 LEFT  JOIN VideoWatchProgress P
                     ON P.VideoId = VV.VideoId AND P.UserId = VV.UserId
-                WHERE VV.VideoId = @Vid AND VV.SessionId = @SessionId
+                WHERE VV.VideoId   = @Vid
+                  AND VV.SessionId = @SessionId
+                  AND U.RoleId     = 4   -- Students only
                 ORDER BY P.WatchedPercent DESC");
             cmd.Parameters.AddWithValue("@Vid", videoId);
             cmd.Parameters.AddWithValue("@SessionId", sessionId);
             return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
-        // ── AI usage stats ─────────────────────────────────────────────────────
-        public DataTable GetAIUsageStats(int videoId)
+        // ══════════════════════════════════════════════════════════════════════
+        //  VIDEO STATS  — student-only view counts
+        // ══════════════════════════════════════════════════════════════════════
+        public DataTable GetVideoStats(int videoId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
                 SELECT
-                    Type,
-                    COUNT(*) AS UsageCount
+                    -- Total student view events (once per student, RoleId=4)
+                    (SELECT COUNT(DISTINCT VV.UserId)
+                     FROM VideoViews VV
+                     INNER JOIN Users US ON VV.UserId = US.UserId
+                     WHERE VV.VideoId   = @Vid
+                       AND VV.SessionId = @SessionId
+                       AND US.RoleId    = 4
+                    ) AS StudentViews,
+
+                    -- Unique students who viewed
+                    (SELECT COUNT(DISTINCT VV.UserId)
+                     FROM VideoViews VV
+                     INNER JOIN Users US ON VV.UserId = US.UserId
+                     WHERE VV.VideoId   = @Vid
+                       AND VV.SessionId = @SessionId
+                       AND US.RoleId    = 4
+                    ) AS UniqueStudents,
+
+                    -- Average completion % across ALL viewers
+                    (SELECT ISNULL(AVG(WatchedPercent), 0)
+                     FROM VideoWatchProgress
+                     WHERE VideoId   = @Vid
+                       AND SessionId = @SessionId
+                    ) AS AvgCompletion,
+
+                    -- Total comments (any role)
+                    (SELECT COUNT(*)
+                     FROM VideoComments
+                     WHERE VideoId   = @Vid
+                       AND SessionId = @SessionId
+                    ) AS CommentCount");
+
+            cmd.Parameters.AddWithValue("@Vid", videoId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            return _dl.GetDataTable(cmd) ?? new DataTable();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  AI USAGE STATS
+        // ══════════════════════════════════════════════════════════════════════
+        public DataTable GetAIUsageStats(int videoId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+                SELECT Type, COUNT(*) AS UsageCount
                 FROM VideoAIHistory
                 WHERE VideoId = @Vid
                 GROUP BY Type
@@ -119,21 +192,9 @@ using System.Data.SqlClient;
             return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
-        // ── Video stats ────────────────────────────────────────────────────────
-        public DataTable GetVideoStats(int videoId, int sessionId)
-        {
-            SqlCommand cmd = new SqlCommand(@"
-                SELECT
-                    (SELECT COUNT(*)         FROM VideoViews        WHERE VideoId=@Vid AND SessionId=@SessionId) AS Views,
-                    (SELECT COUNT(DISTINCT UserId) FROM VideoViews  WHERE VideoId=@Vid AND SessionId=@SessionId) AS Students,
-                    (SELECT ISNULL(AVG(WatchedPercent),0) FROM VideoWatchProgress WHERE VideoId=@Vid AND SessionId=@SessionId) AS Completion,
-                    (SELECT COUNT(*)         FROM VideoComments      WHERE VideoId=@Vid AND SessionId=@SessionId) AS Comments");
-            cmd.Parameters.AddWithValue("@Vid", videoId);
-            cmd.Parameters.AddWithValue("@SessionId", sessionId);
-            return _dl.GetDataTable(cmd) ?? new DataTable();
-        }
-
-        // ── Comments ──────────────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════
+        //  COMMENTS  (top-level only — parent IS NULL)
+        // ══════════════════════════════════════════════════════════════════════
         public DataTable GetComments(int videoId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
@@ -144,80 +205,141 @@ using System.Data.SqlClient;
                     C.CommentedOn
                 FROM VideoComments C
                 INNER JOIN Users U ON C.UserId = U.UserId
-                WHERE C.VideoId = @Vid AND C.SessionId = @SessionId
+                WHERE C.VideoId         = @Vid
+                  AND C.SessionId       = @SessionId
+                  AND C.ParentCommentId IS NULL
                 ORDER BY C.CommentedOn DESC");
             cmd.Parameters.AddWithValue("@Vid", videoId);
             cmd.Parameters.AddWithValue("@SessionId", sessionId);
             return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
+        // ══════════════════════════════════════════════════════════════════════
+        //  REPLIES  (child comments for a given parent)
+        // ══════════════════════════════════════════════════════════════════════
+        public DataTable GetReplies(int parentCommentId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+                SELECT
+                    C.CommentId,
+                    U.Username,
+                    C.Comment,
+                    C.CommentedOn
+                FROM VideoComments C
+                INNER JOIN Users U ON C.UserId = U.UserId
+                WHERE C.ParentCommentId = @ParentId
+                  AND C.SessionId       = @SessionId
+                ORDER BY C.CommentedOn ASC");
+            cmd.Parameters.AddWithValue("@ParentId", parentCommentId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            return _dl.GetDataTable(cmd) ?? new DataTable();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        //  SAVE COMMENT / REPLY
+        //  parentCommentId = null  → top-level comment
+        //  parentCommentId = int   → reply
+        // ══════════════════════════════════════════════════════════════════════
         public void SaveComment(int videoId, int sessionId, int userId,
-            string comment, int societyId, int instituteId)
+            string comment, int societyId, int instituteId, int? parentCommentId)
         {
             if (string.IsNullOrWhiteSpace(comment)) return;
+
             SqlCommand cmd = new SqlCommand(@"
                 INSERT INTO VideoComments
-                    (SocietyId, InstituteId, VideoId, UserId, Comment, SessionId, CommentedOn)
+                    (SocietyId, InstituteId, VideoId, UserId, Comment,
+                     SessionId, CommentedOn, ParentCommentId)
                 VALUES
-                    (@SocId, @InstId, @Vid, @UserId, @Comment, @SessionId, GETDATE())");
+                    (@SocId, @InstId, @Vid, @UserId, @Comment,
+                     @SessionId, GETDATE(), @ParentId)");
+
             cmd.Parameters.AddWithValue("@SocId", societyId);
             cmd.Parameters.AddWithValue("@InstId", instituteId);
             cmd.Parameters.AddWithValue("@Vid", videoId);
             cmd.Parameters.AddWithValue("@UserId", userId);
-            cmd.Parameters.AddWithValue("@Comment", comment);
+            cmd.Parameters.AddWithValue("@Comment", comment.Trim());
             cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            cmd.Parameters.AddWithValue("@ParentId",
+                parentCommentId.HasValue ? (object)parentCommentId.Value : DBNull.Value);
             _dl.ExecuteCMD(cmd);
         }
 
+        // ══════════════════════════════════════════════════════════════════════
+        //  DELETE COMMENT  (hard delete — also removes replies via cascade)
+        //  NOTE: Add ON DELETE CASCADE to FK_VideoComments_ParentCommentId in DB,
+        //        OR use the soft-delete approach below which handles both.
+        // ══════════════════════════════════════════════════════════════════════
         public void DeleteComment(int commentId, int sessionId)
         {
-            SqlCommand cmd = new SqlCommand(
-                "DELETE FROM VideoComments WHERE CommentId = @Id AND SessionId = @SessionId");
-            cmd.Parameters.AddWithValue("@Id", commentId);
-            cmd.Parameters.AddWithValue("@SessionId", sessionId);
-            _dl.ExecuteCMD(cmd);
+            // Delete replies first, then parent (handles DB without cascade)
+            SqlCommand delReplies = new SqlCommand(@"
+                DELETE FROM VideoComments
+                WHERE ParentCommentId = @Id AND SessionId = @SessionId");
+            delReplies.Parameters.AddWithValue("@Id", commentId);
+            delReplies.Parameters.AddWithValue("@SessionId", sessionId);
+            _dl.ExecuteCMD(delReplies);
+
+            SqlCommand delParent = new SqlCommand(@"
+                DELETE FROM VideoComments
+                WHERE CommentId = @Id AND SessionId = @SessionId");
+            delParent.Parameters.AddWithValue("@Id", commentId);
+            delParent.Parameters.AddWithValue("@SessionId", sessionId);
+            _dl.ExecuteCMD(delParent);
         }
 
-        // ── Track view (once per user per video per session) ───────────────────
-        public void TrackView(int videoId, int sessionId, int userId, int instituteId, int societyId)
+        // ══════════════════════════════════════════════════════════════════════
+        //  TRACK STUDENT VIEW  — once per student per video (RoleId=4 check in CS)
+        // ══════════════════════════════════════════════════════════════════════
+        public void TrackStudentView(int videoId, int sessionId, int userId,
+            int societyId, int instituteId)
         {
             SqlCommand cmd = new SqlCommand(@"
                 IF NOT EXISTS (
                     SELECT 1 FROM VideoViews
-                    WHERE VideoId=@Vid AND UserId=@UserId AND SessionId=@SessionId
+                    WHERE VideoId = @Vid AND UserId = @UserId AND SessionId = @SessionId
                 )
                 BEGIN
-                    INSERT INTO VideoViews (SocietyId, InstituteId, SessionId, VideoId, UserId, ViewedOn, IsCompleted)
-                    VALUES (@SocId, @InstId, @SessionId, @Vid, @UserId, GETDATE(), 0);
-                END
-
-                UPDATE Videos
-                SET ViewCount = ISNULL(ViewCount, 0) + 1
-                WHERE VideoId = @Vid AND SessionId = @SessionId;");
+                    INSERT INTO VideoViews
+                        (SocietyId, InstituteId, SessionId, VideoId, UserId, ViewedOn, IsCompleted)
+                    VALUES
+                        (@SocId, @InstId, @SessionId, @Vid, @UserId, GETDATE(), 0);
+                END");
 
             cmd.Parameters.AddWithValue("@Vid", videoId);
             cmd.Parameters.AddWithValue("@UserId", userId);
             cmd.Parameters.AddWithValue("@SessionId", sessionId);
-            cmd.Parameters.AddWithValue("@InstId", instituteId);
             cmd.Parameters.AddWithValue("@SocId", societyId);
+            cmd.Parameters.AddWithValue("@InstId", instituteId);
             _dl.ExecuteCMD(cmd);
         }
 
-        // ── Upsert watch progress (called from AJAX every 10s) ────────────────
+        // ══════════════════════════════════════════════════════════════════════
+        //  UPSERT WATCH PROGRESS  — called every 10s from JS
+        //  Progress bar logic:
+        //    - Updated on every call with current watched seconds
+        //    - IsCompleted set to 1 only when pct >= 100
+        //    - Student skip-lock: student side checks IsCompleted before allowing seek
+        // ══════════════════════════════════════════════════════════════════════
         public void UpsertWatchProgress(int videoId, int sessionId, int userId,
             int societyId, int instituteId,
             int watchedSeconds, int videoDuration, int watchedPercent, int lastPosition)
         {
             SqlCommand cmd = new SqlCommand(@"
-                IF EXISTS (SELECT 1 FROM VideoWatchProgress WHERE UserId=@UserId AND VideoId=@Vid)
+                IF EXISTS (
+                    SELECT 1 FROM VideoWatchProgress
+                    WHERE UserId = @UserId AND VideoId = @Vid
+                )
                 BEGIN
                     UPDATE VideoWatchProgress
-                    SET WatchedSeconds  = @WatchedSec,
-                        VideoDuration   = @Duration,
-                        WatchedPercent  = @Pct,
-                        LastPosition    = @LastPos,
-                        UpdatedOn       = GETDATE()
-                    WHERE UserId=@UserId AND VideoId=@Vid;
+                    SET
+                        WatchedSeconds = CASE WHEN @WatchedSec > WatchedSeconds
+                                              THEN @WatchedSec ELSE WatchedSeconds END,
+                        VideoDuration  = @Duration,
+                        WatchedPercent = CASE WHEN @Pct > WatchedPercent
+                                              THEN @Pct ELSE WatchedPercent END,
+                        LastPosition   = @LastPos,
+                        UpdatedOn      = GETDATE()
+                    WHERE UserId = @UserId AND VideoId = @Vid;
                 END
                 ELSE
                 BEGIN
@@ -229,7 +351,7 @@ using System.Data.SqlClient;
                          @WatchedSec, @Duration, @Pct, @LastPos, GETDATE());
                 END
 
-                -- Mark as completed in VideoViews if 100%
+                -- Mark completed in VideoViews when 100%
                 IF @Pct >= 100
                 BEGIN
                     UPDATE VideoViews
@@ -249,27 +371,34 @@ using System.Data.SqlClient;
             _dl.ExecuteCMD(cmd);
         }
 
-    public void IncreaseViewCount(int videoId, int sessionId, int userId, int instituteId)
-    {
-        SqlCommand cmd = new SqlCommand(@"
-                INSERT INTO VideoViews(VideoId,SessionId,UserId,InstituteId)
-                VALUES(@VideoId,@SessionId,@UserId,@InstituteId)");
+        // ══════════════════════════════════════════════════════════════════════
+        //  CHECK COMPLETION  — used by student side to allow/block seeking
+        // ══════════════════════════════════════════════════════════════════════
+        public bool HasStudentCompletedVideo(int videoId, int userId, int sessionId)
+        {
+            SqlCommand cmd = new SqlCommand(@"
+                SELECT COUNT(*)
+                FROM VideoViews
+                WHERE VideoId   = @Vid
+                  AND UserId    = @UserId
+                  AND SessionId = @SessionId
+                  AND IsCompleted = 1");
+            cmd.Parameters.AddWithValue("@Vid", videoId);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            DataTable dt = _dl.GetDataTable(cmd);
+            return dt != null && dt.Rows.Count > 0 && Convert.ToInt32(dt.Rows[0][0]) > 0;
+        }
 
-        cmd.Parameters.AddWithValue("@VideoId", videoId);
-        cmd.Parameters.AddWithValue("@SessionId", sessionId);
-        cmd.Parameters.AddWithValue("@UserId", userId);
-        cmd.Parameters.AddWithValue("@InstituteId", instituteId);
-
-        _dl.ExecuteCMD(cmd);
-    }
-
-    // ── Navigation ─────────────────────────────────────────────────────────
-    public int GetNextVideo(int videoId, int sessionId)
+        // ══════════════════════════════════════════════════════════════════════
+        //  NAVIGATION
+        // ══════════════════════════════════════════════════════════════════════
+        public int GetNextVideo(int videoId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
                 SELECT TOP 1 VideoId
                 FROM Videos
-                WHERE VideoId > @Vid
+                WHERE VideoId  > @Vid
                   AND SessionId = @SessionId
                   AND IsActive  = 1
                   AND SubjectId = (SELECT SubjectId FROM Videos WHERE VideoId = @Vid)
@@ -285,7 +414,7 @@ using System.Data.SqlClient;
             SqlCommand cmd = new SqlCommand(@"
                 SELECT TOP 1 VideoId
                 FROM Videos
-                WHERE VideoId < @Vid
+                WHERE VideoId  < @Vid
                   AND SessionId = @SessionId
                   AND IsActive  = 1
                   AND SubjectId = (SELECT SubjectId FROM Videos WHERE VideoId = @Vid)
@@ -296,40 +425,33 @@ using System.Data.SqlClient;
             return (dt != null && dt.Rows.Count > 0) ? Convert.ToInt32(dt.Rows[0][0]) : 0;
         }
 
-        // ── Check if student has completed the video (for skip-lock) ──────────
-        public bool HasStudentCompletedVideo(int videoId, int userId, int sessionId)
-        {
-            SqlCommand cmd = new SqlCommand(@"
-                SELECT COUNT(*)
-                FROM VideoViews
-                WHERE VideoId = @Vid AND UserId = @UserId
-                  AND SessionId = @SessionId AND IsCompleted = 1");
-            cmd.Parameters.AddWithValue("@Vid", videoId);
-            cmd.Parameters.AddWithValue("@UserId", userId);
-            cmd.Parameters.AddWithValue("@SessionId", sessionId);
-            DataTable dt = _dl.GetDataTable(cmd);
-            return (dt != null && dt.Rows.Count > 0) && Convert.ToInt32(dt.Rows[0][0]) > 0;
-        }
-
-        // ── User display name ──────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════
+        //  USER DISPLAY NAME
+        // ══════════════════════════════════════════════════════════════════════
         public DataRow GetUserDisplayName(int userId)
         {
-            SqlCommand cmd = new SqlCommand(
-                "SELECT ISNULL(FullName, 'Admin') AS FullName FROM UserProfile WHERE UserId = @UserId");
+            SqlCommand cmd = new SqlCommand(@"
+                SELECT ISNULL(FullName, 'Admin') AS FullName
+                FROM UserProfile
+                WHERE UserId = @UserId");
             cmd.Parameters.AddWithValue("@UserId", userId);
             DataTable dt = _dl.GetDataTable(cmd);
             return (dt != null && dt.Rows.Count > 0) ? dt.Rows[0] : null;
         }
 
-        // ── Save AI history (called from FastAPI proxy) ────────────────────────
+        // ══════════════════════════════════════════════════════════════════════
+        //  AI HISTORY
+        // ══════════════════════════════════════════════════════════════════════
         public void SaveAIHistory(int videoId, int userId, string type,
             string question, string response)
         {
             try
             {
                 SqlCommand cmd = new SqlCommand(@"
-                    INSERT INTO VideoAIHistory (VideoId, UserId, Type, Question, Response, CreatedOn)
-                    VALUES (@Vid, @UserId, @Type, @Q, @R, GETDATE())");
+                    INSERT INTO VideoAIHistory
+                        (VideoId, UserId, Type, Question, Response, CreatedOn)
+                    VALUES
+                        (@Vid, @UserId, @Type, @Q, @R, GETDATE())");
                 cmd.Parameters.AddWithValue("@Vid", videoId);
                 cmd.Parameters.AddWithValue("@UserId", userId);
                 cmd.Parameters.AddWithValue("@Type", type);
@@ -340,7 +462,9 @@ using System.Data.SqlClient;
             catch { /* Non-critical */ }
         }
 
-        // ── Activity log ───────────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════
+        //  ACTIVITY LOG
+        // ══════════════════════════════════════════════════════════════════════
         public void LogActivity(int userId, int societyId, int instituteId,
             int sessionId, string activityType, int referenceId = 0)
         {
@@ -348,9 +472,11 @@ using System.Data.SqlClient;
             {
                 SqlCommand cmd = new SqlCommand(@"
                     INSERT INTO UserActivityLog
-                        (UserId, SocietyId, InstituteId, SessionId, ActivityType, ReferenceId, ActionTime)
+                        (UserId, SocietyId, InstituteId, SessionId,
+                         ActivityType, ReferenceId, ActionTime)
                     VALUES
-                        (@UserId, @SocId, @InstId, @SessionId, @Activity, @RefId, GETDATE())");
+                        (@UserId, @SocId, @InstId, @SessionId,
+                         @Activity, @RefId, GETDATE())");
                 cmd.Parameters.AddWithValue("@UserId", userId);
                 cmd.Parameters.AddWithValue("@SocId", societyId);
                 cmd.Parameters.AddWithValue("@InstId", instituteId);
@@ -361,4 +487,22 @@ using System.Data.SqlClient;
             }
             catch { }
         }
+   
+    public void SaveCommentWithoutReply(int vid, int sessionId, int userId, string msg, int societyId, int instituteId)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = @"INSERT INTO VideoComments
+        (SocietyId, InstituteId, VideoId, UserId, Comment, SessionId)
+        VALUES
+        (@SocietyId, @InstituteId, @VideoId, @UserId, @Comment, @SessionId)";
+
+        cmd.Parameters.AddWithValue("@SocietyId", societyId);
+        cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+        cmd.Parameters.AddWithValue("@VideoId", vid);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@Comment", msg);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
+        new DataLayer().ExecuteCMD(cmd);
     }
+}

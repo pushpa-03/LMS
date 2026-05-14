@@ -13,7 +13,7 @@
     <link href="assets/icons/fontawesome/css/solid.min.css" rel="stylesheet">
 
     <style>
-        :root {
+        :root { 
             --glass-bg: rgba(255, 255, 255, 0.12);
             --glass-border: rgba(255, 255, 255, 0.25);
             --primary-accent: #00d2ff;

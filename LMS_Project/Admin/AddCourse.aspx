@@ -60,10 +60,12 @@
                 </ul>
             </div>
 
+            <% if (!IsSuperAdmin) { %>
             <a href="#" data-bs-toggle="modal" data-bs-target="#CreateModal"
                class="btn btn-primary rounded-pill px-4">
                 + Add Course
             </a>
+            <% } %>
 
         </div>
     </div>
@@ -126,7 +128,7 @@
                    placeholder="Search course..."
                    list="courseList"
                    onkeyup="this.form.submit();" />
-
+            
             <datalist id="courseList">
                 <asp:Repeater ID="rptCourseSuggestions" runat="server">
                     <ItemTemplate>
@@ -135,65 +137,11 @@
                 </asp:Repeater>
             </datalist>
         </div>
-    </div>
-
-     <%--course mapping to next session--%>
-    <div class="card shadow-sm border-0 mb-4 p-3">
-
-        <h5 class="fw-bold mb-3">🔁 Course Session Mapping</h5>
-
-        <div class="row g-3">
-
-            <!-- FROM SESSION -->
-            <div class="col-md-4">
-                <asp:DropDownList ID="ddlFromSession" runat="server"
-                    CssClass="form-select" AutoPostBack="true"
-                    OnSelectedIndexChanged="ddlFromSession_SelectedIndexChanged" />
-            </div>
-
-            <!-- TO SESSION -->
-            <div class="col-md-4">
-                <asp:DropDownList ID="ddlToSession" runat="server"
-                    CssClass="form-select" />
-            </div>
-
-            <!-- ACTION BUTTONS -->
-            <div class="col-md-4 d-flex gap-2">
-                <asp:Button ID="btnCopyAll" runat="server"
-                    Text="Copy All"
-                    CssClass="btn btn-success w-100"
-                    OnClick="btnCopyAll_Click" />
-
-                <asp:Button ID="btnCopySelected" runat="server"
-                    Text="Copy Selected"
-                    CssClass="btn btn-primary w-100"
-                    OnClick="btnCopySelected_Click" />
-            </div>
-
-        </div>
+        <small class="text-muted">Tip: Search then Select Active or inavite from filter button which pop-up after search</small>
 
     </div>
 
-    <asp:GridView ID="gvMappingCourses" runat="server"
-    CssClass="table table-bordered"
-    AutoGenerateColumns="false">
-
-    <Columns>
-
-        <asp:TemplateField>
-            <ItemTemplate>
-                <asp:CheckBox ID="chkSelect" runat="server" />
-                <asp:HiddenField ID="hfCourseId" runat="server"
-                    Value='<%# Eval("CourseId") %>' />
-            </ItemTemplate>
-        </asp:TemplateField>
-
-        <asp:BoundField DataField="CourseName" HeaderText="Course" />
-        <asp:BoundField DataField="CourseCode" HeaderText="Code" />
-
-    </Columns>
-
-</asp:GridView>
+    
 
 
     <!-- TABLE -->
@@ -335,7 +283,7 @@
             <div class="modal-content">
 
                 <div class="modal-header bg-primary text-white">
-                    <h5>Add Course</h5>
+                   <h5>Add Course</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
@@ -346,11 +294,13 @@
 
                     <asp:TextBox ID="txtCourseName" runat="server"
                         CssClass="form-control mb-2"
-                        placeholder="Course Name" />
+                        placeholder="Course Name"
+                        oninput="validateCourseName(this)" />
 
                     <asp:TextBox ID="txtCourseCode" runat="server"
                         CssClass="form-control"
-                        placeholder="Course Code" />
+                        placeholder="Course Code"
+                        oninput="validateCourseCode(this)" />
 
                 </div>
 
@@ -382,10 +332,12 @@
                         CssClass="form-select mb-2" />
 
                     <asp:TextBox ID="txtCourseNameEdit" runat="server"
-                        CssClass="form-control mb-2" />
+                        CssClass="form-control mb-2"
+                        oninput="validateCourseName(this)"/>
 
                     <asp:TextBox ID="txtCourseCodeEdit" runat="server"
-                        CssClass="form-control" />
+                        CssClass="form-control"
+                        oninput="validateCourseCode(this)"/>
 
                 </div>
 
@@ -536,38 +488,87 @@
             transform: translateY(-2px);
         }
 
+        /* ===== FIX MODAL OVER HEADER ===== */
+
+        .modal {
+            z-index: 99999 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 99990 !important;
+        }
+
+        /* force center */
+        .modal-dialog {
+            margin-top: 80px !important;
+        }
+
+        /* fix bootstrap stacking issue */
+        body.modal-open {
+            overflow: hidden;
+            padding-right: 0 !important;
+        }
+
+
         @media (max-width: 768px) {
 
-    .stream-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
+        .stream-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
 
-    .stream-title {
-        font-size: 16px;
-    }
+        .stream-title {
+            font-size: 16px;
+        }
 
-    .course-table td {
-        font-size: 13px;
-    }
+        .course-table td {
+            font-size: 13px;
+        }
 
-    .action-btn {
-        width: 28px;
-        height: 28px;
-    }
+        .action-btn {
+            width: 28px;
+            height: 28px;
+        }
+        /* ===== MOBILE MODAL FIX ===== */
+        .modal-dialog {
+            margin: 20px !important;
+        }
 
-    .modal-dialog {
-        margin: 10px;
-    }
+        .modal-content {
+            border-radius: 12px;
+        }
 
-    .toast {
-        width: 100%;
-    }
-}
+        .modal-body {
+            padding: 15px;
+        }
+
+        .modal-header h5 {
+            font-size: 16px;
+        }
+
+        .modal-footer .btn {
+            width: 100%;
+        }
+        .toast {
+                width: 100%;
+            }
+        }
     </style>
 
     <script>
+        function validateCourseName(el) {
+            let regex = /^[A-Za-z][A-Za-z0-9 ]*$/;
+            el.classList.toggle("is-invalid", !regex.test(el.value));
+        }
+
+        function validateCourseCode(el) {
+            let regex = /^[A-Za-z0-9]*$/;
+            el.classList.toggle("is-invalid", !regex.test(el.value));
+        }
+    </script>
+
+   <%-- <script>
 
         document.body.classList.add("loading");
 
@@ -578,6 +579,6 @@
             return;
         }
 
-    </script>
+    </script>--%>
 
 </asp:Content>

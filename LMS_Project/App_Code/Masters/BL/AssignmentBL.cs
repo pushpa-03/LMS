@@ -56,39 +56,32 @@ namespace LearningManagementSystem.BL
         public void AddAssignment(AssignmentGC obj)
         {
             SqlCommand cmd = new SqlCommand(@"
-                INSERT INTO Assignments
-                (SocietyId, InstituteId, SubjectId, ChapterId, Title, Description,
-                 FilePath, DueDate, MaxMarks, CreatedBy, IsActive)
-                VALUES
-                (@S, @I, @Sub, @Chap, @T, @D, @F, @Due, @M, @C, 1)
-            ");
+        INSERT INTO Assignments
+        (SocietyId, InstituteId, SubjectId, ChapterId, Title, Description,
+         FilePath, DueDate, MaxMarks, CreatedBy, SessionId, IsActive)
+        VALUES
+        (@S, @I, @Sub, @Chap, @T, @D, @F, @Due, @M, @C,
+         (SELECT SessionId FROM AcademicSessions 
+          WHERE InstituteId = @I AND IsCurrent = 1), 1)
+    ");
 
             cmd.Parameters.AddWithValue("@S", obj.SocietyId);
             cmd.Parameters.AddWithValue("@I", obj.InstituteId);
             cmd.Parameters.AddWithValue("@Sub", obj.SubjectId);
-
-            // ✅ FIX: Proper NULL handling
             cmd.Parameters.AddWithValue("@Chap",
                 obj.ChapterId.HasValue ? (object)obj.ChapterId.Value : DBNull.Value);
-
             cmd.Parameters.AddWithValue("@T", obj.Title);
             cmd.Parameters.AddWithValue("@D",
                 string.IsNullOrEmpty(obj.Description) ? (object)DBNull.Value : obj.Description);
-
-            // ❗ File should NEVER be null now (since mandatory)
             cmd.Parameters.AddWithValue("@F", obj.FilePath);
-
             cmd.Parameters.AddWithValue("@Due",
                 obj.DueDate.HasValue ? (object)obj.DueDate.Value : DBNull.Value);
-
             cmd.Parameters.AddWithValue("@M",
                 obj.MaxMarks.HasValue ? (object)obj.MaxMarks.Value : DBNull.Value);
-
             cmd.Parameters.AddWithValue("@C", obj.CreatedBy);
 
             dl.ExecuteCMD(cmd);
         }
-
         // ================= GET ASSIGNMENTS =================
         public DataTable GetTeacherAssignments(int userId, int instituteId, int societyId)
         {

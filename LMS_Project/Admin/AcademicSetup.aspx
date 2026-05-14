@@ -268,6 +268,14 @@
 </div>
 
     <style>
+        .modal {
+            z-index: 99999 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 99990 !important;
+        }
+
         .setup-card {
             background: #fff;
             border-radius: 16px;
@@ -315,6 +323,46 @@
             transform: scale(1.1);
         }
 
+        @media (max-width: 992px) {
+        .col-md-4 {
+            width: 100%;
+        }
+
+        .setup-card {
+            margin-bottom: 15px;
+        }
+
+        #txtSearch {
+            width: 100% !important;
+            margin-top: 10px;
+        }
+
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start !important;
+          }
+        }
+
+    @media (max-width: 576px) {
+        .stat-card {
+            flex-direction: column !important;
+            text-align: center;
+        }
+
+        .icon-box {
+            margin-bottom: 10px;
+        }
+
+        .table {
+            font-size: 12px;
+        }
+
+        .action {
+            padding: 4px 6px;
+            font-size: 12px;
+        }
+     }
+
     </style>
 
     <script>
@@ -359,7 +407,32 @@
                 }, 500);
 
             }, 5000);
-        }  
+        }
+
+        
+            function showToast(type, msg) {
+                let bg = {
+                success: "bg-success",
+            error: "bg-danger",
+            warning: "bg-warning text-dark",
+            info: "bg-info"
+                }[type];
+
+                        let toast = document.createElement("div");
+                        toast.className = `toast align-items-center text-white ${bg} border-0 show position-fixed top-0 end-0 m-3`;
+                        toast.style.zIndex = "99999";
+
+                        toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">${msg}</div>
+                            <button class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                        </div>`;
+
+                document.body.appendChild(toast);
+
+                setTimeout(() => toast.remove(), 4000);
+            }
+    
 
     </script>
 </asp:Content>

@@ -33,27 +33,45 @@ namespace LMS.BL
             cmd.CommandText = @"UPDATE Streams
                                 SET StreamName=@StreamName
                                 WHERE StreamId=@StreamId
-                                AND InstituteId=@InstituteId";
+                                AND InstituteId=@InstituteId and SessionId = @SessionId";
 
             cmd.Parameters.AddWithValue("@StreamName", model.StreamName);
             cmd.Parameters.AddWithValue("@StreamId", model.StreamId);
             cmd.Parameters.AddWithValue("@InstituteId", model.InstituteId);
+            cmd.Parameters.AddWithValue("@SessionId", model.SessionId);
 
             dl.ExecuteCMD(cmd);
         }
 
         // ================= DELETE =================
-        public void DeleteStream(int streamId, int instituteId)
+        public bool DeleteStream(int streamId, int instituteId, out string message)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandText = @"DELETE FROM Streams
-                                WHERE StreamId=@Id
-                                AND InstituteId=@InstituteId";
+            try
+            {
+                SqlCommand cmd = new SqlCommand();
+                cmd.CommandText = @"DELETE FROM Streams
+                            WHERE StreamId=@Id
+                            AND InstituteId=@InstituteId";
 
-            cmd.Parameters.AddWithValue("@Id", streamId);
-            cmd.Parameters.AddWithValue("@InstituteId", instituteId);
+                cmd.Parameters.AddWithValue("@Id", streamId);
+                cmd.Parameters.AddWithValue("@InstituteId", instituteId);
 
-            dl.ExecuteCMD(cmd);
+                dl.ExecuteCMD(cmd);
+
+                message = "Stream deleted successfully.";
+                return true;
+            }
+            catch (SqlException ex)
+            {
+                // FK constraint error number = 547
+                if (ex.Number == 547)
+                {
+                    message = "This stream is already used. You can deactivate it instead.";
+                    return false;
+                }
+
+                throw; // other errors
+            }
         }
 
         // ================= TOGGLE STATUS =================

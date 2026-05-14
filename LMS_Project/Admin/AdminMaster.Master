@@ -288,7 +288,7 @@ body {
         left: 0;
     }
 
-     prevent layout shift 
+/*     prevent layout shift */
     .content-wrapper {
         margin-left: 0 !important;
     }
@@ -427,16 +427,18 @@ body {
                 <li><a runat="server" href="~/Admin/Dashboards/MonthlyAnalyticsDashboard.aspx" class="sidebar-link">Monthly Analytics Dashboard</a></li>
                 <li><a runat="server" href="~/Admin/Dashboards/Streamwisedashboard.aspx" class="sidebar-link">Streamwise Dashboard</a></li>
                 <li><a runat="server" href="~/Admin/Dashboards/CourseWiseDashboard.aspx" class="sidebar-link">Coursewise Dashboard</a></li>
-                <li><a runat="server" href="~/Admin/Dashboards/Studentmanagementdashboard.aspx" class="sidebar-link">Student Management Dashboard</a></li>
-                <li><a runat="server" href="~/Admin/Dashboards/TeacherManagementDashboard.aspx" class="sidebar-link">Teacher Management Dashboard</a></li>
-                <li><a runat="server" href="~/Admin/Dashboards/AttendanceAnalyticsDashboard.aspx" class="sidebar-link">Attendance Analytics Dashboard</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/Studentmanagementdashboard.aspx" class="sidebar-link">Student Management</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/TeacherManagementDashboard.aspx" class="sidebar-link">Teacher Management</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/AttendanceAnalyticsDashboard.aspx" class="sidebar-link">Attendance Analytics</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/AcademicAnalysisDashboard.aspx" class="sidebar-link">Academic Analysis</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/AIInsightsDashboard.aspx" class="sidebar-link">AI Insights</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/EventsCalendarDashboard.aspx" class="sidebar-link">Events & Calendar</a></li>
+                <li><a runat="server" href="~/Admin/Dashboards/SystemUsageDashboard.aspx" class="sidebar-link">System Usage</a></li>                
+                <li><a runat="server" href="~/Admin/Dashboards/CommunicationSupportDashboard.aspx" class="sidebar-link">Communication & Support</a></li>                
+
                 
-                <%--<li><a href="Dashboard.aspx" class="sidebar-link">Dashboard1</a></li>
-                <li><a href="AdminAcademicAnalytics.aspx" class="sidebar-link">Dashboard2</a></li>
-                <li><a href="EngagementAnalytics.aspx" class="sidebar-link">Dashboard3</a></li>
-                <li><a href="AdminControlPanel.aspx" class="sidebar-link">Dashboard4</a></li>
-                <li><a href="AttendanceDashboard.aspx" class="sidebar-link">AttendanceDashboard</a></li>
-                --%>
+                <%--<li><a href="Dashboard.aspx" class="sidebar-link">Dashboard1</a></li> --%>         
+                
                 
             </ul>
         </li>
@@ -609,9 +611,9 @@ body {
 
     <!-- RIGHT -->
     <div class="header-right">
-        <a href="AdminHelp.aspx"><i class="far fa-message text-white"></i></a>
-        <a href="AdminCalendar.aspx"><i class="far fa-calendar-alt text-white"></i></a>
-        <a href="#"><i class="far fa-bell text-white"></i></a>
+        <a runat="server" href="~/Admin/AdminHelp.aspx"><i class="far fa-message text-white"></i></a>
+        <a runat="server" href="~/Admin/AdminCalendar.aspx"><i class="far fa-calendar-alt text-white"></i></a>
+        <a runat="server" href="~/Admin/Notifications.aspx"><i class="far fa-bell text-white"></i></a>
 
         <div class="dropdown">
             <a href="#" data-bs-toggle="dropdown" class="d-flex align-items-center">

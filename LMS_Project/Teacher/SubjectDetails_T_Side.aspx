@@ -1,9 +1,8 @@
-﻿<%@ Page Title="Subject Details" Language="C#" MasterPageFile="~/Teacher/TeacherMaster.master" AutoEventWireup="true" CodeBehind="SubjectDetails_T_Side.aspx.cs" Inherits="LMS_Project.Teacher.SubjectDetails_T_Side" %>
+﻿<%@ Page Title="Subject Details" Language="C#" MasterPageFile="~/Teacher/TeacherMaster.master" AutoEventWireup="true" CodeBehind="SubjectDetails_T_Side.aspx.cs" Inherits="LMS_Project.Teacher.SubjectDetails" %>
 
 <asp:Content ID="bodyContent" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
-
     <asp:HiddenField ID="hfSubjectId" runat="server" />
-    <asp:HiddenField ID="hfChapterId" runat="server" />
+<asp:HiddenField ID="hfChapterId" runat="server" />
 <asp:Label ID="lblMsg" runat="server" CssClass="alert d-block mt-3" Visible="false"></asp:Label>
 
     <div class="d-flex align-items-center mb-4">
@@ -221,17 +220,35 @@
                                             </asp:Repeater>
                                         </div>
 
-                                        <div class="tab-pane fade" id="in<%# Eval("ChapterId") %>">
-                                            <h6 class="text-success border-bottom pb-2"><i class="fa-solid fa-file-pdf me-2"></i>Learning Materials</h6>
-                                            <asp:Repeater ID="rptMaterials" runat="server">
-                                                <ItemTemplate>
-                                                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
-                                                        <span><i class="fa-solid fa-file-lines me-2"></i><%# Eval("Title") %> (<%# Eval("FileType") %>)</span>
-                                                        <a href='MaterialPlayer.aspx?MaterialId=<%# Eval("MaterialId") %>' class="btn btn-outline-success btn-sm">View</a>
-                                                    </div>
-                                                </ItemTemplate>
-                                            </asp:Repeater>
-                                        </div>
+                                       <div class="tab-pane fade" id="in<%# Eval("ChapterId") %>">
+    <h6 class="text-success border-bottom pb-2">
+        <i class="fa-solid fa-file-pdf me-2"></i>Learning Materials
+    </h6>
+    <asp:Repeater ID="rptMaterials" runat="server">
+        <ItemTemplate>
+            <div class="d-flex justify-content-between align-items-center p-2 border-bottom hover-bg">
+                <div class="d-flex align-items-center gap-2">
+                    <span><%# GetMaterialIcon(Eval("FileType").ToString()) %></span>
+                    <div>
+                        <div class="fw-semibold" style="font-size:.9rem;"><%# Eval("Title") %></div>
+                        <small class="text-muted text-uppercase"><%# Eval("FileType") %></small>
+                    </div>
+                </div>
+                <a href='<%# GetMaterialUrl(Eval("FilePath")) %>'
+                   target="_blank"
+                   class="btn btn-outline-success btn-sm">
+                    <i class="fa-solid fa-eye me-1"></i>View
+                </a>
+            </div>
+        </ItemTemplate>
+    </asp:Repeater>
+    <asp:Panel ID="pnlNoMaterials" runat="server" Visible="false">
+        <div class="text-center text-muted py-3" style="font-size:13px;">
+            <i class="fa-solid fa-file-circle-xmark fa-lg d-block mb-2"></i>
+            No materials uploaded yet.
+        </div>
+    </asp:Panel>
+</div>
                                     </div>
                                 </div>
                             </div>

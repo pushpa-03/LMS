@@ -1,9 +1,10 @@
-﻿using System;
+﻿using LearningManagementSystem.BL;
+using LearningManagementSystem.GC;
+using System;
 using System.Data;
+using System.Data.SqlClient;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using LearningManagementSystem.BL;
-using LearningManagementSystem.GC;
 
 namespace LearningManagementSystem.Admin
 {
@@ -11,43 +12,21 @@ namespace LearningManagementSystem.Admin
     {
         AcademicSetupBL bl = new AcademicSetupBL();
 
-        int SocietyId => Convert.ToInt32(Session["SocietyId"]);
-        int InstituteId => Convert.ToInt32(Session["InstituteId"]);
+        private bool IsSuperAdmin()
+        {
+            return Session["Role"]?.ToString() == "SuperAdmin";
+        }
 
         protected void Page_Load(object sender, EventArgs e)
-        {
-            if (Session["InstituteId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
-
-
-
+        { 
             if (!IsPostBack)
             {
                 BindAll();
             }
-        }
+        }       
 
-        int SessionId => Convert.ToInt32(
-    Session["CurrentSessionId"] ?? SetDefaultSessionAndReturn()
-);
 
-        private int SetDefaultSessionAndReturn()
-        {
-            AcademicSessionBL bl = new AcademicSessionBL();
-            DataTable dt = bl.GetCurrentSession(InstituteId);
-
-            if (dt.Rows.Count > 0)
-            {
-                Session["CurrentSessionId"] = dt.Rows[0]["SessionId"];
-                Session["SessionName"] = dt.Rows[0]["SessionName"];
-                return Convert.ToInt32(dt.Rows[0]["SessionId"]);
-            }
-
-            return 0;
-        }
+       
         private void BindAll()
         {
             DataTable dtLevel = bl.GetData("Level", InstituteId,SessionId);
@@ -71,6 +50,12 @@ namespace LearningManagementSystem.Admin
 
         protected void PrepareCreate_Click(object sender, EventArgs e)
         {
+            if (IsSuperAdmin())
+            {
+                ShowToast("warning", "You have view-only access.");
+                return;
+            }
+
             txtName.Text = "";
             hfEntryId.Value = "";
             hfEntryType.Value = (sender as LinkButton).CommandArgument;
@@ -85,55 +70,90 @@ namespace LearningManagementSystem.Admin
             string type = args[0];
             int id = Convert.ToInt32(args[1]);
 
-            if (e.CommandName == "EditRow")
+            if (IsSuperAdmin())
             {
-                hfEntryType.Value = type;
-                hfEntryId.Value = id.ToString();
-
-                DataTable dt = bl.GetById(type, id, InstituteId);
-                if (dt.Rows.Count > 0)
-                    txtName.Text = dt.Rows[0][0].ToString();
-
-                ScriptManager.RegisterStartupScript(this, GetType(),
-                    "pop", $"showSetupModal('Edit {type}');", true);
+                ShowToast("warning", "You have view-only access.");
+                return;
             }
-            else if (e.CommandName == "DeleteRow")
-            {
-                bl.Delete(type, id, InstituteId);
-                BindAll();
 
-                lblMsg.Text = $"{type} deleted successfully!";
-                lblMsg.CssClass = "alert alert-danger";
+            try
+            {
+                if (e.CommandName == "EditRow")
+                {
+                    hfEntryType.Value = type;
+                    hfEntryId.Value = id.ToString();
+
+                    DataTable dt = bl.GetById(type, id, InstituteId, SessionId);
+
+                    if (dt.Rows.Count > 0)
+                        txtName.Text = dt.Rows[0][0].ToString();
+
+                    ScriptManager.RegisterStartupScript(this, GetType(),
+                        "pop", $"showSetupModal('Edit {type}');", true);
+                }
+                else if (e.CommandName == "DeleteRow")
+                {
+                    bl.Delete(type, id, InstituteId, SessionId);
+                    BindAll();
+
+                    ShowToast("success", $"{type} deleted successfully!");
+                }
+            }
+            catch (SqlException ex)
+            {
+                if (ex.Number == 547) // FK constraint
+                {
+                    ShowToast("error", $"{type} is used in another table. You can deactivate it instead.");
+                }
+                else
+                {
+                    ShowToast("error", "Something went wrong.");
+                }
+            }
+        }
+        protected void btnSave_Click(object sender, EventArgs e)
+        {
+            if (IsSuperAdmin())
+            {
+                ShowToast("warning", "You have view-only access.");
+                return;
+            }
+
+            try
+            {
+                AcademicSetupGC obj = new AcademicSetupGC
+                {
+                    Id = string.IsNullOrEmpty(hfEntryId.Value) ? 0 : Convert.ToInt32(hfEntryId.Value),
+                    SocietyId = SocietyId,
+                    InstituteId = InstituteId,
+                    SessionId = SessionId,
+                    Name = txtName.Text.Trim(),
+                    Type = hfEntryType.Value
+                };
+
+                if (obj.Id == 0)
+                {
+                    bl.Insert(obj);
+                    ShowToast("success", "Saved successfully!");
+                }
+                else
+                {
+                    bl.Update(obj);
+                    ShowToast("info", "Updated successfully!");
+                }
+
+                BindAll();
+            }
+            catch
+            {
+                ShowToast("error", "Operation failed.");
             }
         }
 
-        protected void btnSave_Click(object sender, EventArgs e)
+        private void ShowToast(string type, string message)
         {
-            AcademicSetupGC obj = new AcademicSetupGC
-            {
-                Id = string.IsNullOrEmpty(hfEntryId.Value) ? 0 : Convert.ToInt32(hfEntryId.Value),
-                SocietyId = SocietyId,
-                InstituteId = InstituteId,
-                SessionId = SessionId, // 🔥 IMPORTANT
-
-                Name = txtName.Text.Trim(),
-                Type = hfEntryType.Value
-            };
-
-            if (obj.Id == 0)
-                {
-                    bl.Insert(obj);
-                    lblMsg.Text = "Saved successfully!";
-                    lblMsg.CssClass = "alert alert-success";
-                }
-            else
-                bl.Update(obj);
-
-            BindAll();
-
-            txtName.Text = "";
-            hfEntryId.Value = "";
-
+            ScriptManager.RegisterStartupScript(this, GetType(),
+                "toast", $"showToast('{type}','{message}');", true);
         }
     }
 }

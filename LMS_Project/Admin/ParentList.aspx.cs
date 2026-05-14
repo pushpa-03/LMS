@@ -1,15 +1,18 @@
-﻿using System;
+﻿using LearningManagementSystem.BL;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web.UI;
+//using LearningManagementSystem.BL;
+using LearningManagementSystem.GC;
 
 namespace LearningManagementSystem.Admin
 {
     public partial class ParentList : BasePage
     {
-        ParentBL bl = new ParentBL();
+        private readonly AddParentBL bl = new AddParentBL();
 
         public string CurrentFilter
         {

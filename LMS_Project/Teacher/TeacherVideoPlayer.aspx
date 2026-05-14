@@ -314,9 +314,9 @@
 
                     $('#commentContainer').html(h);
                     $('#<%= lblCommentsCount.ClientID %>').text(data.length);
+                }
+            });
         }
-    });
-}
 
         function takeShot() {
             let c = document.createElement("canvas");

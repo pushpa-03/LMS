@@ -1,13 +1,15 @@
-﻿using System;
+﻿using LearningManagementSystem.BL;
+using System;
 using System.Data;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+
 
 namespace LearningManagementSystem.Admin
 {
     public partial class TeacherList : BasePage
     {
-        TeacherBL bl = new TeacherBL();
+        AddTeacherBL bl = new AddTeacherBL();
 
         protected void Page_Load(object sender, EventArgs e)
         {

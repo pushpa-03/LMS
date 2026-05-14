@@ -3,6 +3,7 @@ using LearningManagementSystem.GC;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -11,7 +12,7 @@ namespace LearningManagementSystem.Admin
     public partial class AddCourse : BasePage
     {
         CourseBL bl = new CourseBL();
-        private bool IsSuperAdmin => Session["RoleName"]?.ToString() == "SuperAdmin";
+        public bool IsSuperAdmin => Session["Role"]?.ToString() == "SuperAdmin";
 
 
         protected void Page_Load(object sender, EventArgs e)
@@ -53,8 +54,14 @@ namespace LearningManagementSystem.Admin
             {
                 string search = txtSearch.Value.ToLower();
 
-                var rows = dt.Select($"CourseName LIKE '%{search}%' OR CourseCode LIKE '%{search}%'");
-                dt = SafeCopy(rows, dt);
+                //var rows = dt.Select($"CourseName LIKE '%{search}%' OR CourseCode LIKE '%{search}%'");
+                //dt = SafeCopy(rows, dt);
+
+                var filtered = dt.AsEnumerable()
+                .Where(r => r["CourseName"].ToString().ToLower().Contains(search)
+                         || r["CourseCode"].ToString().ToLower().Contains(search));
+
+                 dt = filtered.Any() ? filtered.CopyToDataTable() : dt.Clone();
             }
 
 
@@ -114,6 +121,18 @@ namespace LearningManagementSystem.Admin
                 return;
             }
 
+            if (!IsValidCourseName(txtCourseName.Text))
+            {
+                ShowMsg("Course name must start with letter and no special characters.", false);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(txtCourseCode.Text) && !IsValidCourseCode(txtCourseCode.Text))
+            {
+                ShowMsg("Course code must contain only letters and numbers.", false);
+                return;
+            }
+
             CourseGC c = new CourseGC
             {
                 SocietyId = Convert.ToInt32(Session["SocietyId"]),
@@ -132,6 +151,10 @@ namespace LearningManagementSystem.Admin
 
             bl.Insert(c);
 
+            //LoadActivity method implemented in BaseBL.cs page
+            LogActivity(UserId, SocietyId, InstituteId, SessionId,
+                "Course Created: " + c.CourseName, 0);
+
             txtCourseName.Text = "";
             txtCourseCode.Text = "";
             ddlStream.SelectedIndex = 0;
@@ -143,6 +166,7 @@ namespace LearningManagementSystem.Admin
         // ================= GRID COMMAND =================
         protected void gvCourses_RowCommand(object sender, GridViewCommandEventArgs e)
         {
+
             if (e.CommandArgument == null || !int.TryParse(e.CommandArgument.ToString(), out int id))
             {
                 ShowMsg("Invalid course.", false);
@@ -183,34 +207,35 @@ namespace LearningManagementSystem.Admin
                 }
 
                 bl.Toggle(id, InstituteId, SessionId);
+
+                //LoadActivity method implemented in BaseBL.cs page
+                LogActivity(UserId, SocietyId, InstituteId, SessionId,
+                    "Course Status Changed", id);
+
                 LoadCourses();
                 ShowMsg("Status Changes successfully.", true);
             }
             else if (e.CommandName == "DeleteRow")
             {
-                try
-                {
-                    if (IsSuperAdmin)
-                    {
-                        ShowMsg("SuperAdmin has view-only access.", false);
-                        return;
-                    }
 
-                    bl.Delete(id, InstituteId, SessionId);
-                    LoadCourses();
-                    ShowMsg("Course deleted successfully.", true);
-                }
-                catch (Exception ex)
+                if (IsSuperAdmin)
                 {
-                    if (ex.InnerException != null && ex.InnerException.Message.Contains("FOREIGN KEY"))
-                    {
-                        ShowMsg("Course is used in other modules. You can't delete it. Please inactive it.", false);
-                    }
-                    else
-                    {
-                        ShowMsg("Something went wrong.", false);
-                    }
+                    ShowMsg("SuperAdmin has view-only access.", false);
+                    return;
                 }
+
+                string msg;
+                bool isDeleted = bl.Delete(id, InstituteId, SessionId, out msg);
+
+                if (isDeleted)
+                {
+                    //LoadActivity method implemented in BaseBL.cs page
+                    LogActivity(UserId, SocietyId, InstituteId, SessionId,
+                        "Course Deleted", id);
+                }
+                LoadStreams();
+                ShowMsg(msg, isDeleted);
+
             }
         }
 
@@ -218,14 +243,11 @@ namespace LearningManagementSystem.Admin
         {
             if (IsSuperAdmin && e.Row.RowType == DataControlRowType.DataRow)
             {
-                foreach (Control c in e.Row.Cells[2].Controls)
-                {
-                    if (c is LinkButton btn)
-                    {
-                        btn.Enabled = false;
-                        btn.CssClass += " disabled";
-                    }
-                }
+                e.Row.Cells[2].Controls.Clear(); // ❌ remove buttons completely
+
+                Literal l = new Literal();
+                l.Text = "<span class='text-muted'>View Only</span>";
+                e.Row.Cells[2].Controls.Add(l);
             }
         }
 
@@ -261,6 +283,18 @@ namespace LearningManagementSystem.Admin
                 return;
             }
 
+            if (!IsValidCourseName(txtCourseNameEdit.Text))
+            {
+                ShowMsg("Invalid course name.", false);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(txtCourseCodeEdit.Text) && !IsValidCourseCode(txtCourseCodeEdit.Text))
+            {
+                ShowMsg("Invalid course code.", false);
+                return;
+            }
+
             CourseGC c = new CourseGC
             {
                 CourseId = Convert.ToInt32(hfCourseId.Value),
@@ -281,6 +315,10 @@ namespace LearningManagementSystem.Admin
             }
 
             bl.Update(c);
+
+            //LoadActivity method implemented in BaseBL.cs page
+            LogActivity(UserId, SocietyId, InstituteId, SessionId,
+                "Course Updated: " + c.CourseName, c.CourseId);
 
             LoadCourses();
             ShowMsg("Course updated successfully.", true);
@@ -313,68 +351,17 @@ namespace LearningManagementSystem.Admin
             }
         }
 
-        protected void ddlFromSession_SelectedIndexChanged(object sender, EventArgs e)
+        private bool IsValidCourseName(string name)
         {
-            int sessionId = Convert.ToInt32(ddlFromSession.SelectedValue);
-
-            gvMappingCourses.DataSource = bl.GetCoursesForMapping(InstituteId, sessionId);
-            gvMappingCourses.DataBind();
+            return System.Text.RegularExpressions.Regex
+                .IsMatch(name, @"^[A-Za-z][A-Za-z0-9 ]*$");
         }
 
-        protected void btnCopyAll_Click(object sender, EventArgs e)
+        private bool IsValidCourseCode(string code)
         {
-            int fromSession = Convert.ToInt32(ddlFromSession.SelectedValue);
-            int toSession = Convert.ToInt32(ddlToSession.SelectedValue);
-
-            bl.CopyAllCoursesToNextSession(InstituteId, fromSession);
-
-            bl.LogActivity(
-                Convert.ToInt32(Session["UserId"]),
-                Convert.ToInt32(Session["SocietyId"]),
-                InstituteId,
-                toSession,
-                "Copied ALL courses to new session"
-            );
-
-            ShowMsg("All courses copied successfully!", true);
+            return System.Text.RegularExpressions.Regex
+                .IsMatch(code, @"^[A-Za-z0-9]+$");
         }
-
-        protected void btnCopySelected_Click(object sender, EventArgs e)
-        {
-            List<int> selected = new List<int>();
-
-            foreach (GridViewRow row in gvMappingCourses.Rows)
-            {
-                CheckBox chk = (CheckBox)row.FindControl("chkSelect");
-                HiddenField hf = (HiddenField)row.FindControl("hfCourseId");
-
-                if (chk.Checked)
-                    selected.Add(Convert.ToInt32(hf.Value));
-            }
-
-            if (selected.Count == 0)
-            {
-                ShowMsg("Select at least one course.", false);
-                return;
-            }
-
-            int fromSession = Convert.ToInt32(ddlFromSession.SelectedValue);
-            int toSession = Convert.ToInt32(ddlToSession.SelectedValue);
-
-            bl.CopySelectedCourses(selected, InstituteId, fromSession, toSession);
-
-            bl.LogActivity(
-                Convert.ToInt32(Session["UserId"]),
-                Convert.ToInt32(Session["SocietyId"]),
-                InstituteId,
-                toSession,
-                $"Copied {selected.Count} selected courses"
-            );
-
-            ShowMsg("Selected courses copied successfully!", true);
-        }
-
-
 
         // ================= MESSAGE =================
         private void ShowMsg(string msg, bool success)

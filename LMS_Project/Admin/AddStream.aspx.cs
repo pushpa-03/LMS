@@ -8,19 +8,9 @@ using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
-    public partial class AddStream : System.Web.UI.Page
+    public partial class AddStream : BasePage
     {
-        StreamBL bl = new StreamBL();
-
-        private int CurrentInstituteId
-        {
-            get { return Convert.ToInt32(Session["InstituteId"]); }
-        }
-
-        private int CurrentSocietyId
-        {
-            get { return Convert.ToInt32(Session["SocietyId"]); }
-        }
+        StreamBL bl = new StreamBL();       
 
         private string CurrentFilter
         {
@@ -30,26 +20,11 @@ namespace LearningManagementSystem.Admin
 
         private bool IsSuperAdmin
         {
-            get { return Session["RoleName"]?.ToString() == "SuperAdmin"; }
+            get { return Session["Role"]?.ToString() == "SuperAdmin"; }
         }
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["UserId"] == null)
-            {
-                Response.Redirect("~/Default.aspx");
-                return;
-            }
-
-            if (Session["InstituteId"] == null)
-                return;
-
-            // ✅ SET DEFAULT SESSION IF NOT SET
-            if (Session["CurrentSessionId"] == null)
-            {
-                SetDefaultSession();
-            }
-
             if (!IsPostBack)
             {
                 LoadStreams();
@@ -60,25 +35,13 @@ namespace LearningManagementSystem.Admin
             }
         }
 
-        private void SetDefaultSession()
-        {
-            AcademicSessionBL bl = new AcademicSessionBL();
-
-            DataTable dt = bl.GetCurrentSession(CurrentInstituteId);
-
-            if (dt != null && dt.Rows.Count > 0)
-            {
-                Session["CurrentSessionId"] = dt.Rows[0]["SessionId"];
-                Session["SessionName"] = dt.Rows[0]["SessionName"];
-            }
-        }
 
         // ================= LOAD =================
         void LoadStreams()
         {
-            int sessionId = Convert.ToInt32(Session["CurrentSessionId"]);
+            int sessionId = SessionId;
 
-            DataTable dt = bl.GetStreams(CurrentInstituteId, sessionId, CurrentFilter);
+            DataTable dt = bl.GetStreams(InstituteId, sessionId, CurrentFilter);
 
             // 🔍 SEARCH FILTER
             if (!string.IsNullOrWhiteSpace(txtSearch.Value))
@@ -115,17 +78,23 @@ namespace LearningManagementSystem.Admin
                 return;
             }
 
-            if (bl.IsStreamExists(CurrentInstituteId, txtStreamName.Text.Trim()))
+            if (bl.IsStreamExists(InstituteId, txtStreamName.Text.Trim()))
             {
                 ShowMsg("Stream already exists (case-insensitive).", false);
                 return;
             }
 
+            if (!System.Text.RegularExpressions.Regex.IsMatch(txtStreamName.Text.Trim(), @"^[A-Za-z\s]+$"))
+            {
+                ShowMsg("Only alphabets allowed. Numbers and special characters are not permitted.", false);
+                return;
+            }
+
             StreamGC model = new StreamGC
             {
-                SocietyId = CurrentSocietyId,
-                InstituteId = CurrentInstituteId,
-                SessionId = Convert.ToInt32(Session["CurrentSessionId"]),
+                SocietyId = SocietyId,
+                InstituteId = InstituteId,
+                SessionId = SessionId,
                 StreamName = txtStreamName.Text.Trim()
             };
 
@@ -150,7 +119,7 @@ namespace LearningManagementSystem.Admin
 
             if (e.CommandName == "EditRow")
             {
-                DataTable dt = bl.GetStreamById(id, CurrentInstituteId);
+                DataTable dt = bl.GetStreamById(id, InstituteId);
 
                 if (dt.Rows.Count > 0)
                 {
@@ -164,15 +133,17 @@ namespace LearningManagementSystem.Admin
             }
             else if (e.CommandName == "Toggle")
             {
-                bl.ToggleStreamStatus(id, CurrentInstituteId);
+                bl.ToggleStreamStatus(id, InstituteId);
                 LoadStreams();
                 ShowMsg("Status updated.", true);
             }
             else if (e.CommandName == "DeleteRow")
             {
-                bl.DeleteStream(id, CurrentInstituteId);
+                string msg;
+                bool isDeleted = bl.DeleteStream(id, InstituteId, out msg);
+
                 LoadStreams();
-                ShowMsg("Stream deleted.", true);
+                ShowMsg(msg, isDeleted);
             }
         }
 
@@ -206,17 +177,24 @@ namespace LearningManagementSystem.Admin
                 return;
             }
 
-            if (bl.IsStreamExists(CurrentInstituteId, txtStreamNameEdit.Text,
+            if (bl.IsStreamExists(InstituteId, txtStreamNameEdit.Text,
                                   Convert.ToInt32(hfStreamId.Value)))
             {
                 ShowMsg("Duplicate stream not allowed.", false);
                 return;
             }
 
+            if (!System.Text.RegularExpressions.Regex.IsMatch(txtStreamNameEdit.Text.Trim(), @"^[A-Za-z\s]+$"))
+            {
+                ShowMsg("Only alphabets allowed. Numbers and special characters are not permitted.", false);
+                return;
+            }
+
             StreamGC model = new StreamGC
             {
                 StreamId = Convert.ToInt32(hfStreamId.Value),
-                InstituteId = CurrentInstituteId,
+                InstituteId = InstituteId,
+                SessionId = SessionId, 
                 StreamName = txtStreamNameEdit.Text.Trim()
             };
 

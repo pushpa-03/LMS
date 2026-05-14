@@ -11,7 +11,7 @@ namespace LMS_Project.Teacher
 {
 
 
-    public partial class SubjectDetails_T_Side
+    public partial class SubjectDetails
     {
 
         /// <summary>

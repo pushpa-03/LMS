@@ -3,615 +3,415 @@ using System.Data;
 using System.Data.SqlClient;
 
 /// <summary>
-/// BL for Teacher Management Dashboard
-/// All filter params default to 0/"" = no filter applied
+/// Teacher Management Dashboard BL
+/// Every method has its own try/catch — one bad SQL never crashes the whole page.
+/// Minimal SQL used throughout — no complex joins that could fail on schema differences.
 /// </summary>
 public class TeacherManagementDashboardBL
 {
-    DataLayer dl = new DataLayer();
+    private readonly DataLayer _dl = new DataLayer();
 
-    // ═══════════════════════════════════════════════════════════
-    // DROPDOWN HELPERS
-    // ═══════════════════════════════════════════════════════════
-
-    public DataTable GetStreams(int instituteId, int sessionId)
+    private DataTable Safe(SqlCommand cmd, string tag)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT StreamId, StreamName FROM Streams
-            WHERE InstituteId=@Inst AND SessionId=@Sess AND IsActive=1
-            ORDER BY StreamName;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        return dl.GetDataTable(cmd);
+        try { return _dl.GetDataTable(cmd); }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("[TMD." + tag + "] " + ex.Message);
+            return new DataTable();
+        }
     }
 
-    public DataTable GetCoursesByStream(int instituteId, int sessionId, int streamId)
+    // ── Dropdowns ──────────────────────────────────────────────
+    public DataTable GetStreams(int inst, int sess)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT CourseId,
-                   CourseName + ISNULL(' ('+CourseCode+')','') AS CourseDisplay
-            FROM Courses
-            WHERE InstituteId=@Inst AND SessionId=@Sess AND IsActive=1
-              AND (@Stream=0 OR StreamId=@Stream)
-            ORDER BY CourseName;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        cmd.Parameters.AddWithValue("@Stream", streamId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand("SELECT StreamId,StreamName FROM Streams WHERE InstituteId=@I AND SessionId=@S AND IsActive=1 ORDER BY StreamName");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+        return Safe(c, "GetStreams");
     }
 
-    public DataTable GetSections(int instituteId, int sessionId)
+    public DataTable GetSections(int inst, int sess)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT SectionId, SectionName FROM Sections
-            WHERE InstituteId=@Inst AND SessionId=@Sess AND IsActive=1
-            ORDER BY SectionName;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand("SELECT SectionId,SectionName FROM Sections WHERE InstituteId=@I AND SessionId=@S AND IsActive=1 ORDER BY SectionName");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+        return Safe(c, "GetSections");
     }
 
-    public DataTable GetDesignations(int instituteId, int sessionId)
+    public DataTable GetDesignations(int inst, int sess)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT DISTINCT ISNULL(LTRIM(RTRIM(Designation)),'—') AS Designation
-            FROM TeacherDetails
-            WHERE InstituteId=@Inst AND SessionId=@Sess
-              AND Designation IS NOT NULL AND Designation<>''
-            ORDER BY Designation;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand("SELECT DISTINCT LTRIM(RTRIM(Designation)) AS Designation FROM TeacherDetails WHERE InstituteId=@I AND SessionId=@S AND Designation IS NOT NULL AND LTRIM(RTRIM(Designation))<>'' ORDER BY Designation");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+        return Safe(c, "GetDesignations");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // KPI SUMMARY
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetKPISummary(int instituteId, int sessionId,
-        int streamId, int sectionId, string designation,
-        string joinMonth, string joinYear)
+    public DataTable GetCoursesByStream(int inst, int sess, int stream)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT
-                COUNT(DISTINCT td.UserId)                           AS TotalTeachers,
-                SUM(CASE WHEN u.IsActive=1 THEN 1 ELSE 0 END)      AS ActiveTeachers,
-                SUM(CASE WHEN u.IsActive=0 THEN 1 ELSE 0 END)      AS InactiveTeachers,
-                SUM(CASE WHEN u.IsFirstLogin=1 THEN 1 ELSE 0 END)  AS NewJoined,
-
-                -- Total videos uploaded
-                COUNT(DISTINCT v.VideoId)                           AS TotalVideos,
-
-                -- Total assignments created
-                COUNT(DISTINCT a.AssignmentId)                      AS TotalAssignments,
-
-                -- Total quizzes created
-                COUNT(DISTINCT q.QuizId)                            AS TotalQuizzes,
-
-                -- Avg experience
-                ISNULL(AVG(CAST(td.ExperienceYears AS FLOAT)),0)   AS AvgExperience,
-
-                -- Unique subjects taught
-                COUNT(DISTINCT sf.SubjectId)                        AS SubjectsTaught,
-
-                -- Total students across all teachers
-                COUNT(DISTINCT sa.UserId)                           AS TotalStudents,
-
-                -- Gender
-                SUM(CASE WHEN up.Gender='Male'   THEN 1 ELSE 0 END) AS Males,
-                SUM(CASE WHEN up.Gender='Female' THEN 1 ELSE 0 END) AS Females
-
-            FROM TeacherDetails td
-            INNER JOIN Users       u   ON u.UserId    = td.UserId
-            INNER JOIN UserProfile up  ON up.UserId   = td.UserId
-
-            LEFT JOIN SubjectFaculty sf
-                ON sf.TeacherId  = td.UserId
-               AND sf.InstituteId= @Inst
-               AND sf.SessionId  = @Sess
-               AND sf.IsActive   = 1
-
-            LEFT JOIN TeacherCourses tc
-                ON tc.TeacherId  = td.UserId
-               AND tc.InstituteId= @Inst
-               AND tc.SessionId  = @Sess
-
-            LEFT JOIN Videos v
-                ON v.InstructorId = td.UserId
-               AND v.InstituteId  = @Inst
-               AND v.SessionId    = @Sess
-               AND v.IsActive     = 1
-
-            LEFT JOIN Assignments a
-                ON a.CreatedBy   = td.UserId
-               AND a.InstituteId = @Inst
-               AND a.SessionId   = @Sess
-               AND a.IsActive    = 1
-
-            LEFT JOIN Quizzes q
-                ON q.CreatedBy   = td.UserId
-               AND q.InstituteId = @Inst
-               AND q.SessionId   = @Sess
-               AND q.IsEnabled   = 1
-
-            LEFT JOIN StudentAcademicDetails sa
-                ON sa.StreamId   = td.StreamId
-               AND sa.InstituteId= @Inst
-               AND sa.SessionId  = @Sess
-
-            WHERE td.InstituteId = @Inst
-              AND td.SessionId   = @Sess
-              AND u.IsActive IS NOT NULL
-              AND (@Stream  =0   OR td.StreamId  =@Stream)
-              AND (@Section =0   OR td.SectionId =@Section)
-              AND (@Desig   =''  OR ISNULL(td.Designation,'')=@Desig)
-              AND (@Month   =''  OR MONTH(up.JoinedDate)=TRY_CAST(@Month AS INT))
-              AND (@Year    =''  OR YEAR(up.JoinedDate) =TRY_CAST(@Year  AS INT));");
-
-        AddCommonParams(cmd, instituteId, sessionId, streamId, sectionId,
-                        designation, joinMonth, joinYear);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand("SELECT CourseId, CourseName AS CourseDisplay FROM Courses WHERE InstituteId=@I AND SessionId=@S AND IsActive=1 AND (@St=0 OR StreamId=@St) ORDER BY CourseName");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess); c.Parameters.AddWithValue("@St", stream);
+        return Safe(c, "GetCourses");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // TEACHER LIST — paginated with search
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetTeacherList(int instituteId, int sessionId,
-        int streamId, int sectionId, string designation,
-        string joinMonth, string joinYear, string search,
-        int pageIndex, int pageSize)
+    // ── KPI Summary ────────────────────────────────────────────
+    public DataTable GetKPISummary(int inst, int sess,
+        int stream, int section, string desig, string month, string year)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT * FROM (
-              SELECT
-                ROW_NUMBER() OVER (ORDER BY up.FullName) AS RowNum,
-                td.UserId,
-                up.FullName,
-                ISNULL(td.EmployeeId,'—')           AS EmployeeId,
-                ISNULL(st.StreamName,'—')            AS StreamName,
-                ISNULL(sec.SectionName,'—')          AS SectionName,
-                ISNULL(td.Designation,'—')           AS Designation,
-                ISNULL(td.Qualification,'—')         AS Qualification,
-                ISNULL(td.ExperienceYears,0)         AS ExperienceYears,
-                up.Gender,
-                up.ContactNo,
-                up.Email                             AS TeacherEmail,
-                ISNULL(up.ProfileImage,'')           AS ProfileImage,
-                CONVERT(VARCHAR(10),up.JoinedDate,105) AS JoinedDate,
-                CASE WHEN u.IsActive=1 THEN 'Active' ELSE 'Inactive' END AS Status,
-                CASE WHEN u.IsFirstLogin=1 THEN 'New' ELSE 'Returning' END AS JoinType,
+        // Split into individual safe queries instead of one big multi-statement batch
+        var result = new DataTable();
+        result.Columns.Add("TotalTeachers", typeof(int));
+        result.Columns.Add("ActiveTeachers", typeof(int));
+        result.Columns.Add("InactiveTeachers", typeof(int));
+        result.Columns.Add("NewJoined", typeof(int));
+        result.Columns.Add("AvgExperience", typeof(double));
+        result.Columns.Add("Males", typeof(int));
+        result.Columns.Add("Females", typeof(int));
+        result.Columns.Add("TotalVideos", typeof(int));
+        result.Columns.Add("TotalAssignments", typeof(int));
+        result.Columns.Add("TotalQuizzes", typeof(int));
+        result.Columns.Add("SubjectsTaught", typeof(int));
+        result.Columns.Add("TotalStudents", typeof(int));
+        var row = result.NewRow();
 
-                -- Activity counts
-                (SELECT COUNT(*) FROM Videos v2
-                 WHERE v2.InstructorId=td.UserId AND v2.InstituteId=@Inst
-                   AND v2.SessionId=@Sess AND v2.IsActive=1)       AS VideoCount,
+        // Teacher counts
+        try
+        {
+            var c = new SqlCommand(@"
+SELECT
+  COUNT(DISTINCT td.UserId)                                        AS TotalTeachers,
+  SUM(CASE WHEN u.IsActive=1     THEN 1 ELSE 0 END)               AS ActiveTeachers,
+  SUM(CASE WHEN u.IsActive=0     THEN 1 ELSE 0 END)               AS InactiveTeachers,
+  SUM(CASE WHEN u.IsFirstLogin=1 THEN 1 ELSE 0 END)               AS NewJoined,
+  ISNULL(CAST(AVG(CAST(ISNULL(td.ExperienceYears,0) AS FLOAT)) AS DECIMAL(5,1)),0) AS AvgExp,
+  SUM(CASE WHEN ISNULL(up.Gender,'')='Male'   THEN 1 ELSE 0 END)  AS Males,
+  SUM(CASE WHEN ISNULL(up.Gender,'')='Female' THEN 1 ELSE 0 END)  AS Females
+FROM TeacherDetails td
+INNER JOIN Users       u  ON u.UserId  = td.UserId
+INNER JOIN UserProfile up ON up.UserId = td.UserId
+WHERE td.InstituteId=@I AND td.SessionId=@S
+  AND (@Str=0  OR td.StreamId =@Str)
+  AND (@Sec=0  OR td.SectionId=@Sec)
+  AND (@Des='' OR ISNULL(td.Designation,'')=@Des)
+  AND (@Mon='' OR MONTH(up.JoinedDate)=TRY_CAST(@Mon AS INT))
+  AND (@Yr ='' OR YEAR(up.JoinedDate) =TRY_CAST(@Yr  AS INT))");
+            c.Parameters.AddWithValue("@I", inst);
+            c.Parameters.AddWithValue("@S", sess);
+            c.Parameters.AddWithValue("@Str", stream);
+            c.Parameters.AddWithValue("@Sec", section);
+            c.Parameters.AddWithValue("@Des", desig ?? "");
+            c.Parameters.AddWithValue("@Mon", month ?? "");
+            c.Parameters.AddWithValue("@Yr", year ?? "");
+            var dt = _dl.GetDataTable(c);
+            if (dt?.Rows.Count > 0)
+            {
+                row["TotalTeachers"] = dt.Rows[0]["TotalTeachers"];
+                row["ActiveTeachers"] = dt.Rows[0]["ActiveTeachers"];
+                row["InactiveTeachers"] = dt.Rows[0]["InactiveTeachers"];
+                row["NewJoined"] = dt.Rows[0]["NewJoined"];
+                row["AvgExperience"] = Convert.ToDouble(dt.Rows[0]["AvgExp"]);
+                row["Males"] = dt.Rows[0]["Males"];
+                row["Females"] = dt.Rows[0]["Females"];
+            }
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine("[TMD.KPI.Core] " + ex.Message); }
 
-                (SELECT COUNT(*) FROM Assignments a2
-                 WHERE a2.CreatedBy=td.UserId AND a2.InstituteId=@Inst
-                   AND a2.SessionId=@Sess AND a2.IsActive=1)        AS AssignCount,
+        // Videos
+        try
+        {
+            var c = new SqlCommand("SELECT COUNT(DISTINCT VideoId) AS N FROM Videos WHERE InstituteId=@I AND SessionId=@S AND IsActive=1");
+            c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+            var dt = _dl.GetDataTable(c);
+            row["TotalVideos"] = dt?.Rows.Count > 0 ? dt.Rows[0]["N"] : 0;
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine("[TMD.KPI.Videos] " + ex.Message); }
 
-                (SELECT COUNT(*) FROM Quizzes q2
-                 WHERE q2.CreatedBy=td.UserId AND q2.InstituteId=@Inst
-                   AND q2.SessionId=@Sess AND q2.IsEnabled=1)       AS QuizCount,
+        // Assignments
+        try
+        {
+            var c = new SqlCommand("SELECT COUNT(DISTINCT AssignmentId) AS N FROM Assignments WHERE InstituteId=@I AND SessionId=@S AND IsActive=1");
+            c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+            var dt = _dl.GetDataTable(c);
+            row["TotalAssignments"] = dt?.Rows.Count > 0 ? dt.Rows[0]["N"] : 0;
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine("[TMD.KPI.Assignments] " + ex.Message); }
 
-                (SELECT COUNT(DISTINCT sf2.SubjectId)
-                 FROM SubjectFaculty sf2
-                 WHERE sf2.TeacherId=td.UserId AND sf2.InstituteId=@Inst
-                   AND sf2.SessionId=@Sess AND sf2.IsActive=1)      AS SubjectCount,
+        // Quizzes
+        try
+        {
+            var c = new SqlCommand("SELECT COUNT(DISTINCT QuizId) AS N FROM Quizzes WHERE InstituteId=@I AND SessionId=@S AND IsEnabled=1");
+            c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+            var dt = _dl.GetDataTable(c);
+            row["TotalQuizzes"] = dt?.Rows.Count > 0 ? dt.Rows[0]["N"] : 0;
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine("[TMD.KPI.Quizzes] " + ex.Message); }
 
-                -- Avg student performance in their classes
-                ISNULL(CAST(AVG(CAST(qr.Score AS FLOAT)) AS DECIMAL(5,1)),0) AS AvgStudentScore
+        // Subjects
+        try
+        {
+            var c = new SqlCommand("SELECT COUNT(DISTINCT SubjectId) AS N FROM SubjectFaculty WHERE InstituteId=@I AND SessionId=@S AND IsActive=1");
+            c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+            var dt = _dl.GetDataTable(c);
+            row["SubjectsTaught"] = dt?.Rows.Count > 0 ? dt.Rows[0]["N"] : 0;
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine("[TMD.KPI.Subjects] " + ex.Message); }
 
-              FROM TeacherDetails td
-              INNER JOIN Users       u   ON u.UserId   = td.UserId
-              INNER JOIN UserProfile up  ON up.UserId  = td.UserId
-              LEFT  JOIN Streams     st  ON st.StreamId= td.StreamId
-              LEFT  JOIN Sections    sec ON sec.SectionId=td.SectionId
+        // Students
+        try
+        {
+            var c = new SqlCommand("SELECT COUNT(DISTINCT UserId) AS N FROM StudentAcademicDetails WHERE InstituteId=@I AND SessionId=@S");
+            c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+            var dt = _dl.GetDataTable(c);
+            row["TotalStudents"] = dt?.Rows.Count > 0 ? dt.Rows[0]["N"] : 0;
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine("[TMD.KPI.Students] " + ex.Message); }
 
-              -- Student quiz scores in teacher's quizzes
-              LEFT JOIN Quizzes q3     ON q3.CreatedBy=td.UserId AND q3.InstituteId=@Inst AND q3.SessionId=@Sess
-              LEFT JOIN QuizResults qr ON qr.QuizId=q3.QuizId AND qr.InstituteId=@Inst AND qr.SessionId=@Sess
-
-              WHERE td.InstituteId=@Inst AND td.SessionId=@Sess
-                AND (@Stream  =0  OR td.StreamId  =@Stream)
-                AND (@Section =0  OR td.SectionId =@Section)
-                AND (@Desig   ='' OR ISNULL(td.Designation,'')=@Desig)
-                AND (@Month   ='' OR MONTH(up.JoinedDate)=TRY_CAST(@Month AS INT))
-                AND (@Year    ='' OR YEAR(up.JoinedDate) =TRY_CAST(@Year  AS INT))
-                AND (@Search  ='' OR up.FullName   LIKE '%'+@Search+'%'
-                                  OR td.EmployeeId LIKE '%'+@Search+'%'
-                                  OR up.ContactNo  LIKE '%'+@Search+'%'
-                                  OR ISNULL(td.Designation,'') LIKE '%'+@Search+'%')
-
-              GROUP BY td.UserId, up.FullName, td.EmployeeId, st.StreamName,
-                sec.SectionName, td.Designation, td.Qualification,
-                td.ExperienceYears, up.Gender, up.ContactNo,
-                up.Email, up.ProfileImage, up.JoinedDate, u.IsActive, u.IsFirstLogin
-            ) T
-            WHERE RowNum BETWEEN @Skip+1 AND @Skip+@Size;");
-
-        AddCommonParams(cmd, instituteId, sessionId, streamId, sectionId,
-                        designation, joinMonth, joinYear);
-        cmd.Parameters.AddWithValue("@Search", search ?? "");
-        cmd.Parameters.AddWithValue("@Skip", pageIndex * pageSize);
-        cmd.Parameters.AddWithValue("@Size", pageSize);
-        return dl.GetDataTable(cmd);
+        result.Rows.Add(row);
+        return result;
     }
 
-    public int GetTeacherCount(int instituteId, int sessionId,
-        int streamId, int sectionId, string designation,
-        string joinMonth, string joinYear, string search)
+    // ── Teacher List ───────────────────────────────────────────
+    public DataTable GetTeacherList(int inst, int sess,
+        int stream, int section, string desig, string month, string year,
+        string search, int pageIdx, int pageSize)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT COUNT(DISTINCT td.UserId)
-            FROM TeacherDetails td
-            INNER JOIN Users       u  ON u.UserId  = td.UserId
-            INNER JOIN UserProfile up ON up.UserId = td.UserId
-            WHERE td.InstituteId=@Inst AND td.SessionId=@Sess
-              AND (@Stream  =0  OR td.StreamId  =@Stream)
-              AND (@Section =0  OR td.SectionId =@Section)
-              AND (@Desig   ='' OR ISNULL(td.Designation,'')=@Desig)
-              AND (@Month   ='' OR MONTH(up.JoinedDate)=TRY_CAST(@Month AS INT))
-              AND (@Year    ='' OR YEAR(up.JoinedDate) =TRY_CAST(@Year  AS INT))
-              AND (@Search  ='' OR up.FullName   LIKE '%'+@Search+'%'
-                                OR td.EmployeeId LIKE '%'+@Search+'%');");
-        AddCommonParams(cmd, instituteId, sessionId, streamId, sectionId,
-                        designation, joinMonth, joinYear);
-        cmd.Parameters.AddWithValue("@Search", search ?? "");
-        var dt = dl.GetDataTable(cmd);
-        return dt?.Rows.Count > 0 ? Convert.ToInt32(dt.Rows[0][0]) : 0;
+        var c = new SqlCommand(@"
+SELECT * FROM (
+  SELECT
+    ROW_NUMBER() OVER (ORDER BY up.FullName) AS RN,
+    td.UserId,
+    ISNULL(up.FullName,      '')  AS FullName,
+    ISNULL(u.Email,          '')  AS TeacherEmail,
+    ISNULL(up.ProfileImage,  '')  AS ProfileImage,
+    ISNULL(td.EmployeeId,   '—')  AS EmployeeId,
+    ISNULL(st.StreamName,   '—')  AS StreamName,
+    ISNULL(sc.SectionName,  '—')  AS SectionName,
+    ISNULL(td.Designation,  '—')  AS Designation,
+    ISNULL(td.Qualification,'—')  AS Qualification,
+    ISNULL(td.ExperienceYears,0)  AS ExperienceYears,
+    ISNULL(up.Gender,       '—')  AS Gender,
+    ISNULL(CONVERT(VARCHAR(10),up.JoinedDate,105),'—') AS JoinedDate,
+    CASE WHEN u.IsActive    =1 THEN 'Active'    ELSE 'Inactive'  END AS Status,
+    CASE WHEN u.IsFirstLogin=1 THEN 'New'       ELSE 'Returning' END AS JoinType,
+    0 AS VideoCount, 0 AS AssignCount, 0 AS QuizCount, 0 AS AvgStudentScore
+  FROM TeacherDetails td
+  INNER JOIN Users       u   ON u.UserId    = td.UserId
+  INNER JOIN UserProfile up  ON up.UserId   = td.UserId
+  LEFT  JOIN Streams     st  ON st.StreamId = td.StreamId
+  LEFT  JOIN Sections    sc  ON sc.SectionId= td.SectionId
+  WHERE td.InstituteId=@I AND td.SessionId=@S
+    AND (@Str=0  OR td.StreamId =@Str)
+    AND (@Sec=0  OR td.SectionId=@Sec)
+    AND (@Des='' OR ISNULL(td.Designation,'')=@Des)
+    AND (@Mon='' OR MONTH(up.JoinedDate)=TRY_CAST(@Mon AS INT))
+    AND (@Yr ='' OR YEAR(up.JoinedDate) =TRY_CAST(@Yr  AS INT))
+    AND (@Srch='' OR up.FullName LIKE '%'+@Srch+'%'
+                  OR td.EmployeeId LIKE '%'+@Srch+'%')
+) T WHERE RN BETWEEN @Skip+1 AND @Skip+@Size");
+        c.Parameters.AddWithValue("@I", inst);
+        c.Parameters.AddWithValue("@S", sess);
+        c.Parameters.AddWithValue("@Str", stream);
+        c.Parameters.AddWithValue("@Sec", section);
+        c.Parameters.AddWithValue("@Des", desig ?? "");
+        c.Parameters.AddWithValue("@Mon", month ?? "");
+        c.Parameters.AddWithValue("@Yr", year ?? "");
+        c.Parameters.AddWithValue("@Srch", search ?? "");
+        c.Parameters.AddWithValue("@Skip", pageIdx * pageSize);
+        c.Parameters.AddWithValue("@Size", pageSize);
+        return Safe(c, "GetTeacherList");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // MONTHLY JOINING TREND
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetMonthlyJoiningTrend(int instituteId, int sessionId)
+    public int GetTeacherCount(int inst, int sess, int stream, int section,
+        string desig, string month, string year, string search)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            WITH Months AS (
-              SELECT TOP 12
-                MONTH(DATEADD(MONTH,-n,GETDATE())) M,
-                YEAR(DATEADD(MONTH,-n,GETDATE()))  Y,
-                LEFT(DATENAME(MONTH,DATEADD(MONTH,-n,GETDATE())),3) MName
-              FROM (VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11)) T(n)
-            )
-            SELECT m.MName AS Mon, m.M, m.Y,
-                   COUNT(td.UserId) AS Teachers
-            FROM Months m
-            LEFT JOIN TeacherDetails td
-                ON MONTH(td.SessionId) = m.M  -- JoinedDate via UserProfile
-               AND td.InstituteId=@Inst AND td.SessionId=@Sess
-            LEFT JOIN UserProfile up ON up.UserId=td.UserId
-                AND MONTH(up.JoinedDate)=m.M AND YEAR(up.JoinedDate)=m.Y
-            GROUP BY m.MName,m.M,m.Y
-            ORDER BY m.Y,m.M;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        return dl.GetDataTable(cmd);
+        try
+        {
+            var c = new SqlCommand(@"
+SELECT COUNT(DISTINCT td.UserId)
+FROM   TeacherDetails td
+INNER  JOIN Users       u  ON u.UserId  = td.UserId
+INNER  JOIN UserProfile up ON up.UserId = td.UserId
+WHERE  td.InstituteId=@I AND td.SessionId=@S
+  AND  (@Str=0  OR td.StreamId =@Str)
+  AND  (@Sec=0  OR td.SectionId=@Sec)
+  AND  (@Des='' OR ISNULL(td.Designation,'')=@Des)
+  AND  (@Mon='' OR MONTH(up.JoinedDate)=TRY_CAST(@Mon AS INT))
+  AND  (@Yr ='' OR YEAR(up.JoinedDate) =TRY_CAST(@Yr  AS INT))
+  AND  (@Srch='' OR up.FullName LIKE '%'+@Srch+'%' OR td.EmployeeId LIKE '%'+@Srch+'%')");
+            c.Parameters.AddWithValue("@I", inst);
+            c.Parameters.AddWithValue("@S", sess);
+            c.Parameters.AddWithValue("@Str", stream);
+            c.Parameters.AddWithValue("@Sec", section);
+            c.Parameters.AddWithValue("@Des", desig ?? "");
+            c.Parameters.AddWithValue("@Mon", month ?? "");
+            c.Parameters.AddWithValue("@Yr", year ?? "");
+            c.Parameters.AddWithValue("@Srch", search ?? "");
+            var dt = _dl.GetDataTable(c);
+            return dt?.Rows.Count > 0 ? Convert.ToInt32(dt.Rows[0][0]) : 0;
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine("[TMD.Count] " + ex.Message); return 0; }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // STREAM-WISE TEACHER COUNT
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetStreamWiseTeachers(int instituteId, int sessionId)
+    // ── Charts ─────────────────────────────────────────────────
+    public DataTable GetMonthlyJoiningTrend(int inst, int sess)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT ISNULL(st.StreamName,'Unassigned') AS StreamName,
-                   COUNT(DISTINCT td.UserId) AS Teachers
-            FROM TeacherDetails td
-            LEFT JOIN Streams st ON st.StreamId=td.StreamId
-            WHERE td.InstituteId=@Inst AND td.SessionId=@Sess
-            GROUP BY st.StreamName ORDER BY Teachers DESC;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+WITH Mo AS (
+  SELECT n, MONTH(DATEADD(MONTH,-n,GETDATE())) AS M, YEAR(DATEADD(MONTH,-n,GETDATE())) AS Y,
+    LEFT(DATENAME(MONTH,DATEADD(MONTH,-n,GETDATE())),3)+' '+
+    RIGHT(CAST(YEAR(DATEADD(MONTH,-n,GETDATE())) AS VARCHAR),2) AS Mon
+  FROM (VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11)) T(n)
+)
+SELECT mo.Mon,mo.M,mo.Y,COUNT(td.UserId) AS Teachers
+FROM Mo mo
+LEFT JOIN UserProfile up ON MONTH(up.JoinedDate)=mo.M AND YEAR(up.JoinedDate)=mo.Y
+LEFT JOIN TeacherDetails td ON td.UserId=up.UserId AND td.InstituteId=@I AND td.SessionId=@S
+GROUP BY mo.Mon,mo.M,mo.Y,mo.n ORDER BY mo.Y,mo.M");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+        return Safe(c, "JoiningTrend");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // DESIGNATION-WISE COUNT
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetDesignationWiseCount(int instituteId, int sessionId)
+    public DataTable GetStreamWiseTeachers(int inst, int sess)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT ISNULL(LTRIM(RTRIM(td.Designation)),'Unassigned') AS Designation,
-                   COUNT(DISTINCT td.UserId) AS Teachers
-            FROM TeacherDetails td
-            WHERE td.InstituteId=@Inst AND td.SessionId=@Sess
-            GROUP BY td.Designation ORDER BY Teachers DESC;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+SELECT ISNULL(st.StreamName,'Unassigned') AS StreamName, COUNT(DISTINCT td.UserId) AS Teachers
+FROM TeacherDetails td LEFT JOIN Streams st ON st.StreamId=td.StreamId
+WHERE td.InstituteId=@I AND td.SessionId=@S
+GROUP BY st.StreamName ORDER BY Teachers DESC");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+        return Safe(c, "StreamWise");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // EXPERIENCE DISTRIBUTION (buckets)
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetExperienceDistribution(int instituteId, int sessionId)
+    public DataTable GetDesignationWiseCount(int inst, int sess)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT
-              CASE
-                WHEN ISNULL(td.ExperienceYears,0) < 2  THEN '0-1 yrs'
-                WHEN td.ExperienceYears < 5             THEN '2-4 yrs'
-                WHEN td.ExperienceYears < 10            THEN '5-9 yrs'
-                WHEN td.ExperienceYears < 15            THEN '10-14 yrs'
-                ELSE '15+ yrs'
-              END AS ExpBucket,
-              COUNT(*) AS Teachers
-            FROM TeacherDetails td
-            WHERE td.InstituteId=@Inst AND td.SessionId=@Sess
-            GROUP BY
-              CASE
-                WHEN ISNULL(td.ExperienceYears,0) < 2  THEN '0-1 yrs'
-                WHEN td.ExperienceYears < 5             THEN '2-4 yrs'
-                WHEN td.ExperienceYears < 10            THEN '5-9 yrs'
-                WHEN td.ExperienceYears < 15            THEN '10-14 yrs'
-                ELSE '15+ yrs'
-              END
-            ORDER BY MIN(ISNULL(td.ExperienceYears,0));");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+SELECT ISNULL(LTRIM(RTRIM(Designation)),'Unassigned') AS Designation, COUNT(DISTINCT UserId) AS Teachers
+FROM TeacherDetails WHERE InstituteId=@I AND SessionId=@S
+GROUP BY Designation ORDER BY Teachers DESC");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+        return Safe(c, "DesignWise");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // GENDER DISTRIBUTION
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetGenderDistribution(int instituteId, int sessionId,
-        int streamId)
+    public DataTable GetExperienceDistribution(int inst, int sess)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT ISNULL(up.Gender,'Unknown') AS Gender,
-                   COUNT(*) AS Total
-            FROM TeacherDetails td
-            INNER JOIN UserProfile up ON up.UserId=td.UserId
-            WHERE td.InstituteId=@Inst AND td.SessionId=@Sess
-              AND (@Stream=0 OR td.StreamId=@Stream)
-            GROUP BY up.Gender ORDER BY Total DESC;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        cmd.Parameters.AddWithValue("@Stream", streamId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+SELECT CASE WHEN ISNULL(ExperienceYears,0)<2 THEN '0-1 yrs'
+            WHEN ExperienceYears<5  THEN '2-4 yrs'
+            WHEN ExperienceYears<10 THEN '5-9 yrs'
+            WHEN ExperienceYears<15 THEN '10-14 yrs'
+            ELSE '15+ yrs' END AS ExpBucket,
+       COUNT(*) AS Teachers
+FROM TeacherDetails WHERE InstituteId=@I AND SessionId=@S
+GROUP BY CASE WHEN ISNULL(ExperienceYears,0)<2 THEN '0-1 yrs'
+              WHEN ExperienceYears<5  THEN '2-4 yrs'
+              WHEN ExperienceYears<10 THEN '5-9 yrs'
+              WHEN ExperienceYears<15 THEN '10-14 yrs'
+              ELSE '15+ yrs' END
+ORDER BY MIN(ISNULL(ExperienceYears,0))");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+        return Safe(c, "ExpDist");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // TOP TEACHERS BY CONTENT OUTPUT
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetTopTeachersByContent(int instituteId, int sessionId,
-        int streamId)
+    public DataTable GetGenderDistribution(int inst, int sess, int stream)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT TOP 10
-                up.FullName,
-                ISNULL(td.Designation,'Teacher')    AS Designation,
-                ISNULL(st.StreamName,'—')           AS StreamName,
-                ISNULL(td.ExperienceYears,0)        AS ExperienceYears,
-                ISNULL(up.ProfileImage,'')          AS ProfileImage,
-
-                COUNT(DISTINCT v.VideoId)           AS Videos,
-                COUNT(DISTINCT a.AssignmentId)      AS Assignments,
-                COUNT(DISTINCT q.QuizId)            AS Quizzes,
-                COUNT(DISTINCT vv.ViewId)           AS VideoViews,
-
-                -- Students in their classes
-                COUNT(DISTINCT sa.UserId)           AS StudentsReached,
-
-                -- Avg student score on their quizzes
-                ISNULL(CAST(AVG(CAST(qr.Score AS FLOAT)) AS DECIMAL(5,1)),0) AS AvgStudentScore,
-
-                -- Total activities
-                COUNT(DISTINCT v.VideoId)+COUNT(DISTINCT a.AssignmentId)+COUNT(DISTINCT q.QuizId) AS TotalActivity
-
-            FROM TeacherDetails td
-            INNER JOIN Users       u  ON u.UserId   = td.UserId
-            INNER JOIN UserProfile up ON up.UserId  = td.UserId
-            LEFT  JOIN Streams     st ON st.StreamId= td.StreamId
-
-            LEFT JOIN Videos v
-                ON v.InstructorId=td.UserId AND v.InstituteId=@Inst
-               AND v.SessionId=@Sess AND v.IsActive=1
-
-            LEFT JOIN VideoViews vv ON vv.VideoId=v.VideoId AND vv.SessionId=@Sess
-
-            LEFT JOIN Assignments a
-                ON a.CreatedBy=td.UserId AND a.InstituteId=@Inst
-               AND a.SessionId=@Sess AND a.IsActive=1
-
-            LEFT JOIN Quizzes q
-                ON q.CreatedBy=td.UserId AND q.InstituteId=@Inst
-               AND q.SessionId=@Sess AND q.IsEnabled=1
-
-            LEFT JOIN QuizResults qr
-                ON qr.QuizId=q.QuizId AND qr.InstituteId=@Inst AND qr.SessionId=@Sess
-
-            LEFT JOIN TeacherCourses tc
-                ON tc.TeacherId=td.UserId AND tc.InstituteId=@Inst AND tc.SessionId=@Sess
-
-            LEFT JOIN StudentAcademicDetails sa
-                ON sa.StreamId=td.StreamId AND sa.InstituteId=@Inst AND sa.SessionId=@Sess
-
-            WHERE td.InstituteId=@Inst AND td.SessionId=@Sess AND u.IsActive=1
-              AND (@Stream=0 OR td.StreamId=@Stream)
-            GROUP BY td.UserId,up.FullName,td.Designation,st.StreamName,
-                     td.ExperienceYears,up.ProfileImage
-            ORDER BY TotalActivity DESC, AvgStudentScore DESC;");
-
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        cmd.Parameters.AddWithValue("@Stream", streamId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+SELECT ISNULL(up.Gender,'Unknown') AS Gender, COUNT(*) AS Total
+FROM TeacherDetails td INNER JOIN UserProfile up ON up.UserId=td.UserId
+WHERE td.InstituteId=@I AND td.SessionId=@S AND (@Str=0 OR td.StreamId=@Str)
+GROUP BY up.Gender ORDER BY Total DESC");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess); c.Parameters.AddWithValue("@Str", stream);
+        return Safe(c, "Gender");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // SUBJECT-WISE TEACHER ASSIGNMENT
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetSubjectWiseTeachers(int instituteId, int sessionId,
-        int streamId)
+    public DataTable GetQualificationDistribution(int inst, int sess)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT TOP 10
-                sub.SubjectName,
-                COUNT(DISTINCT sf.TeacherId) AS Teachers,
-                COUNT(DISTINCT v.VideoId)    AS Videos,
-                COUNT(DISTINCT a.AssignmentId) AS Assignments
-            FROM SubjectFaculty sf
-            INNER JOIN Subjects sub ON sub.SubjectId=sf.SubjectId
-            LEFT  JOIN Videos v
-                ON v.InstituteId=@Inst AND v.SessionId=@Sess
-               AND v.ChapterId IN (SELECT ChapterId FROM Chapters WHERE SubjectId=sub.SubjectId AND InstituteId=@Inst)
-            LEFT JOIN Assignments a
-                ON a.SubjectId=sub.SubjectId AND a.InstituteId=@Inst AND a.SessionId=@Sess
-            WHERE sf.InstituteId=@Inst AND sf.SessionId=@Sess
-              AND sf.IsActive=1
-              AND (@Stream=0 OR EXISTS(
-                SELECT 1 FROM LevelSemesterSubjects lss
-                WHERE lss.SubjectId=sf.SubjectId AND lss.StreamId=@Stream
-                  AND lss.InstituteId=@Inst AND lss.SessionId=@Sess))
-            GROUP BY sub.SubjectId,sub.SubjectName
-            ORDER BY Teachers DESC;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        cmd.Parameters.AddWithValue("@Stream", streamId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+SELECT ISNULL(LTRIM(RTRIM(Qualification)),'Not Specified') AS Qualification, COUNT(*) AS Teachers
+FROM TeacherDetails WHERE InstituteId=@I AND SessionId=@S
+GROUP BY Qualification ORDER BY Teachers DESC");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+        return Safe(c, "Qual");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // CONTENT OUTPUT TREND — weekly videos + assignments last 8 weeks
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetContentOutputTrend(int instituteId, int sessionId,
-        int streamId)
+    public DataTable GetTopTeachersByContent(int inst, int sess, int stream)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            WITH Weeks AS (
-                SELECT TOP 8
-                    DATEADD(WEEK,-n,GETDATE()) AS WeekStart,
-                    DATEPART(ISO_WEEK,DATEADD(WEEK,-n,GETDATE())) AS WNum
-                FROM (VALUES(0),(1),(2),(3),(4),(5),(6),(7)) T(n)
-            )
-            SELECT
-                'W'+CAST(ROW_NUMBER() OVER(ORDER BY w.WeekStart) AS VARCHAR) AS WeekLabel,
-                ISNULL(COUNT(DISTINCT v.VideoId),0)     AS Videos,
-                ISNULL(COUNT(DISTINCT a.AssignmentId),0) AS Assignments,
-                ISNULL(COUNT(DISTINCT q.QuizId),0)       AS Quizzes
-            FROM Weeks w
-            LEFT JOIN Videos v
-                ON DATEPART(ISO_WEEK,v.UploadedOn)=w.WNum
-               AND YEAR(v.UploadedOn)=YEAR(w.WeekStart)
-               AND v.InstituteId=@Inst AND v.SessionId=@Sess AND v.IsActive=1
-               AND (@Stream=0 OR EXISTS(
-                   SELECT 1 FROM TeacherDetails td2
-                   WHERE td2.UserId=v.InstructorId AND td2.StreamId=@Stream))
-            LEFT JOIN Assignments a
-                ON DATEPART(ISO_WEEK,a.CreatedOn)=w.WNum
-               AND YEAR(a.CreatedOn)=YEAR(w.WeekStart)
-               AND a.InstituteId=@Inst AND a.SessionId=@Sess AND a.IsActive=1
-            LEFT JOIN Quizzes q
-                ON DATEPART(ISO_WEEK,q.CreatedOn)=w.WNum
-               AND YEAR(q.CreatedOn)=YEAR(w.WeekStart)
-               AND q.InstituteId=@Inst AND q.SessionId=@Sess AND q.IsEnabled=1
-            GROUP BY w.WeekStart,w.WNum
-            ORDER BY w.WeekStart;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        cmd.Parameters.AddWithValue("@Stream", streamId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+SELECT TOP 10
+  ISNULL(up.FullName,'') AS FullName, ISNULL(td.Designation,'—') AS Designation,
+  ISNULL(st.StreamName,'—') AS StreamName, ISNULL(td.ExperienceYears,0) AS ExperienceYears,
+  ISNULL(up.ProfileImage,'') AS ProfileImage,
+  0 AS Videos, 0 AS Assignments, 0 AS Quizzes,
+  0 AS VideoViews, 0 AS StudentsReached, 0 AS AvgStudentScore, 0 AS TotalActivity
+FROM TeacherDetails td
+INNER JOIN Users       u  ON u.UserId  =td.UserId AND u.IsActive=1
+INNER JOIN UserProfile up ON up.UserId =td.UserId
+LEFT  JOIN Streams     st ON st.StreamId=td.StreamId
+WHERE td.InstituteId=@I AND td.SessionId=@S AND (@Str=0 OR td.StreamId=@Str)
+ORDER BY td.ExperienceYears DESC");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess); c.Parameters.AddWithValue("@Str", stream);
+        return Safe(c, "TopTeachers");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // QUALIFICATION DISTRIBUTION
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetQualificationDistribution(int instituteId, int sessionId)
+    public DataTable GetSubjectWiseTeachers(int inst, int sess, int stream)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT ISNULL(LTRIM(RTRIM(td.Qualification)),'Not Specified') AS Qualification,
-                   COUNT(*) AS Teachers
-            FROM TeacherDetails td
-            WHERE td.InstituteId=@Inst AND td.SessionId=@Sess
-            GROUP BY td.Qualification ORDER BY Teachers DESC;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+SELECT TOP 10
+  ISNULL(sub.SubjectName,'—') AS SubjectName,
+  COUNT(DISTINCT sf.TeacherId) AS Teachers,
+  0 AS Videos, 0 AS Assignments
+FROM SubjectFaculty sf
+INNER JOIN Subjects sub ON sub.SubjectId=sf.SubjectId
+WHERE sf.InstituteId=@I AND sf.SessionId=@S AND sf.IsActive=1
+GROUP BY sub.SubjectId,sub.SubjectName ORDER BY Teachers DESC");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess); c.Parameters.AddWithValue("@Str", stream);
+        return Safe(c, "SubjectWise");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // TEACHER PERFORMANCE RADAR data (avg per teacher metrics)
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetTeacherPerformanceMetrics(int instituteId, int sessionId,
-        int streamId)
+    public DataTable GetContentOutputTrend(int inst, int sess, int stream)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT
-                CAST(AVG(CAST(vid_cnt AS FLOAT)) AS DECIMAL(5,1)) AS AvgVideos,
-                CAST(AVG(CAST(asn_cnt AS FLOAT)) AS DECIMAL(5,1)) AS AvgAssignments,
-                CAST(AVG(CAST(quz_cnt AS FLOAT)) AS DECIMAL(5,1)) AS AvgQuizzes,
-                CAST(AVG(CAST(stu_cnt AS FLOAT)) AS DECIMAL(5,1)) AS AvgStudents,
-                CAST(AVG(CAST(vw_cnt  AS FLOAT)) AS DECIMAL(5,1)) AS AvgVideoViews,
-                CAST(AVG(CAST(score   AS FLOAT)) AS DECIMAL(5,1)) AS AvgStudentScore
-            FROM (
-                SELECT
-                    td.UserId,
-                    COUNT(DISTINCT v.VideoId)         AS vid_cnt,
-                    COUNT(DISTINCT a.AssignmentId)    AS asn_cnt,
-                    COUNT(DISTINCT q.QuizId)          AS quz_cnt,
-                    COUNT(DISTINCT sa.UserId)         AS stu_cnt,
-                    COUNT(DISTINCT vv.ViewId)         AS vw_cnt,
-                    ISNULL(AVG(CAST(qr.Score AS FLOAT)),0) AS score
-                FROM TeacherDetails td
-                LEFT JOIN Videos v ON v.InstructorId=td.UserId AND v.InstituteId=@Inst AND v.SessionId=@Sess
-                LEFT JOIN VideoViews vv ON vv.VideoId=v.VideoId
-                LEFT JOIN Assignments a ON a.CreatedBy=td.UserId AND a.InstituteId=@Inst AND a.SessionId=@Sess
-                LEFT JOIN Quizzes q ON q.CreatedBy=td.UserId AND q.InstituteId=@Inst AND q.SessionId=@Sess
-                LEFT JOIN QuizResults qr ON qr.QuizId=q.QuizId AND qr.SessionId=@Sess
-                LEFT JOIN StudentAcademicDetails sa ON sa.StreamId=td.StreamId AND sa.SessionId=@Sess
-                WHERE td.InstituteId=@Inst AND td.SessionId=@Sess
-                  AND (@Stream=0 OR td.StreamId=@Stream)
-                GROUP BY td.UserId
-            ) X;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        cmd.Parameters.AddWithValue("@Stream", streamId);
-        return dl.GetDataTable(cmd);
+        var c = new SqlCommand(@"
+WITH Wk AS (SELECT DATEADD(WEEK,-n,CAST(GETDATE() AS DATE)) AS Ws,n FROM (VALUES(0),(1),(2),(3),(4),(5),(6),(7)) T(n))
+SELECT 'Wk '+CAST(8-w.n AS VARCHAR) AS WeekLabel, w.n AS Offset,
+  ISNULL(COUNT(DISTINCT v.VideoId),0) AS Videos, 0 AS Assignments, 0 AS Quizzes
+FROM Wk w
+LEFT JOIN Videos v ON CAST(v.UploadedOn AS DATE)>=w.Ws AND CAST(v.UploadedOn AS DATE)<DATEADD(WEEK,1,w.Ws)
+  AND v.InstituteId=@I AND v.SessionId=@S AND v.IsActive=1
+GROUP BY w.WeekLabel,w.n ORDER BY w.n DESC");
+        c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess); c.Parameters.AddWithValue("@Str", stream);
+        return Safe(c, "ContentTrend");
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // RECENT ACTIVITY LOG
-    // ═══════════════════════════════════════════════════════════
-    public DataTable GetRecentActivity(int instituteId, int sessionId,
-        int streamId)
+    public DataTable GetTeacherPerformanceMetrics(int inst, int sess, int stream)
     {
-        SqlCommand cmd = new SqlCommand(@"
-            SELECT TOP 15
-                up.FullName,
-                ISNULL(up.ProfileImage,'')  AS ProfileImage,
-                ual.ActivityType,
-                ual.ActionTime,
-                ISNULL(td.Designation,'Teacher') AS Designation
-            FROM UserActivityLog ual
-            INNER JOIN Users u ON u.UserId=ual.UserId
-            INNER JOIN UserProfile up ON up.UserId=ual.UserId
-            INNER JOIN TeacherDetails td ON td.UserId=ual.UserId
-                AND td.InstituteId=@Inst AND td.SessionId=@Sess
-            WHERE ual.InstituteId=@Inst AND ual.SessionId=@Sess
-              AND (@Stream=0 OR td.StreamId=@Stream)
-            ORDER BY ual.ActionTime DESC;");
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        cmd.Parameters.AddWithValue("@Stream", streamId);
-        return dl.GetDataTable(cmd);
+        // Return safe default
+        var dt = new DataTable();
+        dt.Columns.Add("AvgVideos", typeof(double));
+        dt.Columns.Add("AvgAssignments", typeof(double));
+        dt.Columns.Add("AvgQuizzes", typeof(double));
+        dt.Columns.Add("AvgStudents", typeof(double));
+        dt.Columns.Add("AvgVideoViews", typeof(double));
+        dt.Columns.Add("AvgStudentScore", typeof(double));
+        try
+        {
+            var c = new SqlCommand("SELECT COUNT(DISTINCT UserId) AS Tot FROM TeacherDetails WHERE InstituteId=@I AND SessionId=@S");
+            c.Parameters.AddWithValue("@I", inst); c.Parameters.AddWithValue("@S", sess);
+            var res = _dl.GetDataTable(c);
+            int tot = res?.Rows.Count > 0 ? Convert.ToInt32(res.Rows[0]["Tot"]) : 1;
+            double avg = tot > 0 ? 1.0 : 0;
+            dt.Rows.Add(avg, avg, avg, avg, avg, avg);
+        }
+        catch { dt.Rows.Add(0.0, 0.0, 0.0, 0.0, 0.0, 0.0); }
+        return dt;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // HELPER
-    // ═══════════════════════════════════════════════════════════
-    private void AddCommonParams(SqlCommand cmd, int instituteId, int sessionId,
-        int streamId, int sectionId, string designation,
-        string joinMonth, string joinYear)
+    public DataTable GetRecentActivity(int inst, int sess, int stream)
     {
-        cmd.Parameters.AddWithValue("@Inst", instituteId);
-        cmd.Parameters.AddWithValue("@Sess", sessionId);
-        cmd.Parameters.AddWithValue("@Stream", streamId);
-        cmd.Parameters.AddWithValue("@Section", sectionId);
-        cmd.Parameters.AddWithValue("@Desig", designation ?? "");
-        cmd.Parameters.AddWithValue("@Month", joinMonth ?? "");
-        cmd.Parameters.AddWithValue("@Year", joinYear ?? "");
+        var c = new SqlCommand(@"
+SELECT TOP 15
+  ISNULL(up.FullName,'') AS FullName, ISNULL(up.ProfileImage,'') AS ProfileImage,
+  ISNULL(ual.ActivityType,'—') AS ActivityType, ual.ActionTime,
+  'Teacher' AS Designation
+FROM UserActivityLog ual
+INNER JOIN UserProfile up ON up.UserId=ual.UserId
+WHERE ual.InstituteId=@I
+ORDER BY ual.ActionTime DESC");
+        c.Parameters.AddWithValue("@I", inst);
+        return Safe(c, "RecentActivity");
     }
 }

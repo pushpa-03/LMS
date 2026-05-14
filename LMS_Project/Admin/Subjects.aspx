@@ -331,17 +331,19 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
+body { font-family: 'Segoe UI', sans-serif; background: var(--surface); color: #1565c0; }
 
 /* ── PAGE HEADER ── */
-.ph { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px; }
-.ph-left h1 { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; letter-spacing:-.5px; color:var(--ink); }
+.ph { display:flex; justify-content:space-between;
+align-items:center; flex-wrap:wrap;
+margin-bottom:20px; }
+.ph-left h1 { font-size:24px; font-weight:900; color:#1565c0; }
 .ph-left p  { color:var(--ink-soft); font-size:.875rem; margin-top:2px; }
 .ph-right   { display:flex; align-items:center; gap:10px; }
 
 /* Toggle pill */
 .toggle-pill { display:flex; align-items:center; gap:8px; background:var(--card-bg); border:1px solid var(--border); border-radius:50px; padding:6px 14px; cursor:pointer; font-size:.825rem; font-weight:500; transition:.2s; }
-.toggle-pill:hover { border-color:var(--accent); }
+.toggle-pill:hover { border-color:#1565c0; }
 .toggle-pill .form-check-input { cursor:pointer; }
 
 /* ── STAT CARDS ── */
@@ -360,10 +362,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: va
     width:46px; height:46px; border-radius:12px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center; font-size:18px;
 }
-.sc-num { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; line-height:1; }
+.sc-num { font-family: 'Segoe UI', sans-serif; font-size:1.6rem; font-weight:800; line-height:1; }
 .sc-lbl { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:2px; }
 
-.sc.c-indigo .sc-ico { background:#eef2ff; color:#4f46e5; }
+.sc.c-indigo .sc-ico { background:#eef2ff; color:#1565c0; }
 .sc.c-violet  .sc-ico { background:#f5f3ff; color:#7c3aed; }
 .sc.c-emerald .sc-ico { background:#ecfdf5; color:#059669; }
 .sc.c-red     .sc-ico { background:#fef2f2; color:#dc2626; }
@@ -408,7 +410,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: va
 @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
 /* Accent top strip */
-.sub-card-accent { height:4px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); }
+.sub-card-accent { height:4px; background:linear-gradient(90deg,#1565c0,var(--accent-2)); }
 
 .sub-card-body { padding:20px; flex:1; display:flex; flex-direction:column; gap:14px; }
 
@@ -422,16 +424,16 @@ body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: va
 
 .sub-meta { display:flex; flex-direction:column; gap:5px; }
 .sub-meta-row { display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--ink-soft); }
-.sub-meta-row i { width:14px; color:var(--accent); }
+.sub-meta-row i { width:14px; color:#1565c0; }
 
 .sub-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
 .sub-stat-box { background:var(--surface); border-radius:10px; padding:8px 6px; text-align:center; border:1px solid var(--border); }
-.sub-stat-val { font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; color:var(--ink); }
+.sub-stat-val { font-family: 'Segoe UI', sans-serif; font-weight:700; font-size:1.1rem; color:var(--ink); }
 .sub-stat-lbl { font-size:.65rem; font-weight:600; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em; }
 
 .sub-card-footer { display:flex; gap:8px; padding:14px 20px; border-top:1px solid var(--border); background:#fafbff; }
 .btn-manage {
-    flex:1; background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    flex:1; background:linear-gradient(135deg,#1565c0,var(--accent-2));
     color:#fff; border:none; border-radius:10px; padding:9px 12px;
     font-size:.82rem; font-weight:600; cursor:pointer; transition:.2s;
     display:flex; align-items:center; justify-content:center; gap:6px; text-decoration:none;
@@ -478,9 +480,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: va
 <!-- PAGE HEADER -->
 <div class="ph">
     <div class="ph-left">
-        <h1><i class="fa fa-book-open me-2" style="color:var(--accent)"></i>Subject Management</h1>
-        <p>Manage subjects across streams, courses & semesters &nbsp;·&nbsp;
-           <span id="tsLabel" style="font-weight:600;color:var(--accent)">Loading…</span>
+        <h1><i class="fa fa-book-open me-2" style="color:#1565c0; font-weight:900;"></i>Subject Management</h1>
+        <p>Manage subjects across streams, courses & semesters | 
+           <span id="tsLabel"> Loading…</span>
         </p>
     </div>
     <div class="ph-right">

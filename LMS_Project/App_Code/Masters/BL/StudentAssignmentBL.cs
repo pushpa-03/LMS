@@ -94,52 +94,130 @@ public class StudentAssignmentBL
     // ============================================================
     // ✅ 2. Submit assignment (file upload)
     // ============================================================
+    //public bool SubmitAssignment(int assignmentId, int studentId,
+    //                              int societyId, int instituteId,int SessionId,
+    //                              HttpPostedFile file,
+    //                              string remarks, HttpServerUtility server)
+    //{
+    //    // Check not already submitted
+    //    SqlCommand checkCmd = new SqlCommand(@"
+    //        SELECT COUNT(*) FROM AssignmentSubmissions
+    //        WHERE AssignmentId = @AsgId AND StudentId = @StudId and SessionId = SessionId");
+
+    //    checkCmd.Parameters.AddWithValue("@AsgId", assignmentId);
+    //    checkCmd.Parameters.AddWithValue("@StudId", studentId);
+
+    //    int existing = Convert.ToInt32(dl.GetDataTable(checkCmd).Rows[0][0]);
+    //    if (existing > 0) return false; // Already submitted
+
+    //    // Save file
+    //    string ext = Path.GetExtension(file.FileName);
+    //    string fileName = $"ASG_{assignmentId}_{studentId}_{DateTime.Now:yyyyMMddHHmmss}{ext}";
+    //    string folderPath = server.MapPath("~/Uploads/Assignments/");
+
+    //    if (!Directory.Exists(folderPath))
+    //        Directory.CreateDirectory(folderPath);
+
+    //    string fullPath = Path.Combine(folderPath, fileName);
+    //    file.SaveAs(fullPath);
+
+    //    string dbPath = "../Uploads/Assignments/" + fileName;
+
+    //    // Insert submission
+    //    SqlCommand cmd = new SqlCommand(@"
+    //        INSERT INTO AssignmentSubmissions
+    //        (AssignmentId, StudentId, SocietyId, InstituteId,
+    //         FilePath, Remarks, SubmittedOn)
+    //        VALUES
+    //        (@AsgId, @StudId, @SocId, @InstId,
+    //         @Path, @Remarks, GETDATE())");
+
+    //    cmd.Parameters.AddWithValue("@AsgId", assignmentId);
+    //    cmd.Parameters.AddWithValue("@StudId", studentId);
+    //    cmd.Parameters.AddWithValue("@SocId", societyId);
+    //    cmd.Parameters.AddWithValue("@InstId", instituteId);
+    //    cmd.Parameters.AddWithValue("@SessionId", SessionId);
+    //    cmd.Parameters.AddWithValue("@Path", dbPath);
+    //    cmd.Parameters.AddWithValue("@Remarks", remarks ?? "");
+
+    //    dl.ExecuteCMD(cmd);
+    //    return true;
+    //}
+
     public bool SubmitAssignment(int assignmentId, int studentId,
-                                  int societyId, int instituteId,
-                                  HttpPostedFile file,
-                                  string remarks, HttpServerUtility server)
+                              int societyId, int instituteId, int SessionId,
+                              HttpPostedFile file,
+                              string remarks, HttpServerUtility server)
     {
-        // Check not already submitted
+        // Check already submitted
         SqlCommand checkCmd = new SqlCommand(@"
-            SELECT COUNT(*) FROM AssignmentSubmissions
-            WHERE AssignmentId = @AsgId AND StudentId = @StudId");
+        SELECT COUNT(*)
+        FROM AssignmentSubmissions
+        WHERE AssignmentId = @AsgId
+          AND StudentId = @StudId
+          AND SessionId = @SessionId");
 
         checkCmd.Parameters.AddWithValue("@AsgId", assignmentId);
         checkCmd.Parameters.AddWithValue("@StudId", studentId);
+        checkCmd.Parameters.AddWithValue("@SessionId", SessionId);
 
         int existing = Convert.ToInt32(dl.GetDataTable(checkCmd).Rows[0][0]);
-        if (existing > 0) return false; // Already submitted
+
+        if (existing > 0)
+            return false;
 
         // Save file
         string ext = Path.GetExtension(file.FileName);
-        string fileName = $"ASG_{assignmentId}_{studentId}_{DateTime.Now:yyyyMMddHHmmss}{ext}";
+
+        string fileName =
+            $"ASG_{assignmentId}_{studentId}_{DateTime.Now:yyyyMMddHHmmss}{ext}";
+
         string folderPath = server.MapPath("~/Uploads/Assignments/");
 
         if (!Directory.Exists(folderPath))
             Directory.CreateDirectory(folderPath);
 
         string fullPath = Path.Combine(folderPath, fileName);
+
         file.SaveAs(fullPath);
 
         string dbPath = "../Uploads/Assignments/" + fileName;
 
         // Insert submission
         SqlCommand cmd = new SqlCommand(@"
-            INSERT INTO AssignmentSubmissions
-            (AssignmentId, StudentId, SocietyId, InstituteId,
-             FilePath, Remarks, SubmittedOn)
-            VALUES
-            (@AsgId, @StudId, @SocId, @InstId,
-             @Path, @Remarks, GETDATE())");
+        INSERT INTO AssignmentSubmissions
+        (
+            AssignmentId,
+            StudentId,
+            SocietyId,
+            InstituteId,
+            SessionId,
+            FilePath,
+            Remarks,
+            SubmittedOn
+        )
+        VALUES
+        (
+            @AsgId,
+            @StudId,
+            @SocId,
+            @InstId,
+            @SessionId,
+            @Path,
+            @Remarks,
+            GETDATE()
+        )");
 
         cmd.Parameters.AddWithValue("@AsgId", assignmentId);
         cmd.Parameters.AddWithValue("@StudId", studentId);
         cmd.Parameters.AddWithValue("@SocId", societyId);
         cmd.Parameters.AddWithValue("@InstId", instituteId);
+        cmd.Parameters.AddWithValue("@SessionId", SessionId);
         cmd.Parameters.AddWithValue("@Path", dbPath);
         cmd.Parameters.AddWithValue("@Remarks", remarks ?? "");
 
         dl.ExecuteCMD(cmd);
+
         return true;
     }
 
