@@ -366,23 +366,23 @@
 <asp:HiddenField ID="hfActiveTab" runat="server" Value="assignments" />
 
 <script>
-function switchTab(tab) {
-    document.getElementById('panelAssignments').style.display =
-        tab === 'assignments' ? 'block' : 'none';
-    document.getElementById('panelQuizzes').style.display =
-        tab === 'quizzes' ? 'block' : 'none';
+    function switchTab(tab) {
+        document.getElementById('panelAssignments').style.display =
+            tab === 'assignments' ? 'block' : 'none';
+        document.getElementById('panelQuizzes').style.display =
+            tab === 'quizzes' ? 'block' : 'none';
 
-    document.getElementById('tabAsg').className =
-        'tab-btn' + (tab === 'assignments' ? ' active' : '');
-    document.getElementById('tabQuiz').className =
-        'tab-btn' + (tab === 'quizzes' ? ' active' : '');
+        document.getElementById('tabAsg').className =
+            'tab-btn' + (tab === 'assignments' ? ' active' : '');
+        document.getElementById('tabQuiz').className =
+            'tab-btn' + (tab === 'quizzes' ? ' active' : '');
 
-    document.getElementById('<%= hfActiveTab.ClientID %>').value = tab;
-}
+        document.getElementById('<%= hfActiveTab.ClientID %>').value = tab;
+    }
 
-// Restore active tab on postback
-window.addEventListener('DOMContentLoaded', function () {
-    var tab = document.getElementById('<%= hfActiveTab.ClientID %>').value;
+    // Restore active tab on postback
+    window.addEventListener('DOMContentLoaded', function () {
+        var tab = document.getElementById('<%= hfActiveTab.ClientID %>').value;
     if (tab) switchTab(tab);
 });
 </script>

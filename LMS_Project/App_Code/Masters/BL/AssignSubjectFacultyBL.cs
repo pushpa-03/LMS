@@ -6,27 +6,7 @@ using System.Data.SqlClient;
 
 namespace LearningManagementSystem.BL
 {
-    /// <summary>
-    /// Business Logic Layer – Assign Subject to Faculty (Teachers).
-    ///
-    /// KEY FIXES in this version:
-    ///  1. SearchTeachers — NO SessionId filter on TeacherDetails JOIN.
-    ///     Teachers are registered once in Users; TeacherDetails may belong to a
-    ///     different session. Filtering by sessionId caused "No teachers found".
-    ///     Fix: search only on Users (InstituteId + Role=Teacher + IsActive) and
-    ///     UserProfile (FullName LIKE) / TeacherDetails (EmployeeId LIKE).
-    ///
-    ///  2. GetSectionsBySubject — NEW method called when admin selects a subject.
-    ///     Reads LevelSemesterSubjects to find which Stream/Course/Level/Semester
-    ///     that subject belongs to, then returns sections assigned to students in
-    ///     that academic combination. This ensures only valid sections appear.
-    ///
-    ///  3. IsAlreadyAssigned (same-section duplicate) — prevents inserting the
-    ///     same teacher+subject+section+session twice. Used in single AND bulk.
-    ///
-    ///  4. Tracker GetAll — Pending filter returns teachers who have NO assignment
-    ///     in this session, enabling the admin to see who is still unassigned.
-    /// </summary>
+    
     public class AssignSubjectFacultyBL
     {
         private readonly DataLayer _dl = new DataLayer();
@@ -64,12 +44,7 @@ namespace LearningManagementSystem.BL
             return _dl.GetDataTable(cmd);
         }
 
-        /// <summary>
-        /// Sections filtered optionally by streamId.
-        /// streamId=0 → ALL active sections for institute+session.
-        /// streamId>0 → only sections used by students in that stream.
-        /// Called by ddlStream_Changed (stream narrows section list).
-        /// </summary>
+        
         public DataTable GetSections(int instituteId, int sessionId, int streamId = 0)
         {
             string query = @"
@@ -94,16 +69,7 @@ namespace LearningManagementSystem.BL
             return _dl.GetDataTable(cmd);
         }
 
-        /// <summary>
-        /// ★ FIX 2: Sections that are valid for a specific subject.
-        /// Logic:
-        ///   1. Find the LevelSemesterSubjects rows for this subject
-        ///      (gets StreamId, CourseId, LevelId, SemesterId).
-        ///   2. Find students enrolled in that Stream/Level/Semester.
-        ///   3. Return their distinct sections.
-        /// This is called by the ASPX when admin selects a subject in the DDL
-        /// so the section dropdown only shows sections where that subject is taught.
-        /// </summary>
+        
         public DataTable GetSectionsBySubject(int subjectId, int instituteId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
@@ -133,7 +99,7 @@ namespace LearningManagementSystem.BL
             return _dl.GetDataTable(cmd);
         }
 
-        /// <summary>All active subjects for this session — for single DDL + bulk repeater.</summary>
+        
         public DataTable GetSubjects(int instituteId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
@@ -150,7 +116,7 @@ namespace LearningManagementSystem.BL
             return _dl.GetDataTable(cmd);
         }
 
-        /// <summary>Single subject by ID — for notification message (subject name).</summary>
+
         public DataTable GetSubjectById(int subjectId, int instituteId, int sessionId)
         {
             SqlCommand cmd = new SqlCommand(@"
@@ -163,62 +129,7 @@ namespace LearningManagementSystem.BL
             return _dl.GetDataTable(cmd);
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  ★ FIX 1: TEACHER LIVE-SEARCH
-        //
-        //  ROOT CAUSE of "No teachers found":
-        //  The old query had:
-        //    AND (t.SessionId=@S OR t.SessionId IS NULL)
-        //  Problem: TeacherDetails.SessionId stores the ENROLMENT session,
-        //  which may differ from the current session. The LEFT JOIN on
-        //  TeacherDetails meant many teachers got filtered out.
-        //
-        //  FIX: Remove session filter entirely from TeacherDetails JOIN.
-        //  Teachers are unique per Users.UserId — search by name/empId only.
-        //  We keep the InstituteId check on Users so only correct-institute
-        //  teachers appear. IsActive=1 filters suspended accounts.
-        // ══════════════════════════════════════════════════════════════════════
-        //public DataTable SearchTeachers(string prefix, int instituteId, int sessionId)
-        //{
-        //    if (string.IsNullOrWhiteSpace(prefix)) return new DataTable();
-
-        //    // ── FIXED QUERY ─────────────────────────────────────────────────
-        //    // • NO session filter on TeacherDetails — avoids the "not found" bug.
-        //    // • DISTINCT on UserId prevents duplicates when teacher has multiple
-        //    //   TeacherDetails rows (re-enrolled across sessions).
-        //    // • Uses TOP 1 per UserId with CROSS APPLY to get the most recent
-        //    //   TeacherDetails row (highest SessionId) for EmployeeId/StreamName.
-        //    SqlCommand cmd = new SqlCommand(@"
-        //        SELECT DISTINCT TOP 10
-        //            u.UserId,
-        //            ISNULL(p.FullName,    '')  AS FullName,
-        //            ISNULL(td.EmployeeId, '')  AS EmployeeId,
-        //            ISNULL(str.StreamName,'—') AS StreamName
-        //        FROM  Users u
-        //        INNER JOIN Roles r
-        //                ON r.RoleId = u.RoleId AND r.RoleName = 'Teacher'
-        //        LEFT  JOIN UserProfile p
-        //                ON p.UserId = u.UserId
-        //        OUTER APPLY (
-        //            SELECT TOP 1 t.EmployeeId, t.StreamId
-        //            FROM   TeacherDetails t
-        //            WHERE  t.UserId = u.UserId
-        //            ORDER  BY t.SessionId DESC      -- most-recent enrolment
-        //        ) td
-        //        LEFT  JOIN Streams str ON str.StreamId = td.StreamId
-        //        WHERE u.InstituteId = @I
-        //          AND u.IsActive    = 1
-        //          AND (
-        //                p.FullName   LIKE @Pfx
-        //             OR td.EmployeeId LIKE @Pfx
-        //          )
-        //        ORDER BY p.FullName");
-
-        //    cmd.Parameters.AddWithValue("@I", instituteId);
-        //    cmd.Parameters.AddWithValue("@Pfx", "%" + prefix.Trim() + "%");
-        //    // sessionId param kept for future use / audit but NOT used in query
-        //    return _dl.GetDataTable(cmd);
-        //}
+       
 
         public DataTable SearchTeachers(string prefix, int instituteId, int sessionId)
         {
@@ -294,16 +205,7 @@ namespace LearningManagementSystem.BL
             return _dl.GetDataTable(cmd);
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  ★ FIX 3: DUPLICATE CHECK
-        //
-        //  Rule: same (teacher + subject + section + session) = duplicate.
-        //  NOTE: same subject CAN be assigned to DIFFERENT teachers per section.
-        //  So (Subject A, Section A, Teacher X) and (Subject A, Section A, Teacher Y)
-        //  ARE duplicates only if both teacher AND section are the same.
-        //
-        //  Used in single assign AND bulk assign (bulk just skips + counts them).
-        // ══════════════════════════════════════════════════════════════════════
+       
         public bool IsAlreadyAssigned(int instituteId, int sessionId,
                                       int teacherId, int subjectId, int sectionId)
         {
@@ -320,9 +222,7 @@ namespace LearningManagementSystem.BL
             return dt.Rows.Count > 0 && Convert.ToInt32(dt.Rows[0][0]) > 0;
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  INSERT  (IF NOT EXISTS safety net for race conditions)
-        // ══════════════════════════════════════════════════════════════════════
+       
         public void Insert(SubjectFacultyGC obj)
         {
             SqlCommand cmd = new SqlCommand(@"
@@ -376,11 +276,7 @@ namespace LearningManagementSystem.BL
             _dl.ExecuteCMD(cmd);
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  GET ALL ASSIGNMENTS  → BindTracker()
-        //  filterStatus: "All" | "Active" | "Inactive" | "Pending"
-        //  "Pending" = teachers who have NO assignment in this session at all.
-        // ══════════════════════════════════════════════════════════════════════
+      
         public DataTable GetAll(int instituteId, int sessionId,
                                 int filterStreamId = 0,
                                 string filterStatus = "All")

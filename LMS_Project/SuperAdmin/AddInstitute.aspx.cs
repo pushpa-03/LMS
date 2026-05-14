@@ -17,24 +17,7 @@ namespace LMS.SuperAdmin
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
-            {
-                //if (Request.QueryString["InstituteId"] != null)
-                //{
-                //    int instituteId = Convert.ToInt32(Request.QueryString["InstituteId"]);
-
-                //    InstituteBL bl = new InstituteBL();
-                //    DataTable dt = bl.GetInstituteById(instituteId);
-
-                //    if (dt.Rows.Count > 0)
-                //    {
-                //        DataRow dr = dt.Rows[0];
-
-                //        Session["InstituteId"] = instituteId;
-                //        Session["InstituteName"] = dr["InstituteName"].ToString();
-                //        Session["ActiveInstituteName"] = dr["InstituteName"].ToString();
-                //        Session["SocietyId"] = dr["SocietyId"];
-                //    }
-                //}
+            {                
                 CurrentPage = 0;
                 LoadSocieties();
                 BindInstitutes();

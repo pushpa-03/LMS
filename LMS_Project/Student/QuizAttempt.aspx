@@ -386,30 +386,30 @@
 </asp:Panel>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// Quiz Attempt Engine
-// ═══════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    // Quiz Attempt Engine
+    // ═══════════════════════════════════════════════════════════════
 
-var questions   = [];
-var answers     = {};           // { questionId: "A"/"B"/"C"/"D" }
-var currentIdx  = 0;
-var timerInterval;
-var secondsLeft = 0;
-var startedAt   = Date.now();
+    var questions = [];
+    var answers = {};           // { questionId: "A"/"B"/"C"/"D" }
+    var currentIdx = 0;
+    var timerInterval;
+    var secondsLeft = 0;
+    var startedAt = Date.now();
 
-// ── Bootstrap ──────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", function () {
-    var raw = document.getElementById("questionsData");
-    if (!raw) return;
+    // ── Bootstrap ──────────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", function () {
+        var raw = document.getElementById("questionsData");
+        if (!raw) return;
 
-    try { questions = JSON.parse(raw.textContent.trim()); }
-    catch(e) { questions = []; }
+        try { questions = JSON.parse(raw.textContent.trim()); }
+        catch (e) { questions = []; }
 
-    if (questions.length === 0) return;
+        if (questions.length === 0) return;
 
-    // Duration from hidden field (minutes → seconds)
-    var mins = parseInt(
-        document.getElementById('<%= hfDuration.ClientID %>').value, 10);
+        // Duration from hidden field (minutes → seconds)
+        var mins = parseInt(
+            document.getElementById('<%= hfDuration.ClientID %>').value, 10);
     secondsLeft = mins * 60;
 
     buildNavGrid();
@@ -417,155 +417,155 @@ document.addEventListener("DOMContentLoaded", function () {
     startTimer();
 });
 
-// ── Timer ──────────────────────────────────────────────────────
-function startTimer() {
-    updateTimerDisplay();
-    timerInterval = setInterval(function () {
-        secondsLeft--;
+    // ── Timer ──────────────────────────────────────────────────────
+    function startTimer() {
         updateTimerDisplay();
+        timerInterval = setInterval(function () {
+            secondsLeft--;
+            updateTimerDisplay();
 
-        if (secondsLeft <= 0) {
-            clearInterval(timerInterval);
-            autoSubmit();
-        }
-        // Turn red in last 2 minutes
-        if (secondsLeft <= 120) {
-            document.getElementById('timerChip')
+            if (secondsLeft <= 0) {
+                clearInterval(timerInterval);
+                autoSubmit();
+            }
+            // Turn red in last 2 minutes
+            if (secondsLeft <= 120) {
+                document.getElementById('timerChip')
                     .classList.add('timer-danger');
-        }
-    }, 1000);
-}
-
-function updateTimerDisplay() {
-    var m = Math.floor(Math.abs(secondsLeft) / 60);
-    var s = Math.abs(secondsLeft) % 60;
-    document.getElementById('timerDisplay').innerText =
-        String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-}
-
-// ── Show question ──────────────────────────────────────────────
-function showQuestion(idx) {
-    if (idx < 0 || idx >= questions.length) return;
-    currentIdx = idx;
-
-    var q = questions[idx];
-
-    document.getElementById('qNumber').innerText =
-        'Question ' + (idx + 1) + ' of ' + questions.length;
-    document.getElementById('qText').innerHTML =
-        q.text + '<span class="marks-badge">' + q.marks + ' mark' +
-        (q.marks > 1 ? 's' : '') + '</span>';
-
-    // Options
-    var opts  = ['A','B','C','D'];
-    var texts = [q.optA, q.optB, q.optC, q.optD];
-    var html  = '';
-    opts.forEach(function (letter, i) {
-        var sel = (answers[q.id] === letter) ? ' selected' : '';
-        html +=
-            '<div class="option-item' + sel + '" onclick="selectOption(' +
-            q.id + ',\'' + letter + '\',this)">' +
-            '  <div class="option-letter">' + letter + '</div>' +
-            '  <div class="option-text">' + escHtml(texts[i]) + '</div>' +
-            '</div>';
-    });
-    document.getElementById('optionList').innerHTML = html;
-
-    // Next / Submit button visibility
-    var btnNext   = document.getElementById('btnNext');
-    var btnSubmit = document.getElementById('btnSubmitQuiz');
-    if (idx === questions.length - 1) {
-        btnNext.style.display   = 'none';
-        btnSubmit.style.display = 'inline-block';
-    } else {
-        btnNext.style.display   = 'inline-block';
-        btnSubmit.style.display = 'none';
+            }
+        }, 1000);
     }
 
-    updateNavGrid();
-    updateProgress();
-}
+    function updateTimerDisplay() {
+        var m = Math.floor(Math.abs(secondsLeft) / 60);
+        var s = Math.abs(secondsLeft) % 60;
+        document.getElementById('timerDisplay').innerText =
+            String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
 
-// ── Select option ──────────────────────────────────────────────
-function selectOption(questionId, letter, el) {
-    answers[questionId] = letter;
+    // ── Show question ──────────────────────────────────────────────
+    function showQuestion(idx) {
+        if (idx < 0 || idx >= questions.length) return;
+        currentIdx = idx;
 
-    // Update UI
-    document.querySelectorAll('.option-item').forEach(function(o) {
-        o.classList.remove('selected');
-    });
-    el.classList.add('selected');
+        var q = questions[idx];
 
-    // Save to hidden field
-    document.getElementById('<%= hfAnswers.ClientID %>').value =
-        JSON.stringify(answers);
+        document.getElementById('qNumber').innerText =
+            'Question ' + (idx + 1) + ' of ' + questions.length;
+        document.getElementById('qText').innerHTML =
+            q.text + '<span class="marks-badge">' + q.marks + ' mark' +
+            (q.marks > 1 ? 's' : '') + '</span>';
 
-    updateNavGrid();
-    updateProgress();
-}
+        // Options
+        var opts = ['A', 'B', 'C', 'D'];
+        var texts = [q.optA, q.optB, q.optC, q.optD];
+        var html = '';
+        opts.forEach(function (letter, i) {
+            var sel = (answers[q.id] === letter) ? ' selected' : '';
+            html +=
+                '<div class="option-item' + sel + '" onclick="selectOption(' +
+                q.id + ',\'' + letter + '\',this)">' +
+                '  <div class="option-letter">' + letter + '</div>' +
+                '  <div class="option-text">' + escHtml(texts[i]) + '</div>' +
+                '</div>';
+        });
+        document.getElementById('optionList').innerHTML = html;
 
-// ── Navigation ─────────────────────────────────────────────────
-function navigate(dir) {
-    showQuestion(currentIdx + dir);
-}
+        // Next / Submit button visibility
+        var btnNext = document.getElementById('btnNext');
+        var btnSubmit = document.getElementById('btnSubmitQuiz');
+        if (idx === questions.length - 1) {
+            btnNext.style.display = 'none';
+            btnSubmit.style.display = 'inline-block';
+        } else {
+            btnNext.style.display = 'inline-block';
+            btnSubmit.style.display = 'none';
+        }
 
-function goToQuestion(idx) {
-    showQuestion(idx);
-}
+        updateNavGrid();
+        updateProgress();
+    }
 
-// ── Nav grid ───────────────────────────────────────────────────
-function buildNavGrid() {
-    var grid = document.getElementById('qNavGrid');
-    var html = '';
-    questions.forEach(function (q, i) {
-        html += '<button class="q-nav-btn" id="qnb_' + i + '" ' +
-                'onclick="goToQuestion(' + i + ')">' + (i+1) + '</button>';
-    });
-    grid.innerHTML = html;
-}
+    // ── Select option ──────────────────────────────────────────────
+    function selectOption(questionId, letter, el) {
+        answers[questionId] = letter;
 
-function updateNavGrid() {
-    questions.forEach(function (q, i) {
-        var btn = document.getElementById('qnb_' + i);
-        if (!btn) return;
-        btn.className = 'q-nav-btn';
-        if (i === currentIdx)       btn.classList.add('current');
-        if (answers[q.id])          btn.classList.add('answered');
-    });
-}
+        // Update UI
+        document.querySelectorAll('.option-item').forEach(function (o) {
+            o.classList.remove('selected');
+        });
+        el.classList.add('selected');
 
-function updateProgress() {
-    var answered = Object.keys(answers).length;
-    var total    = questions.length;
-    var pct      = total > 0 ? Math.round(answered / total * 100) : 0;
+        // Save to hidden field
+        document.getElementById('<%= hfAnswers.ClientID %>').value =
+            JSON.stringify(answers);
 
-    document.getElementById('progressLabel').innerText =
-        answered + ' / ' + total;
-    document.getElementById('progressBar').style.width = pct + '%';
-}
+        updateNavGrid();
+        updateProgress();
+    }
 
-// ── Submit ─────────────────────────────────────────────────────
-function confirmSubmit() {
-    var unanswered = questions.length - Object.keys(answers).length;
-    var msg = 'Submit quiz now?';
-    if (unanswered > 0)
-        msg = unanswered + ' question(s) unanswered. Submit anyway?';
-    if (!confirm(msg)) return;
-    doSubmit(false);
-}
+    // ── Navigation ─────────────────────────────────────────────────
+    function navigate(dir) {
+        showQuestion(currentIdx + dir);
+    }
 
-function autoSubmit() {
-    document.getElementById('<%= hfIsAutoSubmit.ClientID %>').value = '1';
-    doSubmit(true);
-}
+    function goToQuestion(idx) {
+        showQuestion(idx);
+    }
 
-function doSubmit(isAuto) {
-    clearInterval(timerInterval);
+    // ── Nav grid ───────────────────────────────────────────────────
+    function buildNavGrid() {
+        var grid = document.getElementById('qNavGrid');
+        var html = '';
+        questions.forEach(function (q, i) {
+            html += '<button class="q-nav-btn" id="qnb_' + i + '" ' +
+                'onclick="goToQuestion(' + i + ')">' + (i + 1) + '</button>';
+        });
+        grid.innerHTML = html;
+    }
 
-    // Time taken in seconds
-    var timeTaken = Math.round((Date.now() - startedAt) / 1000);
+    function updateNavGrid() {
+        questions.forEach(function (q, i) {
+            var btn = document.getElementById('qnb_' + i);
+            if (!btn) return;
+            btn.className = 'q-nav-btn';
+            if (i === currentIdx) btn.classList.add('current');
+            if (answers[q.id]) btn.classList.add('answered');
+        });
+    }
 
-    document.getElementById('<%= hfAnswers.ClientID %>').value =
+    function updateProgress() {
+        var answered = Object.keys(answers).length;
+        var total = questions.length;
+        var pct = total > 0 ? Math.round(answered / total * 100) : 0;
+
+        document.getElementById('progressLabel').innerText =
+            answered + ' / ' + total;
+        document.getElementById('progressBar').style.width = pct + '%';
+    }
+
+    // ── Submit ─────────────────────────────────────────────────────
+    function confirmSubmit() {
+        var unanswered = questions.length - Object.keys(answers).length;
+        var msg = 'Submit quiz now?';
+        if (unanswered > 0)
+            msg = unanswered + ' question(s) unanswered. Submit anyway?';
+        if (!confirm(msg)) return;
+        doSubmit(false);
+    }
+
+    function autoSubmit() {
+        document.getElementById('<%= hfIsAutoSubmit.ClientID %>').value = '1';
+        doSubmit(true);
+    }
+
+    function doSubmit(isAuto) {
+        clearInterval(timerInterval);
+
+        // Time taken in seconds
+        var timeTaken = Math.round((Date.now() - startedAt) / 1000);
+
+        document.getElementById('<%= hfAnswers.ClientID %>').value =
         JSON.stringify(answers);
     document.getElementById('<%= hfIsAutoSubmit.ClientID %>').value =
         isAuto ? '1' : '0';
@@ -576,13 +576,13 @@ function doSubmit(isAuto) {
 
     // Trigger server postback
     document.getElementById('<%= btnDoSubmit.ClientID %>').click();
-}
+    }
 
-// ── Helpers ───────────────────────────────────────────────────
-function escHtml(s) {
-    if (!s) return '';
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+    // ── Helpers ───────────────────────────────────────────────────
+    function escHtml(s) {
+        if (!s) return '';
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
 
 </script>
 

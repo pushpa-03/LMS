@@ -396,12 +396,12 @@
 </div>
 
 <script>
-function showInstructions(quizId, title) {
-    document.getElementById('modalQuizTitle').innerText = title;
-    document.getElementById('btnProceedQuiz').href =
-        'QuizAttempt.aspx?QuizId=' + quizId;
-    new bootstrap.Modal(document.getElementById('instructionsModal')).show();
-}
+    function showInstructions(quizId, title) {
+        document.getElementById('modalQuizTitle').innerText = title;
+        document.getElementById('btnProceedQuiz').href =
+            'QuizAttempt.aspx?QuizId=' + quizId;
+        new bootstrap.Modal(document.getElementById('instructionsModal')).show();
+    }
 </script>
 
 </asp:Content>

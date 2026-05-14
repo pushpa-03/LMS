@@ -7,13 +7,11 @@
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" runat="server" />
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder2" runat="server">
 
-<%-- ══ HIDDEN FIELDS ═══════════════════════════════════════ --%>
-<%-- hfTeacherId : shared by single + bulk — JS sets it after live-search --%>
+
 <asp:HiddenField ID="hfTeacherId"      runat="server" Value="" />
-<%-- hfBulkSubjectIds : JS serialises checked subject IDs before bulk postback --%>
+
 <asp:HiddenField ID="hfBulkSubjectIds" runat="server" Value="" />
 
-<%-- ══ TOAST ════════════════════════════════════════════════ --%>
 <div class="toast-container position-fixed p-3"
      style="top:70px;right:16px;z-index:9999;">
     <div id="liveToast" class="toast align-items-center border-0 shadow-lg"
@@ -26,7 +24,6 @@
     </div>
 </div>
 
-<%-- ══ PAGE HEADER ══════════════════════════════════════════ --%>
 <div class="mb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
 
@@ -47,7 +44,7 @@
             </div>
         </div>
 
-        <%-- Stats --%>
+      
         <div class="d-flex gap-2 flex-wrap">
             <div class="asf-stat border rounded-3 px-3 py-2 text-center">
                 <div class="asf-stat-lbl">Total</div>
@@ -72,13 +69,12 @@
     </div>
 </div>
 
-<%-- ══ TWO-COLUMN LAYOUT ════════════════════════════════════ --%>
+
 <div class="row g-4">
 
-    <%-- ── LEFT: Forms ──────────────────────────────────────── --%>
     <div class="col-12 col-lg-5">
 
-        <%-- Tab switcher --%>
+      
         <div class="asf-tabs mb-3">
             <button type="button" class="asf-tab active" id="tabSingleBtn"
                     onclick="switchTab('single')">
@@ -90,7 +86,7 @@
             </button>
         </div>
 
-        <%-- ════ SINGLE ASSIGN CARD ════ --%>
+       
         <div id="divSingle">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header asf-card-hdr text-white py-3">
@@ -103,7 +99,7 @@
                 </div>
                 <div class="card-body p-4">
 
-                    <%-- Teacher live search --%>
+                   
                     <div class="mb-3 position-relative">
                         <label class="form-label fw-semibold small">
                             Teacher <span class="req">*</span>
@@ -131,7 +127,7 @@
                         <div class="form-err" id="errSingleTeacher"></div>
                     </div>
 
-                    <%-- Stream filter (narrows sections) --%>
+                  
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">
                             Stream <span class="text-muted">(filters sections)</span>
@@ -144,7 +140,7 @@
                         </asp:DropDownList>
                     </div>
 
-                    <%-- Subject --%>
+             
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">
                             Subject <span class="req">*</span>
@@ -156,7 +152,7 @@
                         <div class="form-err" id="errSubject"></div>
                     </div>
 
-                    <%-- Section --%>
+                  
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">
                             Section <span class="req">*</span>
@@ -168,7 +164,7 @@
                         <div class="form-err" id="errSection"></div>
                     </div>
 
-                    <%-- Info --%>
+                  
                     <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-0"
                          style="font-size:12px">
                         <i class="fa fa-info-circle me-1"></i>
@@ -195,7 +191,7 @@
             </div>
         </div>
 
-        <%-- ════ BULK ASSIGN CARD ════ --%>
+      
         <div id="divBulk" style="display:none">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header asf-card-hdr text-white py-3">
@@ -208,7 +204,7 @@
                 </div>
                 <div class="card-body p-4">
 
-                    <%-- Bulk teacher live search --%>
+                   
                     <div class="mb-3 position-relative">
                         <label class="form-label fw-semibold small">
                             Teacher <span class="req">*</span>
@@ -236,7 +232,7 @@
                         <div class="form-err" id="errBulkTeacher"></div>
                     </div>
 
-                    <%-- Bulk section --%>
+                   
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">
                             Section <span class="req">*</span>
@@ -248,7 +244,7 @@
                         <div class="form-err" id="errBulkSection"></div>
                     </div>
 
-                    <%-- Multi-subject checklist --%>
+                   
                     <div class="mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <label class="form-label fw-semibold small mb-0">
@@ -329,10 +325,10 @@
 
     </div>
 
-    <%-- ── RIGHT: Tracker + Workload ─────────────────────────── --%>
+ 
     <div class="col-12 col-lg-7">
 
-        <%-- Tracker filters --%>
+      
         <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
             <span class="fw-semibold small text-muted me-auto">
                 <i class="fa fa-clipboard-list me-1"></i>Assignment Tracker
@@ -360,7 +356,7 @@
             </asp:DropDownList>
         </div>
 
-        <%-- Tracker GridView --%>
+    
         <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
             <div class="table-responsive">
                 <asp:GridView ID="gvAssign" runat="server"
@@ -468,13 +464,13 @@
             </div>
         </div>
 
-        <%-- Pagination --%>
+    
         <div class="d-flex justify-content-center mt-3">
             <asp:Panel ID="pnlPager" runat="server"
                 CssClass="d-flex align-items-center gap-2 flex-wrap justify-content-center" />
         </div>
 
-        <%-- Workload Summary --%>
+      
         <div class="card shadow-sm border-0 rounded-4 mt-4">
             <div class="card-header bg-transparent border-bottom py-3 px-4">
                 <span class="fw-semibold small">
@@ -523,7 +519,7 @@
                     </Columns>
                 </asp:GridView>
 
-                <%-- Workload Pagination --%>
+             
                 <div class="d-flex justify-content-center mt-3">
                     <asp:Panel ID="pnlWorkloadPager" runat="server"
                         CssClass="d-flex align-items-center gap-2 flex-wrap justify-content-center" />

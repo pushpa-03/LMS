@@ -383,7 +383,7 @@
         <div class="panel-card">
             <div class="section-header">
                 <h6><i class="fas fa-bell me-2"></i>Notifications</h6>
-                <a href="Notifications.aspx">View all &rarr;</a>
+                <a href="Student_Notifications.aspx">View all &rarr;</a>
             </div>
 
             <asp:Panel ID="pnlNotifications" runat="server">

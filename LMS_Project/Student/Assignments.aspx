@@ -512,18 +512,18 @@ function filterByStatus(status) {
 // ── Validate before submit ────────────────────────────────
 function validateSubmitForm() {
     var fu = document.getElementById('<%= fuAssignment.ClientID %>');
-    if (!fu || !fu.value) {
-        alert('Please select a file to upload.');
-        return false;
+        if (!fu || !fu.value) {
+            alert('Please select a file to upload.');
+            return false;
+        }
+        var ext = fu.value.split('.').pop().toLowerCase();
+        var allowed = ['pdf', 'doc', 'docx', 'zip'];
+        if (allowed.indexOf(ext) === -1) {
+            alert('Only PDF, DOC, DOCX, ZIP files are allowed.');
+            return false;
+        }
+        return true;
     }
-    var ext = fu.value.split('.').pop().toLowerCase();
-    var allowed = ['pdf', 'doc', 'docx', 'zip'];
-    if (allowed.indexOf(ext) === -1) {
-        alert('Only PDF, DOC, DOCX, ZIP files are allowed.');
-        return false;
-    }
-    return true;
-}
 
 </script>
 

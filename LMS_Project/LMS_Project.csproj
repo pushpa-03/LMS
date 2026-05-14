@@ -239,8 +239,10 @@
     <Content Include="RegisterUser.aspx" />
     <Content Include="Student\Assignments.aspx" />
     <Content Include="Student\Attendance.aspx" />
+    <Content Include="Student\ChangePassword.aspx" />
     <Content Include="Student\Dashboard.aspx" />
     <Content Include="Student\MySubjects.aspx" />
+    <Content Include="Student\Profile.aspx" />
     <Content Include="Student\QuizAttempt.aspx" />
     <Content Include="Student\Quizzes.aspx" />
     <Content Include="Student\Results.aspx" />
@@ -569,6 +571,7 @@
     <Compile Include="App_Code\Masters\BL\DashboardBL\OverviewDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\DashboardBL\StreamWiseDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\DashboardBL\StudentmanagementdashboardBL.cs" />
+    <Compile Include="App_Code\Masters\BL\DashboardBL\SuperAdminDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\DashboardBL\SystemUsageDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\DashboardBL\TeacherManagementDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\HelpBL.cs" />
@@ -580,6 +583,7 @@
     <Compile Include="App_Code\Masters\BL\StudentAttendanceBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentDashboardBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentDetailsBL.cs" />
+    <Compile Include="App_Code\Masters\BL\StudentProfileBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentQuizBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentResultsBL.cs" />
     <Compile Include="App_Code\Masters\BL\StudentSubjectsBL.cs" />
@@ -658,6 +662,13 @@
     <Compile Include="Student\Attendance.aspx.designer.cs">
       <DependentUpon>Attendance.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Student\ChangePassword.aspx.cs">
+      <DependentUpon>ChangePassword.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Student\ChangePassword.aspx.designer.cs">
+      <DependentUpon>ChangePassword.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Student\Dashboard.aspx.cs">
       <DependentUpon>Dashboard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -671,6 +682,13 @@
     </Compile>
     <Compile Include="Student\MySubjects.aspx.designer.cs">
       <DependentUpon>MySubjects.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Student\Profile.aspx.cs">
+      <DependentUpon>Profile.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Student\Profile.aspx.designer.cs">
+      <DependentUpon>Profile.aspx</DependentUpon>
     </Compile>
     <Compile Include="Student\QuizAttempt.aspx.cs">
       <DependentUpon>QuizAttempt.aspx</DependentUpon>
