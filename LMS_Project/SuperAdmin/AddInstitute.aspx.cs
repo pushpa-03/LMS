@@ -16,8 +16,14 @@ namespace LMS.SuperAdmin
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            if (Session["UserId"] == null)
+            {
+                Response.Redirect("~/Default.aspx");
+                return;
+            }
+
             if (!IsPostBack)
-            {                
+            {            
                 CurrentPage = 0;
                 LoadSocieties();
                 BindInstitutes();
@@ -133,9 +139,71 @@ namespace LMS.SuperAdmin
         {
             if (!Page.IsValid) return;
 
+         
+            lblMsg.Text = "";
+            lblMsg.CssClass = "text-danger fw-bold";
+
+            // ===== REQUIRED VALIDATION =====
+
+            if (ddlSocieties.SelectedIndex == 0)
+            {
+                lblMsg.Text = "Please select a society.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtInstName.Text) ||
+                string.IsNullOrWhiteSpace(txtInstCode.Text) ||
+                string.IsNullOrWhiteSpace(txtEducationType.Text) ||
+                string.IsNullOrWhiteSpace(txtShortName.Text) ||
+                string.IsNullOrWhiteSpace(txtPhone.Text) ||
+                string.IsNullOrWhiteSpace(txtEmail.Text))
+            {
+                lblMsg.Text = "Please fill all fields.";
+                return;
+            }
+
+            // ===== INSTITUTE NAME =====
+            if (!System.Text.RegularExpressions.Regex.IsMatch(
+                txtInstName.Text.Trim(),
+                @"^[A-Za-z\s&.-]+$"))
+            {
+                lblMsg.Text = "Institute name should contain alphabets only.";
+                return;
+            }
+
+            // ===== INSTITUTE CODE =====
+            if (!System.Text.RegularExpressions.Regex.IsMatch(
+                txtInstCode.Text.Trim(),
+                @"^[A-Za-z0-9]+$"))
+            {
+                lblMsg.Text = "Institute code should contain only letters and numbers.";
+                return;
+            }
+
+            // ===== PHONE =====
+            if (!System.Text.RegularExpressions.Regex.IsMatch(
+                txtPhone.Text.Trim(),
+                @"^\d{10}$"))
+            {
+                lblMsg.Text = "Phone number must be exactly 10 digits.";
+                return;
+            }
+
+            // ===== EMAIL =====
+            if (!System.Text.RegularExpressions.Regex.IsMatch(
+                txtEmail.Text.Trim(),
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                lblMsg.Text = "Please enter a valid email address.";
+                return;
+            }
+
             int instituteId = Convert.ToInt32(hfInstituteId.Value);
             int societyId = Convert.ToInt32(ddlSocieties.SelectedValue);
+
             string code = txtInstCode.Text.Trim();
+
+           
 
             if (bl.IsDuplicate(societyId, txtInstName.Text.Trim(), code, instituteId))
             {
@@ -166,14 +234,30 @@ namespace LMS.SuperAdmin
                 model.LogoURL = "~/Uploads/InstituteLogos/" + fileName;
             }
 
-            if (instituteId == 0)
+            try
             {
-                bl.InsertInstitute(model);
-                lblMsg.Text = "Saved Successfully!";
-            }
+                if (instituteId == 0)
+                {
+                    bl.InsertInstitute(model);
+                    lblMsg.Text = "Institute saved successfully!";
+                }
+                else
+                {
+                    bl.UpdateInstitute(model);
+                    lblMsg.Text = "Institute updated successfully!";
+                }
 
-            else
-                bl.UpdateInstitute(model);
+                lblMsg.CssClass = "text-success fw-bold";
+
+                hfInstituteId.Value = "0";
+                ClearForm();
+                BindInstitutes();
+            }
+            catch (Exception ex)
+            {
+                lblMsg.Text = ex.Message;
+                lblMsg.CssClass = "text-danger fw-bold";
+            }
 
             hfInstituteId.Value = "0";
             ClearForm();
@@ -226,12 +310,37 @@ namespace LMS.SuperAdmin
         private void ClearForm()
         {
             hfInstituteId.Value = "0";
-            txtInstName.Text = txtInstCode.Text = txtShortName.Text = txtEducationType.Text = txtPhone.Text = txtEmail.Text = "";
-            txtInstCode.ReadOnly = false;
-            txtInstCode.BackColor = System.Drawing.Color.White;
-            btnAddInst.Text = "Save Institute";
+
+            // Clear text fields
+            txtInstName.Text = "";
+            txtInstCode.Text = "";
+            txtShortName.Text = "";
+            txtEducationType.Text = "";
+            txtPhone.Text = "";
+            txtEmail.Text = "";
+
+            // Reset dropdown
             ddlSocieties.SelectedIndex = 0;
 
+            // Reset institute code field
+            txtInstCode.ReadOnly = false;
+            txtInstCode.BackColor = System.Drawing.Color.White;
+
+            // Reset button text
+            btnAddInst.Text = "Save Institute";
+
+            // Clear messages
+            lblMsg.Text = "";
+            lblFormStatus.Text = "";
+
+            // Reset file upload label
+            ScriptManager.RegisterStartupScript(
+                this,
+                GetType(),
+                "ResetFileLabel",
+                "document.getElementById('fileLabel').textContent='Click to upload logo (PNG / JPG)';",
+                true
+            );
         }
 
     }

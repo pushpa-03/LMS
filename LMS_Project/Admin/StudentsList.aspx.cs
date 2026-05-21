@@ -86,8 +86,12 @@ namespace LearningManagementSystem.Admin
             {
                 rptHierarchy.DataSource = null;
                 rptHierarchy.DataBind();
+
+                pnlEmpty.Visible = true;
                 return;
             }
+
+            pnlEmpty.Visible = false;
 
             // ✅ SORT STUDENTS BY ROLL NUMBER
             //data = data.OrderBy(x => x["RollNumber"]);

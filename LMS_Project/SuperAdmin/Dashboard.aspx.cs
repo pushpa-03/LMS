@@ -15,6 +15,12 @@ namespace LMS_Project.SuperAdmin
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            if (Session["UserId"] == null)
+            {
+                Response.Redirect("~/Default.aspx");
+                return;
+            }
+
             if (!IsPostBack)
                 LoadAll();
         }

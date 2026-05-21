@@ -255,50 +255,80 @@ namespace LearningManagementSystem.Admin
 {
     public partial class AddSubject : BasePage
     {
-        // ─── Business-Logic Layer ──────────────────────────────────────────────────
+        // ─── BL ───────────────────────────────────────────────────────────────────
         private readonly AddSubjectBL _bl = new AddSubjectBL();
 
-        // ─── Role Check ────────────────────────────────────────────────────────────
-        private bool IsSuperAdmin =>
-            Session["Role"]?.ToString().Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) == true;
+        // ─── Page size ────────────────────────────────────────────────────────────
+        private const int PAGE_SIZE = 4; // rows per page — change as needed
 
-        // ─── Page Load ─────────────────────────────────────────────────────────────
+        // ─── Role check ───────────────────────────────────────────────────────────
+        private bool IsSuperAdmin =>
+            Session["Role"]?.ToString()
+                .Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) == true;
+
+        // ─── ViewState: current page ──────────────────────────────────────────────
+        private int CurrentPage
+        {
+            get
+            {
+                object v = ViewState["SubjectPage"];
+                return v is int p && p > 0 ? p : 1;
+            }
+            set { ViewState["SubjectPage"] = value; }
+        }
+
+        // ─── ViewState: active/inactive toggle ────────────────────────────────────
+        private string ViewStateStatus
+        {
+            get => ViewState["SubjectStatus"]?.ToString() ?? "1";
+            set => ViewState["SubjectStatus"] = value;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        //  PAGE LOAD
+        //
+        //  KEY FIX:  BindGrid() is called on EVERY request — not just !IsPostBack.
+        //  Dynamic controls (phPageNums LinkButtons) must be re-created on every
+        //  postback so ASP.NET can match their event handlers during the event phase.
+        //  Calling BindGrid() only on !IsPostBack means the controls don't exist
+        //  when the pager fires, which is why a second click was needed.
+        // ══════════════════════════════════════════════════════════════════════════
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
+                // First load only: configure role UI and reset to page 1
                 ConfigureRoleUI();
-                BindGrid();
+                CurrentPage = 1;
             }
+
+            // Always rebuild the grid + pager (every GET and every POST)
+            BindGrid();
         }
 
-        // ─── Role-based UI Configuration ───────────────────────────────────────────
+        // ─── Role-based UI ────────────────────────────────────────────────────────
         private void ConfigureRoleUI()
         {
             hfIsSuperAdmin.Value = IsSuperAdmin ? "true" : "false";
-
             if (IsSuperAdmin)
             {
-                // Show the "View Only" badge
                 lblSuperAdminBadge.Visible = true;
-
-                // Hide the Add button panel
                 pnlAddBtn.Visible = false;
-
-                // Hide the toggle button (still functional on postback but no UI change needed)
-                // Keep btnToggleView visible so they can still switch views
             }
         }
 
-        // ─── Bind GridView ─────────────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════════
+        //  BIND GRID  — fetches full result set, slices for current page,
+        //               and always rebuilds the pager controls
+        // ══════════════════════════════════════════════════════════════════════════
         private void BindGrid()
         {
-            // Guard: no session → clear grid
             if (SessionId == 0)
             {
                 gvSubjects.DataSource = null;
                 gvSubjects.DataBind();
                 UpdateStats(null);
+                RenderPager(0, 0);
                 ShowToast("No active academic session found. Please configure a session.", "warning");
                 return;
             }
@@ -306,20 +336,177 @@ namespace LearningManagementSystem.Admin
             string status = ViewStateStatus;
             string search = txtSearch?.Text?.Trim() ?? string.Empty;
 
-            DataTable dt = _bl.GetSubjects(InstituteId, SessionId, status, search);
+            // Full result set from BL
+            DataTable all = _bl.GetSubjects(InstituteId, SessionId, status, search);
+            int total = all?.Rows.Count ?? 0;
 
-            gvSubjects.DataSource = dt;
+            // Pagination maths
+            int totalPages = total == 0 ? 1 : (int)Math.Ceiling((double)total / PAGE_SIZE);
+
+            // Clamp current page
+            if (CurrentPage > totalPages) CurrentPage = totalPages;
+            if (CurrentPage < 1) CurrentPage = 1;
+
+            int skip = (CurrentPage - 1) * PAGE_SIZE;
+            int take = Math.Min(PAGE_SIZE, total - skip);
+
+            // Slice for this page
+            DataTable paged = all.Clone();
+            for (int i = skip; i < skip + take; i++)
+                paged.ImportRow(all.Rows[i]);
+
+            gvSubjects.DataSource = paged;
             gvSubjects.DataBind();
 
-            UpdateStats(dt);
+            // Stats use the full set
+            UpdateStats(all);
 
-            // Sync toggle button label
+            // Info bar
+            int from = total == 0 ? 0 : skip + 1;
+            int to = total == 0 ? 0 : skip + take;
+            lblRangeFrom.Text = from.ToString();
+            lblRangeTo.Text = to.ToString();
+            lblTotalCount.Text = total.ToString();
+            lblPageMeta.Text = total == 0
+                ? "No subjects found."
+                : $"Page {CurrentPage} of {totalPages}";
+
+            // Toggle button label
             btnToggleView.Text = status == "1"
                 ? "<i class='fa fa-eye me-1'></i>Show Inactive"
                 : "<i class='fa fa-eye-slash me-1'></i>Show Active";
+
+            // Rebuild pager
+            RenderPager(totalPages, total);
         }
 
-        // ─── Update Stats Labels ────────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════════
+        //  RENDER PAGER
+        //
+        //  KEY FIX:  Always clears and re-adds LinkButtons to phPageNums.
+        //  Because this runs inside Page_Load (before the event phase) the controls
+        //  exist in the control tree when ASP.NET tries to route the Click event.
+        //  That is what makes single-click navigation work.
+        // ══════════════════════════════════════════════════════════════════════════
+        private void RenderPager(int totalPages, int total)
+        {
+            pnlPager.Visible = totalPages > 1;
+            if (!pnlPager.Visible) return;
+
+            lblCurrentPage.Text = CurrentPage.ToString();
+            lblTotalPages.Text = totalPages.ToString();
+
+            bool onFirst = CurrentPage == 1;
+            bool onLast = CurrentPage == totalPages;
+
+            btnFirst.Enabled = !onFirst;
+            btnPrev.Enabled = !onFirst;
+            btnNext.Enabled = !onLast;
+            btnLast.Enabled = !onLast;
+
+            btnFirst.CssClass = "spg-btn" + (onFirst ? " disabled" : "");
+            btnPrev.CssClass = "spg-btn" + (onFirst ? " disabled" : "");
+            btnNext.CssClass = "spg-btn" + (onLast ? " disabled" : "");
+            btnLast.CssClass = "spg-btn" + (onLast ? " disabled" : "");
+
+            // ── Numbered buttons — always rebuilt ─────────────────────────────────
+            phPageNums.Controls.Clear();
+
+            int windowSize = 5;
+            int startPage = Math.Max(1, CurrentPage - windowSize / 2);
+            int endPage = Math.Min(totalPages, startPage + windowSize - 1);
+            if (endPage - startPage < windowSize - 1)
+                startPage = Math.Max(1, endPage - windowSize + 1);
+
+            // Leading: always show page 1 + ellipsis if window doesn't start at 1
+            if (startPage > 1)
+            {
+                AddPageButton(1, totalPages);
+                if (startPage > 2) AddSeparator();
+            }
+
+            for (int i = startPage; i <= endPage; i++)
+                AddPageButton(i, totalPages);
+
+            // Trailing: always show last page + ellipsis if window doesn't reach it
+            if (endPage < totalPages)
+            {
+                if (endPage < totalPages - 1) AddSeparator();
+                AddPageButton(totalPages, totalPages);
+            }
+        }
+
+        // Creates a numbered page LinkButton and wires the Click event
+        private void AddPageButton(int pageNum, int totalPages)
+        {
+            bool isActive = pageNum == CurrentPage;
+            var lb = new LinkButton
+            {
+                Text = pageNum.ToString(),
+                CommandArgument = pageNum.ToString(),
+                CssClass = "spg-btn" + (isActive ? " active" : ""),
+                // Keep Enabled=true even for the active page so the control
+                // participates in the control tree and doesn't cause issues;
+                // the 'active' CSS style provides the visual cue.
+                Enabled = true
+            };
+            lb.Click += Pager_Click;
+            phPageNums.Controls.Add(lb);
+        }
+
+        private void AddSeparator()
+        {
+            phPageNums.Controls.Add(new Literal
+            {
+                Text = "<span class='spg-sep'>…</span>"
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        //  PAGER CLICK
+        //
+        //  Updates CurrentPage only — BindGrid was already called in Page_Load
+        //  so we do NOT call it again here (it would double-render).
+        //  Instead we just update ViewState and let Page_Load's BindGrid() that
+        //  already ran handle the render... wait, Page_Load runs BEFORE events.
+        //
+        //  Correct flow:
+        //    1. Page_Load fires  → BindGrid() renders page N (old page)
+        //    2. Pager_Click fires → CurrentPage updated to N+1
+        //    3. We call BindGrid() again here to re-render with the new page
+        //
+        //  This is the standard ASP.NET WebForms pattern for dynamic controls.
+        // ══════════════════════════════════════════════════════════════════════════
+        protected void Pager_Click(object sender, EventArgs e)
+        {
+            string arg = (sender as LinkButton)?.CommandArgument ?? "";
+
+            // Compute total pages for clamping
+            string search = txtSearch?.Text?.Trim() ?? string.Empty;
+            DataTable all = _bl.GetSubjects(InstituteId, SessionId, ViewStateStatus, search);
+            int totalPages = all == null || all.Rows.Count == 0
+                                   ? 1
+                                   : (int)Math.Ceiling((double)all.Rows.Count / PAGE_SIZE);
+
+            switch (arg)
+            {
+                case "First": CurrentPage = 1; break;
+                case "Prev": CurrentPage = Math.Max(1, CurrentPage - 1); break;
+                case "Next": CurrentPage = Math.Min(totalPages, CurrentPage + 1); break;
+                case "Last": CurrentPage = totalPages; break;
+                default:
+                    if (int.TryParse(arg, out int pg))
+                        CurrentPage = Math.Max(1, Math.Min(pg, totalPages));
+                    break;
+            }
+
+            // Re-render with the new page (Page_Load already ran with the old page)
+            BindGrid();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        //  STATS
+        // ══════════════════════════════════════════════════════════════════════════
         private void UpdateStats(DataTable dt)
         {
             if (dt == null || dt.Rows.Count == 0)
@@ -329,86 +516,56 @@ namespace LearningManagementSystem.Admin
                 lblInactive.Text = "0";
                 return;
             }
-
             lblTotal.Text = dt.Rows.Count.ToString();
             lblActive.Text = dt.Select("IsActive = 1").Length.ToString();
             lblInactive.Text = dt.Select("IsActive = 0").Length.ToString();
         }
 
-        // ─── Save (Insert / Update) ────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════════
+        //  SAVE (INSERT / UPDATE)
+        // ══════════════════════════════════════════════════════════════════════════
         protected void btnSave_Click(object sender, EventArgs e)
         {
-            // 1. SuperAdmin guard
             if (IsSuperAdmin)
             {
-                ShowToast("Access Denied: SuperAdmin has view-only access and cannot perform CRUD operations.", "warning");
+                ShowToast("Access Denied: SuperAdmin has view-only access.", "warning");
                 return;
             }
-
-            // 2. Session guard
             if (SessionId == 0)
             {
-                ShowToast("No active academic session found. Please configure an academic session first.", "warning");
+                ShowToast("No active academic session found.", "warning");
                 return;
             }
 
-            // 3. Server-side validation
             string code = txtSubjectCode.Text.Trim();
             string name = txtSubjectName.Text.Trim();
             string durVal = txtDurationValue.Text.Trim();
             string durUnit = ddlDurationUnit.SelectedValue;
 
             if (string.IsNullOrWhiteSpace(code))
-            {
-                ShowToast("Subject Code is required.", "danger");
-                ReopenModal();
-                return;
-            }
+            { ShowToast("Subject Code is required.", "danger"); ReopenModal(); return; }
 
-            // Code: alphanumeric only
             if (!System.Text.RegularExpressions.Regex.IsMatch(code, @"^[a-zA-Z0-9]+$"))
-            {
-                ShowToast("Subject Code must contain only letters and numbers (no special characters).", "danger");
-                ReopenModal();
-                return;
-            }
+            { ShowToast("Subject Code must contain only letters and numbers.", "danger"); ReopenModal(); return; }
 
             if (string.IsNullOrWhiteSpace(name) || name.Length < 3)
-            {
-                ShowToast("Subject Name must be at least 3 characters.", "danger");
-                ReopenModal();
-                return;
-            }
+            { ShowToast("Subject Name must be at least 3 characters.", "danger"); ReopenModal(); return; }
 
-            // Duration: if provided, must be a positive integer
             string durationFull = string.Empty;
             if (!string.IsNullOrWhiteSpace(durVal))
             {
                 if (!int.TryParse(durVal, out int durInt) || durInt <= 0)
-                {
-                    ShowToast("Duration must be a positive number.", "danger");
-                    ReopenModal();
-                    return;
-                }
-                durationFull = $"{durInt} {durUnit}"; // e.g. "45 mins"
+                { ShowToast("Duration must be a positive number.", "danger"); ReopenModal(); return; }
+                durationFull = $"{durInt} {durUnit}";
             }
 
             try
             {
-                int subjectId = string.IsNullOrEmpty(hfSubjectId.Value)
-                    ? 0
-                    : Convert.ToInt32(hfSubjectId.Value);
-
+                int subjectId = string.IsNullOrEmpty(hfSubjectId.Value) ? 0 : Convert.ToInt32(hfSubjectId.Value);
                 bool isInsert = subjectId == 0;
 
-                // Check for duplicate code in same session (server-side)
-                bool isDuplicate = _bl.IsCodeDuplicate(InstituteId, SessionId, code, subjectId);
-                if (isDuplicate)
-                {
-                    ShowToast($"Subject Code '{code}' already exists in this session. Please use a unique code.", "danger");
-                    ReopenModal();
-                    return;
-                }
+                if (_bl.IsCodeDuplicate(InstituteId, SessionId, code, subjectId))
+                { ShowToast($"Subject Code '{code}' already exists in this session.", "danger"); ReopenModal(); return; }
 
                 var obj = new AddSubjectGC
                 {
@@ -426,39 +583,36 @@ namespace LearningManagementSystem.Admin
                 if (isInsert)
                 {
                     _bl.Insert(obj);
-                    LogActivity(UserId, SocietyId, InstituteId, SessionId,
-                        $"INSERT_SUBJECT: Code={code}, Name={name}", 0);
+                    LogActivity(UserId, SocietyId, InstituteId, SessionId, $"INSERT_SUBJECT: Code={code}, Name={name}", 0);
                     ShowToast($"Subject '{name}' added successfully.", "success");
+                    CurrentPage = 1;
                 }
                 else
                 {
                     _bl.Update(obj);
-                    LogActivity(UserId, SocietyId, InstituteId, SessionId,
-                        $"UPDATE_SUBJECT: Id={subjectId}, Code={code}, Name={name}", subjectId);
+                    LogActivity(UserId, SocietyId, InstituteId, SessionId, $"UPDATE_SUBJECT: Id={subjectId}, Code={code}, Name={name}", subjectId);
                     ShowToast($"Subject '{name}' updated successfully.", "success");
                 }
 
                 Clear();
+                // BindGrid already called by Page_Load; call again to reflect new data
                 BindGrid();
             }
             catch (Exception ex)
             {
-                // Log internally; show friendly message
-                System.Diagnostics.Debug.WriteLine($"[AddSubject.Save] Error: {ex}");
-                ShowToast("An unexpected error occurred while saving. Please try again.", "danger");
+                System.Diagnostics.Debug.WriteLine($"[AddSubject.Save] {ex}");
+                ShowToast("An unexpected error occurred. Please try again.", "danger");
                 ReopenModal();
             }
         }
 
-        // ─── GridView Row Commands ─────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════════════
+        //  GRIDVIEW ROW COMMANDS
+        // ══════════════════════════════════════════════════════════════════════════
         protected void gvSubjects_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            // SuperAdmin: block all modifications
             if (IsSuperAdmin)
-            {
-                ShowToast("Access Denied: SuperAdmin has view-only access and cannot modify subjects.", "warning");
-                return;
-            }
+            { ShowToast("Access Denied: SuperAdmin has view-only access.", "warning"); return; }
 
             if (e.CommandArgument == null) return;
             if (!int.TryParse(e.CommandArgument.ToString(), out int id)) return;
@@ -467,140 +621,110 @@ namespace LearningManagementSystem.Admin
             {
                 switch (e.CommandName)
                 {
-                    case "EditRow":
-                        HandleEdit(id);
-                        break;
-
-                    case "Toggle":
-                        HandleToggle(id);
-                        break;
-
-                    case "DeleteRow":
-                        HandleDelete(id);
-                        break;
+                    case "EditRow": HandleEdit(id); break;
+                    case "Toggle": HandleToggle(id); break;
+                    case "DeleteRow": HandleDelete(id); break;
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AddSubject.RowCommand] Error: {ex}");
+                System.Diagnostics.Debug.WriteLine($"[AddSubject.RowCommand] {ex}");
                 ShowToast("An unexpected error occurred. Please try again.", "danger");
             }
         }
 
-        // ─── Handle Edit ───────────────────────────────────────────────────────────
         private void HandleEdit(int id)
         {
             DataTable dt = _bl.GetById(id, SessionId);
             if (dt == null || dt.Rows.Count == 0)
-            {
-                ShowToast("Subject not found or may have been deleted.", "warning");
-                BindGrid();
-                return;
-            }
+            { ShowToast("Subject not found.", "warning"); BindGrid(); return; }
 
             DataRow dr = dt.Rows[0];
-
             hfSubjectId.Value = id.ToString();
             txtSubjectCode.Text = dr["SubjectCode"].ToString();
             txtSubjectName.Text = dr["SubjectName"].ToString();
             txtDescription.Text = dr["Description"].ToString();
             chkActive.Checked = Convert.ToBoolean(dr["IsActive"]);
 
-            // Parse stored duration back into value + unit
-            string fullDuration = dr["Duration"].ToString();
-            ParseDuration(fullDuration, out string durVal, out string durUnit);
+            ParseDuration(dr["Duration"].ToString(), out string durVal, out string durUnit);
             txtDurationValue.Text = durVal;
             if (!string.IsNullOrEmpty(durUnit))
-            {
-                try { ddlDurationUnit.SelectedValue = durUnit; } catch { /* default */ }
-            }
+                try { ddlDurationUnit.SelectedValue = durUnit; } catch { }
 
-            // Open modal via JS
             ScriptManager.RegisterStartupScript(this, GetType(), "openEdit", "openModal();", true);
         }
 
-        // ─── Handle Toggle ─────────────────────────────────────────────────────────
         private void HandleToggle(int id)
         {
-            // Get current status first for better toast message
             DataTable dt = _bl.GetById(id, SessionId);
             if (dt == null || dt.Rows.Count == 0)
-            {
-                ShowToast("Subject not found.", "warning");
-                BindGrid();
-                return;
-            }
+            { ShowToast("Subject not found.", "warning"); BindGrid(); return; }
 
             bool wasActive = Convert.ToBoolean(dt.Rows[0]["IsActive"]);
             string subjectName = dt.Rows[0]["SubjectName"].ToString();
 
             _bl.Toggle(id, SessionId);
-
             LogActivity(UserId, SocietyId, InstituteId, SessionId,
                 $"TOGGLE_SUBJECT: Id={id}, Name={subjectName}, NewStatus={(!wasActive ? "Active" : "Inactive")}", id);
 
-            string newStatus = wasActive ? "deactivated" : "activated";
-            ShowToast($"Subject '{subjectName}' has been {newStatus} successfully.", "success");
-
+            ShowToast($"Subject '{subjectName}' {(wasActive ? "deactivated" : "activated")} successfully.", "success");
             BindGrid();
         }
 
-        // ─── Handle Delete ─────────────────────────────────────────────────────────
         private void HandleDelete(int id)
         {
-            // Check if subject is used in other tables before deleting
-            bool isUsed = _bl.IsSubjectInUse(id);
-            if (isUsed)
+            if (_bl.IsSubjectInUse(id))
             {
-                // Get name for a better message
-                string subName = GetSubjectName(id);
-                ShowToast(
-                    $"Cannot delete '{subName}': this subject is assigned to students, faculty, or other records. " +
-                    "You may deactivate it instead.",
-                    "warning");
+                ShowToast($"Cannot delete '{GetSubjectName(id)}': subject is in use. Deactivate instead.", "warning");
                 return;
             }
 
             DataTable dt = _bl.GetById(id, SessionId);
             string name = dt?.Rows.Count > 0 ? dt.Rows[0]["SubjectName"].ToString() : "Subject";
-
             _bl.Delete(id, SessionId);
 
-            LogActivity(UserId, SocietyId, InstituteId, SessionId,
-                $"DELETE_SUBJECT: Id={id}, Name={name}", id);
-
+            LogActivity(UserId, SocietyId, InstituteId, SessionId, $"DELETE_SUBJECT: Id={id}, Name={name}", id);
             ShowToast($"Subject '{name}' deleted successfully.", "success");
+
+            // Step back if the last item on the last page was deleted
+            string search = txtSearch?.Text?.Trim() ?? string.Empty;
+            DataTable check = _bl.GetSubjects(InstituteId, SessionId, ViewStateStatus, search);
+            int totalPages = check == null || check.Rows.Count == 0
+                                   ? 1 : (int)Math.Ceiling((double)check.Rows.Count / PAGE_SIZE);
+            if (CurrentPage > totalPages) CurrentPage = totalPages;
+
             BindGrid();
         }
 
-        // ─── Toggle View (Active / Inactive) ──────────────────────────────────────
+        // ─── Toggle active / inactive view ────────────────────────────────────────
         protected void btnToggleView_Click(object sender, EventArgs e)
         {
             ViewStateStatus = ViewStateStatus == "1" ? "0" : "1";
+            CurrentPage = 1;
             BindGrid();
         }
 
-        // ─── Toast Helper ──────────────────────────────────────────────────────────
-        /// <summary>
-        /// Shows a Bootstrap toast via ScriptManager.
-        /// type: "success" | "danger" | "warning"
-        /// </summary>
+        // ─── Server-side search (if a search button is wired up) ──────────────────
+        protected void btnSearch_Click(object sender, EventArgs e)
+        {
+            CurrentPage = 1;
+            BindGrid();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        //  HELPERS
+        // ══════════════════════════════════════════════════════════════════════════
         private void ShowToast(string msg, string type = "success")
         {
-            // Escape single quotes to prevent JS injection
             msg = msg.Replace("'", "\\'");
-
-            string script = $"serverToast('{msg}', '{type}');";
-            ScriptManager.RegisterStartupScript(this, GetType(), "toast_" + Guid.NewGuid().ToString("N").Substring(0, 8), script, true);
+            ScriptManager.RegisterStartupScript(this, GetType(),
+                "toast_" + Guid.NewGuid().ToString("N").Substring(0, 8),
+                $"serverToast('{msg}','{type}');", true);
         }
 
-        // ─── Reopen Modal (after server validation failure) ────────────────────────
-        private void ReopenModal()
-        {
+        private void ReopenModal() =>
             ScriptManager.RegisterStartupScript(this, GetType(), "reopenModal", "openModal();", true);
-        }
 
-        // ─── Clear Form ────────────────────────────────────────────────────────────
         private void Clear()
         {
             hfSubjectId.Value = string.Empty;
@@ -612,28 +736,15 @@ namespace LearningManagementSystem.Admin
             ddlDurationUnit.SelectedIndex = 0;
         }
 
-        // ─── ViewState Status ──────────────────────────────────────────────────────
-        private string ViewStateStatus
+        private void ParseDuration(string full, out string value, out string unit)
         {
-            get => ViewState["SubjectStatus"]?.ToString() ?? "1"; // "1" = Active
-            set => ViewState["SubjectStatus"] = value;
-        }
-
-        // ─── Duration Parser ───────────────────────────────────────────────────────
-        /// <summary>Splits "45 mins" → ("45", "mins")</summary>
-        private void ParseDuration(string fullDuration, out string value, out string unit)
-        {
-            value = string.Empty;
-            unit = "hrs";
-
-            if (string.IsNullOrWhiteSpace(fullDuration)) return;
-
-            var parts = fullDuration.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            value = string.Empty; unit = "hrs";
+            if (string.IsNullOrWhiteSpace(full)) return;
+            var parts = full.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length >= 1) value = parts[0];
             if (parts.Length >= 2) unit = parts[1].ToLower();
         }
 
-        // ─── Get Subject Name (for messages) ──────────────────────────────────────
         private string GetSubjectName(int id)
         {
             try

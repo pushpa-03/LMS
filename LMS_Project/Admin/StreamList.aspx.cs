@@ -1,6 +1,8 @@
 ﻿using LMS.BL;
 using System;
 using System.Data;
+using System.Collections.Generic;
+using System.Web.UI.WebControls;
 
 namespace LearningManagementSystem.Admin
 {
@@ -23,31 +25,52 @@ namespace LearningManagementSystem.Admin
                 return;
             }
 
-            LoadStreams();
+            if (!IsPostBack)
+            {
+                LoadStreams();
+            }
         }
 
-        // ================= LOAD =================
+       
         void LoadStreams()
         {
-            DataTable dt = bl.GetStreams(InstituteId, SessionId,CurrentFilter);
+            DataTable dt = bl.GetStreams(InstituteId, SessionId, CurrentFilter);
 
-            // SERVER SEARCH SAFE
+            // SEARCH
             if (!string.IsNullOrWhiteSpace(txtSearch.Value))
             {
                 string search = txtSearch.Value.Replace("'", "''");
 
                 DataRow[] rows = dt.Select($"StreamName LIKE '%{search}%'");
 
-                if (rows.Length > 0)
-                    dt = rows.CopyToDataTable();
-                else
-                    dt = dt.Clone();
+                dt = rows.Length > 0
+                    ? rows.CopyToDataTable()
+                    : dt.Clone();
             }
 
-            rptStreams.DataSource = dt;
+            // ===== PAGING =====
+            PagedDataSource pg = new PagedDataSource();
+
+            pg.DataSource = dt.DefaultView;
+
+            pg.AllowPaging = true;
+
+            pg.PageSize = 5;
+
+            pg.CurrentPageIndex = CurrentPage;
+
+            rptStreams.DataSource = pg;
             rptStreams.DataBind();
 
-            // ================= STATS =================
+            // ===== PAGER =====
+            pagerDiv.Visible = pg.PageCount > 1;
+
+            GeneratePager(pg.PageCount);
+
+            // ===== EMPTY =====
+            pnlEmpty.Visible = dt.Rows.Count == 0;
+
+            // ===== STATS =====
             int total = dt.Rows.Count;
             int active = dt.Select("IsActive = true").Length;
             int inactive = dt.Select("IsActive = false").Length;
@@ -56,18 +79,69 @@ namespace LearningManagementSystem.Admin
             lblActive.Text = active.ToString();
             lblInactive.Text = inactive.ToString();
 
-            // 🔥 EXTRA ANALYTICS
-            if (total > 0)
-            {
-                int percent = (active * 100) / total;
-                lblPercent.Text = percent + "%";
-            }
-            else
-            {
-                lblPercent.Text = "0%";
-            }
+            lblPercent.Text = total > 0
+                ? ((active * 100) / total) + "%"
+                : "0%";
         }
 
+        private void GeneratePager(int totalPages)
+        {
+            List<dynamic> pages = new List<dynamic>();
+
+            int start = Math.Max(CurrentPage - 2, 0);
+            int end = Math.Min(start + 4, totalPages - 1);
+
+            for (int i = start; i <= end; i++)
+            {
+                pages.Add(new
+                {
+                    Text = (i + 1).ToString(),
+                    Value = i,
+                    Selected = i == CurrentPage
+                });
+            }
+
+            rptPager.DataSource = pages;
+            rptPager.DataBind();
+        }
+
+        protected void Pager_Click(object sender, EventArgs e)
+        {
+            LinkButton btn = (LinkButton)sender;
+
+            DataTable dt = bl.GetStreams(InstituteId, SessionId, CurrentFilter);
+
+            int totalPages = (int)Math.Ceiling((double)dt.Rows.Count / 5);
+
+            switch (btn.CommandArgument)
+            {
+                case "First":
+                    CurrentPage = 0;
+                    break;
+
+                case "Prev":
+                    if (CurrentPage > 0)
+                        CurrentPage--;
+                    break;
+
+                case "Next":
+                    if (CurrentPage < totalPages - 1)
+                        CurrentPage++;
+                    break;
+
+                case "Last":
+                    CurrentPage = totalPages - 1;
+                    break;
+
+                default:
+                    CurrentPage = Convert.ToInt32(btn.CommandArgument);
+                    break;
+            }
+
+            LoadStreams();
+
+            upStreams.Update();
+        }
         // ================= FILTER =================
         protected void Filter_Click(object sender, EventArgs e)
         {
@@ -83,6 +157,20 @@ namespace LearningManagementSystem.Admin
             }
 
             LoadStreams();
+        }
+
+        private int CurrentPage
+        {
+            get
+            {
+                return ViewState["CurrentPage"] != null
+                    ? Convert.ToInt32(ViewState["CurrentPage"])
+                    : 0;
+            }
+            set
+            {
+                ViewState["CurrentPage"] = value;
+            }
         }
     }
 }

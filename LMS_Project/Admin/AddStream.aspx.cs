@@ -5,6 +5,7 @@ using System;
 using System.Data;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using System.Collections.Generic;
 
 namespace LearningManagementSystem.Admin
 {
@@ -56,12 +57,50 @@ namespace LearningManagementSystem.Admin
             gvStreams.DataSource = dt;
             gvStreams.DataBind();
 
+            
             lblTotal.Text = dt.Rows.Count.ToString();
 
             lblActive.Text = dt.Select("IsActive = true").Length.ToString();
             lblInactive.Text = dt.Select("IsActive = false").Length.ToString();
         }
 
+        protected void gvStreams_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.Pager)
+            {
+                Repeater rptPager =
+                    (Repeater)e.Row.FindControl("rptPager");
+
+                if (rptPager != null)
+                {
+                    rptPager.DataSource = GetPagerData();
+                    rptPager.DataBind();
+                }
+            }
+        }
+
+        private List<dynamic> GetPagerData()
+        {
+            List<dynamic> pages = new List<dynamic>();
+
+            int totalPages = gvStreams.PageCount;
+            int currentPage = gvStreams.PageIndex;
+
+            int start = Math.Max(currentPage - 2, 0);
+            int end = Math.Min(start + 4, totalPages - 1);
+
+            for (int i = start; i <= end; i++)
+            {
+                pages.Add(new
+                {
+                    Text = (i + 1).ToString(),
+                    Value = i,
+                    Selected = i == currentPage
+                });
+            }
+
+            return pages;
+        }
 
         // ================= SAVE =================
         protected void btnSave_Click(object sender, EventArgs e)
@@ -109,6 +148,10 @@ namespace LearningManagementSystem.Admin
         // ================= GRID COMMAND =================
         protected void gvStreams_RowCommand(object sender, GridViewCommandEventArgs e)
         {
+            // 🚀 Ignore paging commands
+            if (e.CommandName == "Page")
+                return;
+
             if (IsSuperAdmin)
             {
                 ShowMsg("SuperAdmin cannot perform this action.", false);
@@ -255,5 +298,16 @@ namespace LearningManagementSystem.Admin
 
             ScriptManager.RegisterStartupScript(this, GetType(), Guid.NewGuid().ToString(), script, true);
         }
+
+        protected void gvStreams_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvStreams.PageIndex = e.NewPageIndex;
+
+            LoadStreams();
+
+            upStreams.Update();
+        }
+
+        
     }
 }

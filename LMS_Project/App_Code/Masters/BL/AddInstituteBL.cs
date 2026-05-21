@@ -111,7 +111,7 @@ namespace LMS.BL
         public void ToggleInstituteStatus(int instituteId)
         {
             SqlCommand cmd = new SqlCommand();
-            cmd.CommandText = "UPDATE Institutes SET IsActive = IsActive ^ 1 WHERE InstituteId=@Id";
+            cmd.CommandText = "UPDATE Institutes SET IsActive = CASE WHEN IsActive = 1 THEN 0 ELSE 1 END WHERE InstituteId=@Id";
             cmd.Parameters.AddWithValue("@Id", instituteId);
 
             dl.ExecuteCMD(cmd);

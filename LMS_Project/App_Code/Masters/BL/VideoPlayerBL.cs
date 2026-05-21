@@ -505,4 +505,75 @@ using System.Data.SqlClient;
 
         new DataLayer().ExecuteCMD(cmd);
     }
+
+
+    //used in progressTracker page
+
+    // ═════════════════════════════════════════════════════════════════════=
+    //  PROGRESS AGGREGATION
+    //  - Subject level: average completion across videos in subject for a user
+    //  - Chapter level: average completion across videos in chapter
+    //  - Video level: individual video progress rows
+    // ═════════════════════════════════════════════════════════════════════=
+    public DataTable GetSubjectProgress(int userId, int sessionId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+            SELECT
+                S.SubjectId,
+                S.SubjectName,
+                ISNULL(ROUND(AVG(CAST(ISNULL(P.WatchedPercent,0) AS FLOAT)),0),0) AS CompletionPercent,
+                COUNT(DISTINCT V.VideoId) AS TotalVideos,
+                SUM(CASE WHEN ISNULL(P.WatchedPercent,0) >= 100 THEN 1 ELSE 0 END) AS CompletedVideos
+            FROM Subjects S
+            INNER JOIN Videos V ON V.SubjectId = S.SubjectId AND V.SessionId = @SessionId AND V.IsActive = 1
+            LEFT JOIN VideoWatchProgress P ON P.VideoId = V.VideoId AND P.UserId = @UserId
+            GROUP BY S.SubjectId, S.SubjectName
+            ORDER BY S.SubjectName");
+
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+        return _dl.GetDataTable(cmd) ?? new DataTable();
+    }
+
+    public DataTable GetChapterProgress(int subjectId, int userId, int sessionId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+            SELECT
+                C.ChapterId,
+                C.ChapterName,
+                ISNULL(ROUND(AVG(CAST(ISNULL(P.WatchedPercent,0) AS FLOAT)),0),0) AS CompletionPercent,
+                COUNT(DISTINCT V.VideoId) AS TotalVideos,
+                SUM(CASE WHEN ISNULL(P.WatchedPercent,0) >= 100 THEN 1 ELSE 0 END) AS CompletedVideos
+            FROM Chapters C
+            INNER JOIN Videos V ON V.ChapterId = C.ChapterId AND V.SessionId = @SessionId AND V.IsActive = 1
+            LEFT JOIN VideoWatchProgress P ON P.VideoId = V.VideoId AND P.UserId = @UserId
+            WHERE V.SubjectId = @SubjectId
+            GROUP BY C.ChapterId, C.ChapterName
+            ORDER BY C.ChapterName");
+
+        cmd.Parameters.AddWithValue("@SubjectId", subjectId);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+        return _dl.GetDataTable(cmd) ?? new DataTable();
+    }
+
+    public DataTable GetVideoProgressByChapter(int chapterId, int userId, int sessionId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+            SELECT
+                V.VideoId,
+                V.Title,
+                ISNULL(P.WatchedPercent, 0) AS WatchedPercent,
+                CASE WHEN ISNULL(P.WatchedPercent,0) >= 100 OR ISNULL(VV.IsCompleted,0)=1 THEN 1 ELSE 0 END AS IsCompleted
+            FROM Videos V
+            LEFT JOIN VideoWatchProgress P ON P.VideoId = V.VideoId AND P.UserId = @UserId
+            LEFT JOIN VideoViews VV ON VV.VideoId = V.VideoId AND VV.UserId = @UserId
+            WHERE V.ChapterId = @ChapterId AND V.SessionId = @SessionId AND V.IsActive = 1
+            ORDER BY V.VideoId");
+
+        cmd.Parameters.AddWithValue("@ChapterId", chapterId);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+        return _dl.GetDataTable(cmd) ?? new DataTable();
+    }
 }

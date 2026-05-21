@@ -120,6 +120,7 @@
     <Content Include="Admin\AddTeacher.aspx" />
     <Content Include="Admin\AdminCalendar.aspx" />
     <Content Include="Admin\AdminHelp.aspx" />
+    <Content Include="Admin\AdminProfile.aspx" />
     <Content Include="Admin\AssignLevelSubject.aspx" />
     <Content Include="Admin\AssignStudentSubject.aspx" />
     <Content Include="Admin\AssignSubjectFaculty.aspx" />
@@ -243,6 +244,7 @@
     <Content Include="Student\Dashboard.aspx" />
     <Content Include="Student\MySubjects.aspx" />
     <Content Include="Student\Profile.aspx" />
+    <Content Include="Student\ProgressTracker.aspx" />
     <Content Include="Student\QuizAttempt.aspx" />
     <Content Include="Student\Quizzes.aspx" />
     <Content Include="Student\Results.aspx" />
@@ -345,6 +347,13 @@
     </Compile>
     <Compile Include="Admin\AdminMaster.Master.designer.cs">
       <DependentUpon>AdminMaster.Master</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\AdminProfile.aspx.cs">
+      <DependentUpon>AdminProfile.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\AdminProfile.aspx.designer.cs">
+      <DependentUpon>AdminProfile.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\AssignLevelSubject.aspx.cs">
       <DependentUpon>AssignLevelSubject.aspx</DependentUpon>
@@ -552,6 +561,7 @@
     <Compile Include="App_Code\Masters\BL\AddSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AddTeacherBL.cs" />
     <Compile Include="App_Code\Masters\BL\AdminDashboardBL.cs" />
+    <Compile Include="App_Code\Masters\BL\AdminProfileBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignLevelSubjectBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignmentBL.cs" />
     <Compile Include="App_Code\Masters\BL\AssignStudentSubjectBL.cs" />
@@ -689,6 +699,13 @@
     </Compile>
     <Compile Include="Student\Profile.aspx.designer.cs">
       <DependentUpon>Profile.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Student\ProgressTracker.aspx.cs">
+      <DependentUpon>ProgressTracker.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Student\ProgressTracker.aspx.designer.cs">
+      <DependentUpon>ProgressTracker.aspx</DependentUpon>
     </Compile>
     <Compile Include="Student\QuizAttempt.aspx.cs">
       <DependentUpon>QuizAttempt.aspx</DependentUpon>

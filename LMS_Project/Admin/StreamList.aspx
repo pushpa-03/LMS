@@ -120,6 +120,48 @@
     color:#90a4ae;
 }
 
+/* ===== PAGINATION ===== */
+
+.pager-wrap{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+    padding:20px;
+    flex-wrap:wrap;
+}
+
+.pager-btn{
+    min-width:38px;
+    height:38px;
+    padding:0 14px;
+
+    border-radius:10px;
+    border:1px solid #ddd;
+
+    background:#fff;
+    color:#333 !important;
+
+    font-weight:700;
+    text-decoration:none !important;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    transition:all .2s ease;
+}
+
+.pager-btn:hover{
+    background:#f5f5f5;
+    transform:translateY(-1px);
+}
+
+.pager-btn.active{
+    background:#1565c0;
+    color:#fff !important;
+    border-color:#1565c0;
+}
 </style>
 
 </asp:Content>
@@ -187,27 +229,107 @@
         onkeyup="filterStreams()" />
 </div>
 
+
 <!-- ===== STREAM LIST ===== -->
-<asp:Repeater ID="rptStreams" runat="server">
-    <ItemTemplate>
+<asp:UpdatePanel ID="upStreams" runat="server" UpdateMode="Conditional">
+<ContentTemplate>
 
-        <div class="stream-card">
+    <asp:Repeater ID="rptStreams" runat="server">
+        <ItemTemplate>
 
-            <div>
-                <div class="stream-title"><%# Eval("StreamName") %></div>
-                <small class="text-muted">Stream ID: <%# Eval("StreamId") %></small>
+            <div class="stream-card">
+
+                <div>
+                    <div class="stream-title">
+                        <%# Eval("StreamName") %>
+                    </div>
+
+                    <small class="text-muted">
+                        Stream ID: <%# Eval("StreamId") %>
+                    </small>
+                </div>
+
+                <div>
+                    <span class='<%# Convert.ToBoolean(Eval("IsActive")) ? "badge-active" : "badge-inactive" %>'>
+                        <%# Convert.ToBoolean(Eval("IsActive")) ? "Active" : "Inactive" %>
+                    </span>
+                </div>
+
             </div>
 
-            <div>
-                <span class='<%# Convert.ToBoolean(Eval("IsActive")) ? "badge-active" : "badge-inactive" %>'>
-                    <%# Convert.ToBoolean(Eval("IsActive")) ? "Active" : "Inactive" %>
-                </span>
-            </div>
+        </ItemTemplate>
+    </asp:Repeater>
 
+    <!-- ===== PAGINATION ===== -->
+    <div class="pager-wrap" runat="server" id="pagerDiv">
+
+        <!-- FIRST -->
+        <asp:LinkButton ID="lnkFirst"
+            runat="server"
+            CssClass="pager-btn"
+            CommandArgument="First"
+            OnClick="Pager_Click">
+            <<
+        </asp:LinkButton>
+
+        <!-- PREVIOUS -->
+        <asp:LinkButton ID="lnkPrev"
+            runat="server"
+            CssClass="pager-btn"
+            CommandArgument="Prev"
+            OnClick="Pager_Click">
+            <
+        </asp:LinkButton>
+
+        <!-- PAGE NUMBERS -->
+        <asp:Repeater ID="rptPager" runat="server">
+            <ItemTemplate>
+
+                <asp:LinkButton ID="lnkPage"
+                    runat="server"
+                    CssClass='<%# Convert.ToBoolean(Eval("Selected")) ? "pager-btn active" : "pager-btn" %>'
+                    Text='<%# Eval("Text") %>'
+                    CommandArgument='<%# Eval("Value") %>'
+                    OnClick="Pager_Click">
+                </asp:LinkButton>
+
+            </ItemTemplate>
+        </asp:Repeater>
+
+        <!-- NEXT -->
+        <asp:LinkButton ID="lnkNext"
+            runat="server"
+            CssClass="pager-btn"
+            CommandArgument="Next"
+            OnClick="Pager_Click">
+            >
+        </asp:LinkButton>
+
+        <!-- LAST -->
+        <asp:LinkButton ID="lnkLast"
+            runat="server"
+            CssClass="pager-btn"
+            CommandArgument="Last"
+            OnClick="Pager_Click">
+            >>
+        </asp:LinkButton>
+
+    </div>
+
+</ContentTemplate>
+</asp:UpdatePanel>
+
+    <asp:Panel ID="pnlEmpty" runat="server" Visible="false">
+        <div class="text-center p-5 bg-white rounded shadow-sm">
+            <i class="fa fa-database fa-3x text-muted mb-3"></i>
+
+            <h5>No Streams Found</h5>
+
+            <p>
+                Try adjusting the search or switch the active/inactive toggle.
+            </p>
         </div>
-
-    </ItemTemplate>
-</asp:Repeater>
+    </asp:Panel>
 
 <div id="noData" class="empty-state" style="display:none;">
     No streams found

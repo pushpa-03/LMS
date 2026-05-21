@@ -10,95 +10,98 @@ namespace LearningManagementSystem.Admin
     {
         CourseBL bl = new CourseBL();
 
+        // Page size for client-side pagination (stream cards per page)
+        // Set via hidden field so JS can read it
+        private const int CardsPerPage = 3;
+
         protected void Page_Load(object sender, EventArgs e)
         {
-            
-
-            if (!IsPostBack)
-            {
-                LoadCourses();
-            }
-            else
-            {
-                LoadCourses();
-            }
+            // Always load — we need current data on every postback
+            LoadCourses(ViewState["FilterStatus"]?.ToString() ?? "All");
         }
 
         private void LoadCourses(string status = "All")
         {
+            // Full data for stats
+            DataTable dtAll = bl.GetCourses(InstituteId, SessionId, "All");
 
-            // 🔥 1. GET FULL DATA FOR STATS
-            DataTable dtAll = bl.GetCourses(InstituteId,SessionId ,"All");
+            // Filtered display data
+            DataTable dt = status == "All"
+                ? dtAll
+                : bl.GetCourses(InstituteId, SessionId, status);
 
-            // 🔥 2. APPLY FILTER FOR DISPLAY
-            DataTable dt = status == "All" ? dtAll : bl.GetCourses(InstituteId,SessionId, status);
-
-            // 🔍 SEARCH (apply only on display data)
-            if (!string.IsNullOrEmpty(txtSearch.Value))
+            // Server-side search filter (applied on full filtered set)
+            string search = txtSearch.Value?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(search))
             {
-                string search = txtSearch.Value.Replace("'", "''");
-
-                var rows = dt.Select($"CourseName LIKE '%{search}%' OR CourseCode LIKE '%{search}%'");
+                string safe = search.Replace("'", "''");
+                DataRow[] rows = dt.Select(
+                    $"CourseName LIKE '%{safe}%' OR CourseName LIKE '%{safe}%' OR CourseCode LIKE '%{safe}%'");
                 dt = rows.Length > 0 ? rows.CopyToDataTable() : dt.Clone();
             }
 
-            // ================= ✅ CORRECT STATS =================
+            // Stats (always from full unfiltered set)
             lblTotal.Text = dtAll.Rows.Count.ToString();
             lblActive.Text = dtAll.Select("IsActive = true").Length.ToString();
             lblInactive.Text = dtAll.Select("IsActive = false").Length.ToString();
 
-            // ================= GROUP (USE FILTERED DATA) =================
+            // Group by stream
             DataTable streamTable = new DataTable();
             streamTable.Columns.Add("StreamId");
             streamTable.Columns.Add("StreamName");
             streamTable.Columns.Add("CourseCount");
             streamTable.Columns.Add("Courses", typeof(DataTable));
 
-            DataView view = new DataView(dt);
-            DataTable distinct = view.ToTable(true, "StreamId", "StreamName");
+            DataTable distinct = new DataView(dt).ToTable(true, "StreamId", "StreamName");
 
             foreach (DataRow row in distinct.Rows)
             {
-                DataRow newRow = streamTable.NewRow();
+                DataRow[] matches = dt.Select("StreamId=" + row["StreamId"]);
+                if (matches.Length == 0) continue;
 
-                newRow["StreamId"] = row["StreamId"];
-                newRow["StreamName"] = row["StreamName"];
-
-                DataRow[] rows = dt.Select("StreamId=" + row["StreamId"]);
-                newRow["CourseCount"] = rows.Length;
-
-                if (rows.Length > 0)
-                    newRow["Courses"] = rows.CopyToDataTable();
-
-                streamTable.Rows.Add(newRow);
+                DataRow nr = streamTable.NewRow();
+                nr["StreamId"] = row["StreamId"];
+                nr["StreamName"] = row["StreamName"];
+                nr["CourseCount"] = matches.Length;
+                nr["Courses"] = matches.CopyToDataTable();
+                streamTable.Rows.Add(nr);
             }
 
             rptStreams.DataSource = streamTable;
             rptStreams.DataBind();
+
+            pnlEmpty.Visible = streamTable.Rows.Count == 0;
+
+            // Pass cards-per-page to JS via hidden field
+            hfCardsPerPage.Value = CardsPerPage.ToString();
+
+            // Re-register the current search so JS can filter on page load
+            if (!string.IsNullOrEmpty(search))
+                ScriptManager.RegisterStartupScript(this, GetType(), "initSearch",
+                    $"document.getElementById('txtSearchClient').value='{search.Replace("'", "\\'")}';", true);
         }
 
         protected void rptStreams_ItemDataBound(object sender, RepeaterItemEventArgs e)
         {
-            if (e.Item.ItemType == ListItemType.Item ||
-                e.Item.ItemType == ListItemType.AlternatingItem)
+            if (e.Item.ItemType != ListItemType.Item &&
+                e.Item.ItemType != ListItemType.AlternatingItem) return;
+
+            DataRowView drv = (DataRowView)e.Item.DataItem;
+            GridView gv = (GridView)e.Item.FindControl("gvInnerCourses");
+            if (gv == null) return;
+
+            if (drv["Courses"] != DBNull.Value)
             {
-                DataRowView drv = (DataRowView)e.Item.DataItem;
-
-                GridView gv = (GridView)e.Item.FindControl("gvInnerCourses");
-
-                if (drv["Courses"] != DBNull.Value)
-                {
-                    gv.DataSource = (DataTable)drv["Courses"];
-                    gv.DataBind();
-                }
+                gv.DataSource = (DataTable)drv["Courses"];
+                gv.DataBind();
             }
         }
 
         protected void FilterStatus_Click(object sender, EventArgs e)
         {
-            LinkButton btn = (LinkButton)sender;
-            LoadCourses(btn.CommandArgument);
-
+            string status = ((LinkButton)sender).CommandArgument;
+            ViewState["FilterStatus"] = status;
+            LoadCourses(status);
         }
     }
 }

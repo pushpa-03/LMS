@@ -15,6 +15,15 @@ namespace LMS.SuperAdmin
     {
 
         /// <summary>
+        /// lblMsg control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblMsg;
+
+        /// <summary>
         /// hfInstituteId control.
         /// </summary>
         /// <remarks>
@@ -33,13 +42,13 @@ namespace LMS.SuperAdmin
         protected global::System.Web.UI.UpdatePanel upForm;
 
         /// <summary>
-        /// lblMsg control.
+        /// lblFormStatus control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblMsg;
+        protected global::System.Web.UI.WebControls.Label lblFormStatus;
 
         /// <summary>
         /// ddlSocieties control.
@@ -150,15 +159,6 @@ namespace LMS.SuperAdmin
         protected global::System.Web.UI.WebControls.DropDownList ddlFilterSociety;
 
         /// <summary>
-        /// rptSocietyGroup control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptSocietyGroup;
-
-        /// <summary>
         /// lblPageInfo control.
         /// </summary>
         /// <remarks>
@@ -184,5 +184,14 @@ namespace LMS.SuperAdmin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnNext;
+
+        /// <summary>
+        /// rptSocietyGroup control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptSocietyGroup;
     }
 }

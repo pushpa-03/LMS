@@ -35,6 +35,32 @@ public class SocietyBL
         dl.ExecuteCMD(cmd);
     }
 
+    // 🔹 DELETE
+    public void DeleteSociety(int societyId)
+    {
+        try
+        {
+            SqlCommand cmd = new SqlCommand();
+
+            cmd.CommandText = @"DELETE FROM Societies 
+                            WHERE SocietyId = @Id";
+
+            cmd.Parameters.AddWithValue("@Id", societyId);
+
+            dl.ExecuteCMD(cmd);
+        }
+        catch (SqlException ex)
+        {
+            // Foreign key constraint error
+            if (ex.Number == 547)
+            {
+                throw new Exception("This society is used by other records. You cannot delete it. You can deactivate it instead.");
+            }
+
+            throw;
+        }
+    }
+
     // 🔹 TOGGLE STATUS
     public void ToggleSocietyStatus(int societyId)
     {

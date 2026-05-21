@@ -26,17 +26,7 @@ namespace LearningManagementSystem.Admin
             Session["Role"]?.ToString()
                 .Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) == true;
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  PAGE LOAD
-        //
-        //  ★ KEY FIX: BindTracker() is called on EVERY request (not just
-        //  !IsPostBack). BuildTrackerPager() adds LinkButton controls
-        //  dynamically to pnlTrackerPager. WebForms rule: dynamic controls
-        //  must be re-added in Page_Load on every postback so the framework
-        //  can match and fire their Click events. If only added on !IsPostBack,
-        //  the buttons appear but clicking them causes a full postback where
-        //  the buttons don't exist → event never fires → page stays on page 1.
-        // ═════════════════════════════════════════════════════════════════════
+       
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)

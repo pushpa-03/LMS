@@ -199,6 +199,21 @@
 
 </div>
 
+<!-- EMPTY STATE -->
+<asp:Panel ID="pnlEmpty" runat="server" Visible="false">
+    <div class="text-center p-5 bg-white rounded-4 shadow-sm mt-3">
+
+        <i class="fa fa-database fa-3x text-muted mb-3"></i>
+
+        <h5>No Students Found</h5>
+
+        <p class="text-muted">
+            Try adjusting the filters, search, or switch the active/inactive toggle.
+        </p>
+
+    </div>
+</asp:Panel>
+
 <style>
 body {
     font-family: 'Segoe UI', sans-serif;
@@ -427,7 +442,7 @@ body {
 <script>
 function filterStudents(){
  let val=document.getElementById("<%= txtSearch.ClientID %>").value.toLowerCase();
- document.querySelectorAll(".hierarchy-card").forEach(c=>{
+    document.querySelectorAll(".student-card-wrapper").forEach(c => {
    c.style.display=c.innerText.toLowerCase().includes(val)?"":"none";
  });
 }

@@ -5,7 +5,7 @@
     <asp:HiddenField ID="hfEntryType" runat="server" />
     <asp:Label ID="lblMsg" runat="server" CssClass="fw-bold mb-2 d-block" />
 
-    <!-- ================= MODAL ================= -->
+    
 <div class="modal fade" id="SetupModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content rounded-4">
@@ -20,7 +20,7 @@
 
                 <label class="fw-bold mb-2">Enter Name</label>
 
-                <!-- ✅ THIS WAS MISSING -->
+              
                 <asp:TextBox ID="txtName" runat="server"
                     CssClass="form-control"
                     placeholder="Enter value..." />
@@ -50,7 +50,7 @@
 
     <div class="container-fluid">
 
-    <!-- 🔥 HEADER -->
+  
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold">Academic Setup</h3>
@@ -66,10 +66,10 @@
                onkeyup="filterAll()" />        
     </div>
 
-  <!-- 🔥 STATS -->
+ 
 <div class="row g-3 mb-4">
 
-    <!-- LEVELS -->
+   
     <div class="col-md-4">
         <div class="card border-0 shadow-sm stat-card d-flex flex-row align-items-center p-3">
             
@@ -87,7 +87,7 @@
         </div>
     </div>
 
-    <!-- SEMESTERS -->
+    
     <div class="col-md-4">
         <div class="card border-0 shadow-sm stat-card d-flex flex-row align-items-center p-3">
             
@@ -105,7 +105,7 @@
         </div>
     </div>
 
-    <!-- SECTIONS -->
+   
     <div class="col-md-4">
         <div class="card border-0 shadow-sm stat-card d-flex flex-row align-items-center p-3">
             
@@ -125,10 +125,10 @@
 
 </div>
 
-    <!-- 🔥 MAIN CARDS -->
+  
     <div class="row g-4">
 
-        <!-- LEVEL -->
+       
         <div class="col-md-4">
             <div class="setup-card">
                 <div class="card-header d-flex justify-content-between">
@@ -178,7 +178,7 @@
             </div>
         </div>
 
-        <!-- SEMESTER -->
+      
         <div class="col-md-4">
             <div class="setup-card">
                 <div class="card-header d-flex justify-content-between">
@@ -221,7 +221,7 @@
             </div>
         </div>
 
-        <!-- SECTION -->
+      
         <div class="col-md-4">
             <div class="setup-card">
                 <div class="card-header d-flex justify-content-between">
@@ -436,3 +436,9 @@
 
     </script>
 </asp:Content>
+
+
+
+
+<%-- ======================================================================================================================================================================================= --%>
+
