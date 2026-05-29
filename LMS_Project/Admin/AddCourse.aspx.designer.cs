@@ -51,6 +51,33 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.HiddenField hfToastType;
 
         /// <summary>
+        /// hfClientPage control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfClientPage;
+
+        /// <summary>
+        /// hfClientFilter control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfClientFilter;
+
+        /// <summary>
+        /// upMain control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.UpdatePanel upMain;
+
+        /// <summary>
         /// lblTotal control.
         /// </summary>
         /// <remarks>
@@ -85,33 +112,6 @@ namespace LearningManagementSystem.Admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlInputText txtSearch;
-
-        /// <summary>
-        /// btnFilterAll control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnFilterAll;
-
-        /// <summary>
-        /// btnFilterActive control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnFilterActive;
-
-        /// <summary>
-        /// btnFilterInactive control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnFilterInactive;
 
         /// <summary>
         /// lblRangeFrom control.
@@ -150,15 +150,6 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.Label lblTotalCourses;
 
         /// <summary>
-        /// lblFilterBadge control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblFilterBadge;
-
-        /// <summary>
         /// rptStreams control.
         /// </summary>
         /// <remarks>
@@ -166,78 +157,6 @@ namespace LearningManagementSystem.Admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater rptStreams;
-
-        /// <summary>
-        /// pnlPagination control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlPagination;
-
-        /// <summary>
-        /// lblCurrentPage control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblCurrentPage;
-
-        /// <summary>
-        /// lblTotalPages control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblTotalPages;
-
-        /// <summary>
-        /// btnFirst control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnFirst;
-
-        /// <summary>
-        /// btnPrev control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnPrev;
-
-        /// <summary>
-        /// phPageNums control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.PlaceHolder phPageNums;
-
-        /// <summary>
-        /// btnNext control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnNext;
-
-        /// <summary>
-        /// btnLast control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnLast;
 
         /// <summary>
         /// ddlStream control.

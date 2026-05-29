@@ -33,15 +33,6 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.Label lblMsg;
 
         /// <summary>
-        /// videoPlayer control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlVideo videoPlayer;
-
-        /// <summary>
         /// lblVideoTitle control.
         /// </summary>
         /// <remarks>
@@ -238,5 +229,14 @@ namespace LearningManagementSystem.Admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.HiddenField hfAdminName;
+
+        /// <summary>
+        /// hfSessionId control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfSessionId;
     }
 }

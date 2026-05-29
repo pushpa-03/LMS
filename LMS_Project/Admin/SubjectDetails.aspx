@@ -48,23 +48,10 @@ body { font-family: 'Segoe UI', sans-serif; background:var(--surface); color:var
 .sidebar-item:hover { background:var(--surface); color:var(--accent); }
 .sidebar-item .num { width:22px; height:22px; border-radius:6px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; flex-shrink:0; }
 
-.modal {
-    z-index: 9999 !important;
-}
-
-.modal-backdrop {
-    z-index: 9990 !important;
-}
-
-/* center modal properly */
-.modal-dialog {
-    margin-top: 100px;
-}
-
-/* fix header overlap */
-body.modal-open {
-    padding-right: 0 !important;
-}
+.modal { z-index: 9999 !important; }
+.modal-backdrop { z-index: 9990 !important; }
+.modal-dialog { margin-top: 100px; }
+body.modal-open { padding-right: 0 !important; }
 
 /* ── CHAPTER ACCORDION ── */
 .chapter-wrap { margin-bottom:10px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); box-shadow:var(--shadow); }
@@ -144,6 +131,10 @@ body.modal-open {
 .topic-row { display:grid; grid-template-columns:120px 1fr 32px; gap:8px; margin-bottom:6px; align-items:center; }
 .topic-row input { padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:.82rem; color:var(--ink); background:var(--surface); width:100%; }
 .topic-row .del-btn { width:28px; height:28px; border:none; background:#fee2e2; color:var(--danger); border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:.8rem; }
+
+/* File size info badge — matches Teacher side exactly */
+.file-size-badge { display:inline-flex; align-items:center; gap:5px; background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; border-radius:8px; padding:5px 12px; font-size:.75rem; font-weight:700; margin-top:8px; }
+.file-size-badge.video-limit { background:#fff0f0; border-color:#fca5a5; color:#b91c1c; }
 
 /* Progress bar */
 .upload-progress { display:none; margin-top:10px; }
@@ -444,9 +435,23 @@ body.modal-open {
                     </div>
                 </div>
 
+                <!-- FILE UPLOAD -->
                 <div class="mt-3">
                     <label class="form-label-custom">Select File *</label>
-                    <asp:FileUpload ID="fuContent" runat="server" CssClass="form-control-custom" style="padding:6px" />
+                    <asp:FileUpload ID="fuContent" runat="server" CssClass="form-control-custom"
+                        style="padding:6px" onchange="validateFileSize(this)" />
+
+                    <!-- File size limit info badges — shown/hidden by toggleContentFields() -->
+                    <div id="videoLimitBadge" class="file-size-badge video-limit mt-2">
+                        <i class="fa fa-film me-1"></i>
+                        Max video size: <strong>1 GB</strong> &nbsp;|&nbsp; Allowed: mp4, webm, ogg, avi, mov, mkv, flv, wmv
+                    </div>
+                    <div id="materialLimitBadge" class="file-size-badge mt-2" style="display:none">
+                        <i class="fa fa-file me-1"></i>
+                        Max material size: <strong>100 MB</strong> &nbsp;|&nbsp; Allowed: pdf, doc, docx, ppt, pptx, xls, xlsx, jpg, png, gif, webp, zip
+                    </div>
+                    <div id="fileSizeError" style="display:none;color:var(--danger);font-size:.8rem;margin-top:6px;font-weight:600"></div>
+
                     <div class="upload-progress" id="uploadProgress">
                         <div style="font-size:.78rem;color:var(--ink-soft);margin-bottom:4px">Uploading…</div>
                         <div class="upload-bar"><div class="upload-fill" id="uploadFill"></div></div>
@@ -455,9 +460,9 @@ body.modal-open {
             </div>
             <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 24px;display:flex;gap:10px">
                 <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">Cancel</button>
-                <asp:Button ID="btnUploadSave" runat="server" Text="Upload & Save"
+                <asp:Button ID="btnUploadSave" runat="server" Text="Upload &amp; Save"
                     CssClass="btn-primary-custom" OnClick="btnUploadSave_Click"
-                    OnClientClick="showUploadProgress()" />
+                    OnClientClick="return confirmUpload()" />
             </div>
         </div>
     </div>
@@ -494,6 +499,10 @@ body.modal-open {
 <div id="toast-wrap"></div>
 
 <script>
+    // ── File size limits (bytes) — must match server-side constants ──
+    const VIDEO_MAX_BYTES    = 1024 * 1024 * 1024; // 1 GB
+    const MATERIAL_MAX_BYTES =  100 * 1024 * 1024; // 100 MB
+
     // ── Toast ──
     function showToast(msg, type) {
         const wrap = document.getElementById('toast-wrap');
@@ -506,23 +515,24 @@ body.modal-open {
 
     window.addEventListener('DOMContentLoaded', () => {
         // Server toast
-        const hfMsg = document.getElementById('<%= hfToastMsg.ClientID %>');
-    const hfType = document.getElementById('<%= hfToastType.ClientID %>');
-    if (hfMsg && hfMsg.value) { showToast(hfMsg.value, hfType.value || 'success'); hfMsg.value = ''; }
+        const hfMsg  = document.getElementById('<%= hfToastMsg.ClientID %>');
+        const hfType = document.getElementById('<%= hfToastType.ClientID %>');
+        if (hfMsg && hfMsg.value) { showToast(hfMsg.value, hfType.value || 'success'); hfMsg.value = ''; }
 
-    // Build sidebar from chapters
-    buildSidebar();
+        buildSidebar();
 
-    // Chapter count badge
-    const items = document.querySelectorAll('.chapter-item');
-    const badge = document.getElementById('chapterCountBadge');
-    if (badge) badge.textContent = items.length + ' Chapter' + (items.length !== 1 ? 's' : '');
-});
+        const items = document.querySelectorAll('.chapter-item');
+        const badge = document.getElementById('chapterCountBadge');
+        if (badge) badge.textContent = items.length + ' Chapter' + (items.length !== 1 ? 's' : '');
+
+        // Initialise badge visibility to match default dropdown (Video)
+        toggleContentFields();
+    });
 
     // ── Sidebar ──
     function buildSidebar() {
         const items = document.querySelectorAll('.chapter-item');
-        const list = document.getElementById('sidebarList');
+        const list  = document.getElementById('sidebarList');
         if (!list) return;
         if (items.length === 0) {
             list.innerHTML = '<div class="mini-empty"><i class="fa fa-book"></i>No chapters yet</div>';
@@ -530,7 +540,7 @@ body.modal-open {
         }
         items.forEach((item, i) => {
             const title = item.getAttribute('data-title');
-            const div = document.createElement('div');
+            const div   = document.createElement('div');
             div.className = 'sidebar-item';
             div.innerHTML = `<span class="num">${i + 1}</span>${title}`;
             div.onclick = () => {
@@ -558,7 +568,7 @@ body.modal-open {
     // ── Tab switching ──
     function switchTab(tabEl, paneId) {
         const wrapper = tabEl.closest('.chapter-body');
-        wrapper.querySelectorAll('.ch-tab').forEach(t => t.classList.remove('active'));
+        wrapper.querySelectorAll('.ch-tab').forEach(t  => t.classList.remove('active'));
         wrapper.querySelectorAll('.ch-tab-pane').forEach(p => p.classList.remove('active'));
         tabEl.classList.add('active');
         const pane = document.getElementById(paneId);
@@ -569,86 +579,120 @@ body.modal-open {
     function openModal(id) { new bootstrap.Modal(document.getElementById(id)).show(); }
     function showChapterModal() { openModal('ChapterModal'); }
 
-    // ── Content type toggle ──
+    // ── Content type toggle — also updates file-size badge visibility ──
     function toggleContentFields() {
-        const sel = document.getElementById('<%= ddlContentType.ClientID %>').value;
-        document.getElementById('videoFields').style.display = sel === 'Video' ? 'block' : 'none';
+        const sel     = document.getElementById('<%= ddlContentType.ClientID %>').value;
+        const isVideo = sel === 'Video';
+        document.getElementById('videoFields').style.display         = isVideo ? 'block' : 'none';
+        document.getElementById('videoLimitBadge').style.display     = isVideo ? 'flex'  : 'none';
+        document.getElementById('materialLimitBadge').style.display  = isVideo ? 'none'  : 'flex';
+        // Clear any previous error when switching type
+        document.getElementById('fileSizeError').style.display       = 'none';
     }
 
-    // ── Teacher search (AJAX) ──
+    // ── Client-side file-size validation (fires on file input change) ──
+    function validateFileSize(input) {
+        const err     = document.getElementById('fileSizeError');
+        if (!input.files || input.files.length === 0) { err.style.display = 'none'; return; }
+        const file    = input.files[0];
+        const isVideo = document.getElementById('<%= ddlContentType.ClientID %>').value === 'Video';
+        const limit   = isVideo ? VIDEO_MAX_BYTES : MATERIAL_MAX_BYTES;
+        const limitLbl = isVideo ? '1 GB' : '100 MB';
+        if (file.size > limit) {
+            err.textContent   = `File is too large (${formatBytes(file.size)}). Maximum allowed is ${limitLbl}.`;
+            err.style.display = 'block';
+            input.value       = '';   // clear selection so server also rejects
+        } else {
+            err.style.display = 'none';
+        }
+    }
+
+    // ── Human-readable file size ──
+    function formatBytes(bytes) {
+        if (bytes >= 1024 * 1024 * 1024) return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+        if (bytes >= 1024 * 1024)        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return (bytes / 1024).toFixed(1) + ' KB';
+    }
+
+    // ── Called by Upload button OnClientClick — blocks if size error present ──
+    function confirmUpload() {
+        const errEl = document.getElementById('fileSizeError');
+        if (errEl && errEl.style.display !== 'none') {
+            showToast('Please fix the file size error before uploading.', 'danger');
+            return false;
+        }
+        showUploadProgress();
+        return true;
+    }
+
+    // ── Teacher search (AJAX via WebMethod) ──
     let selectedTeacherId = null;
-    // ── Teacher search — uses WebMethod POST (not GET query string) ──
     let teacherSearchTimer = null;
+
     function searchTeachers(q) {
         const drop = document.getElementById('teacherDropdown');
         if (!q || q.trim().length < 1) { drop.style.display = 'none'; return; }
-
-        // Debounce: wait 300ms after user stops typing
         clearTimeout(teacherSearchTimer);
         teacherSearchTimer = setTimeout(() => doTeacherSearch(q.trim()), 300);
     }
 
     function doTeacherSearch(q) {
-        const drop = document.getElementById('teacherDropdown');
+        const drop      = document.getElementById('teacherDropdown');
         const subjectId = parseInt(document.getElementById('<%= hfSubjectId.ClientID %>').value) || 0;
 
         drop.innerHTML = '<div class="teacher-option" style="color:var(--ink-soft)"><i class="fa fa-spinner fa-spin me-2"></i>Searching…</div>';
         drop.style.display = 'block';
 
         fetch('SubjectDetails.aspx/SearchTeachers', {
-            method: 'POST',
+            method : 'POST',
             headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({ q: q, subjectId: subjectId })
+            body   : JSON.stringify({ q: q, subjectId: subjectId })
         })
-            .then(r => {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json();
-            })
-            .then(res => {
-                // ASP.NET WebMethod wraps response in { d: "..." }
-                const raw = typeof res.d !== 'undefined' ? res.d : res;
-                const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-
-                drop.innerHTML = '';
-                if (!data || data.length === 0) {
-                    drop.innerHTML = '<div class="teacher-option" style="color:var(--ink-soft)">No teachers found matching "' + q + '"</div>';
-                } else {
-                    data.forEach(t => {
-                        if (!t.UserId || t.UserId === 0) return; // skip error rows
-                        const d = document.createElement('div');
-                        d.className = 'teacher-option';
-                        d.innerHTML = `
-                    <div class="teacher-avatar">${t.Name.charAt(0).toUpperCase()}</div>
-                    <div>
-                        <strong>${escHtml(t.Name)}</strong><br>
-                        <small style="color:var(--ink-soft)">${escHtml(t.Designation || 'Teacher')}</small>
-                    </div>`;
-                        d.onclick = () => selectTeacher(t.UserId, t.Name);
-                        drop.appendChild(d);
-                    });
-                }
-                drop.style.display = 'block';
-            })
-            .catch(err => {
-                drop.innerHTML = '<div class="teacher-option" style="color:var(--danger)"><i class="fa fa-exclamation-triangle me-2"></i>Search error. Check console.</div>';
-                drop.style.display = 'block';
-                console.error('Teacher search error:', err);
-            });
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(res => {
+            const raw  = typeof res.d !== 'undefined' ? res.d : res;
+            const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            drop.innerHTML = '';
+            if (!data || data.length === 0) {
+                drop.innerHTML = `<div class="teacher-option" style="color:var(--ink-soft)">No teachers found matching "${escHtml(q)}"</div>`;
+            } else {
+                data.forEach(t => {
+                    if (!t.UserId || t.UserId === 0) return;
+                    const d = document.createElement('div');
+                    d.className = 'teacher-option';
+                    d.innerHTML = `
+                        <div class="teacher-avatar">${t.Name.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <strong>${escHtml(t.Name)}</strong><br>
+                            <small style="color:var(--ink-soft)">${escHtml(t.Designation || 'Teacher')}</small>
+                        </div>`;
+                    d.onclick = () => selectTeacher(t.UserId, t.Name);
+                    drop.appendChild(d);
+                });
+            }
+            drop.style.display = 'block';
+        })
+        .catch(err => {
+            drop.innerHTML = '<div class="teacher-option" style="color:var(--danger)"><i class="fa fa-exclamation-triangle me-2"></i>Search error. Check console.</div>';
+            drop.style.display = 'block';
+            console.error('Teacher search error:', err);
+        });
     }
 
     function escHtml(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     function selectTeacher(id, name) {
         selectedTeacherId = id;
         document.getElementById('<%= hfInstructorId.ClientID %>').value = id;
-        document.getElementById('selTeacherName').textContent = name;
-        document.getElementById('selTeacherInitial').textContent = name.charAt(0).toUpperCase();
-        document.getElementById('selectedTeacherWrap').style.display = 'block';
-        document.getElementById('teacherDropdown').style.display = 'none';
-        document.getElementById('txtTeacherSearch').value = '';
+        document.getElementById('selTeacherName').textContent            = name;
+        document.getElementById('selTeacherInitial').textContent         = name.charAt(0).toUpperCase();
+        document.getElementById('selectedTeacherWrap').style.display     = 'block';
+        document.getElementById('teacherDropdown').style.display         = 'none';
+        document.getElementById('txtTeacherSearch').value                = '';
     }
+
     function clearTeacher() {
         selectedTeacherId = null;
         document.getElementById('<%= hfInstructorId.ClientID %>').value = '';
@@ -656,7 +700,8 @@ body.modal-open {
     }
 
     document.addEventListener('click', e => {
-        if (!e.target.closest('.teacher-search-wrap')) document.getElementById('teacherDropdown').style.display = 'none';
+        if (!e.target.closest('.teacher-search-wrap'))
+            document.getElementById('teacherDropdown').style.display = 'none';
     });
 
     // ── Topic rows ──
@@ -664,7 +709,9 @@ body.modal-open {
         const c = document.getElementById('topicContainer');
         const r = document.createElement('div');
         r.className = 'topic-row';
-        r.innerHTML = `<input type="text" name="topicTime" placeholder="00:00"><input type="text" name="topicTitle" placeholder="Topic name…"><button type="button" class="del-btn" onclick="removeTopicRow(this)"><i class="fa fa-times"></i></button>`;
+        r.innerHTML = `<input type="text" name="topicTime" placeholder="00:00">
+                       <input type="text" name="topicTitle" placeholder="Topic name…">
+                       <button type="button" class="del-btn" onclick="removeTopicRow(this)"><i class="fa fa-times"></i></button>`;
         c.appendChild(r);
     }
     function removeTopicRow(btn) {
@@ -672,13 +719,12 @@ body.modal-open {
         if (rows.length > 1) btn.closest('.topic-row').remove();
     }
 
-    // ── Upload progress ──
+    // ── Upload progress bar (called from confirmUpload) ──
     function showUploadProgress() {
         const p = document.getElementById('uploadProgress');
         const f = document.getElementById('uploadFill');
         if (p) p.style.display = 'block';
         if (f) { let w = 0; const iv = setInterval(() => { w = Math.min(w + 8, 90); f.style.width = w + '%'; if (w >= 90) clearInterval(iv); }, 200); }
-        return true;
     }
 </script>
 </asp:Content>

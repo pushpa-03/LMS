@@ -1,4 +1,5 @@
-﻿<%@ Page Title="Video Player" Language="C#" MasterPageFile="~/Admin/AdminMaster.master"
+﻿
+<%@ Page Title="Video Player" Language="C#" MasterPageFile="~/Admin/AdminMaster.master"
     AutoEventWireup="true" CodeBehind="VideoPlayer.aspx.cs"
     Inherits="LearningManagementSystem.Admin.VideoPlayer" %>
 
@@ -27,6 +28,13 @@
     --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
     --radius: 12px;
     --font: 'Inter', system-ui, sans-serif;
+    /* Role colours matching StudyMaterial */
+    --blue: #1565c0;
+    --blue-l: #e3f2fd;
+    --green: #2e7d32;
+    --green-l: #e8f5e9;
+    --red: #c62828;
+    --red-l: #fce4ec;
 }
 body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
 
@@ -138,62 +146,159 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .sn { font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; font-family: monospace; }
 .sl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 4px; }
 
-/* ── COMMENTS ── */
-.cmts-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 14px; box-shadow: var(--shadow); }
-.cmts-hdr { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-.cmts-hdr h5 { font-size: 15px; font-weight: 800; color: var(--text); }
-.cmt-count { font-size: 12px; color: var(--muted); font-weight: 500; }
+/* ══════════════════════════════════════════════════════
+   COMMENTS  —  redesigned to match StudyMaterial style
+   ══════════════════════════════════════════════════════ */
+.cmts-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-top: 14px; box-shadow: var(--shadow);
+    overflow: hidden;
+}
 
-/* Comment role filters */
+/* Header */
+.cmts-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+}
+.cmts-hdr h5 { font-size: 15px; font-weight: 800; color: var(--text); margin: 0; }
+.cmt-count { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+
+/* Role filter pills — StudyMaterial style */
 .cmt-filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .cf {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
+    border: 1.5px solid var(--border); border-radius: 20px;
     padding: 3px 12px; font-size: 11px; font-weight: 700; cursor: pointer;
-    color: var(--muted); transition: .18s; font-family: var(--font);
+    background: var(--card); color: var(--muted); font-family: var(--font);
+    transition: .18s;
 }
 .cf.active, .cf:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-/* New comment input */
-.new-cmt { display: flex; gap: 10px; margin-bottom: 20px; }
-.av { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
-.av.sm { width: 28px; height: 28px; font-size: 11px; background: #4338ca; }
+/* New-comment input area */
+.new-cmt { display: flex; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.av {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+}
 .cinput-wrap { flex: 1; }
 .ctxt {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    width: 100%; background: var(--bg); border: 1.5px solid var(--border);
     border-radius: 9px; padding: 9px 13px; font-size: 13px; color: var(--text);
     resize: none; font-family: var(--font); transition: .18s; min-height: 56px;
 }
 .ctxt:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
 .cmt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 7px; }
-.btn-cancel { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; color: var(--muted); cursor: pointer; font-family: var(--font); }
-.btn-post { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 6px 16px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: .18s; }
+.btn-cancel {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; font-size: 12px; color: var(--muted);
+    cursor: pointer; font-family: var(--font);
+}
+.btn-post {
+    background: var(--primary); color: #fff; border: none; border-radius: 8px;
+    padding: 6px 16px; font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: var(--font); transition: .18s;
+    display: inline-flex; align-items: center; gap: 5px;
+}
 .btn-post:hover { background: var(--primary-dark); }
 .btn-post:disabled { opacity: .5; pointer-events: none; }
 
-/* Comment item */
-.ci { display: flex; gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--border); animation: fadeUp .3s ease; }
-.ci:last-child { border-bottom: none; }
-.cb { flex: 1; min-width: 0; }
-.cmt-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
-.cn { font-size: 13px; font-weight: 700; color: var(--text); }
-.crole { font-size: 10px; font-weight: 700; border-radius: 4px; padding: 1px 6px; text-transform: uppercase; }
-.role-student { background: #dcfce7; color: #15803d; }
-.role-teacher { background: #dbeafe; color: #1d4ed8; }
-.role-admin   { background: #f3e8ff; color: #7c3aed; }
-.role-other   { background: var(--bg); color: var(--muted); }
-.ct { font-size: 11px; color: var(--dim); }
-.cc { font-size: 13px; color: var(--muted); line-height: 1.65; }
-.c-btns { display: flex; gap: 10px; margin-top: 6px; }
-.btn-rep, .btn-del { background: none; border: none; font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: .15s; }
+/* Comment list container */
+#cmtList { padding: 0 18px; }
+
+/* ── Single comment row  (StudyMaterial .cmt style) ── */
+.cmt-row {
+    display: flex; gap: 10px;
+    padding: 12px 0; border-bottom: 1px solid #f0f4f8;
+    animation: fadeUp .3s ease;
+}
+.cmt-row:last-child { border-bottom: none; }
+
+/* Avatar — role-coloured like StudyMaterial */
+.c-av {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.av-student { background: var(--blue); }
+.av-teacher { background: var(--green); }
+.av-admin   { background: var(--red); }
+.av-other   { background: var(--purple); }
+
+.cmt-body { flex: 1; min-width: 0; }
+
+/* Name + role badge + time */
+.cmt-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 3px; }
+.c-nm { font-size: 13px; font-weight: 700; color: var(--text); }
+.c-rl {
+    font-size: 10px; font-weight: 700;
+    padding: 1px 7px; border-radius: 9px;
+}
+.rl-student { background: var(--blue-l);   color: var(--blue); }
+.rl-teacher { background: var(--green-l);  color: var(--green); }
+.rl-admin   { background: var(--red-l);    color: var(--red); }
+.rl-other   { background: var(--bg);       color: var(--muted); }
+.c-ts { font-size: 10px; color: var(--dim); }
+
+/* Comment text */
+.c-tx { font-size: 13px; color: var(--muted); line-height: 1.65; margin: 3px 0 6px; }
+
+/* Reply / Delete action row */
+.c-meta { display: flex; gap: 12px; align-items: center; }
+.btn-rep, .btn-del {
+    background: none; border: none; font-size: 11px; font-weight: 600;
+    cursor: pointer; font-family: var(--font); transition: .15s;
+    padding: 0; display: inline-flex; align-items: center; gap: 4px;
+}
 .btn-rep { color: var(--muted); } .btn-rep:hover { color: var(--primary); }
 .btn-del { color: var(--dim); }   .btn-del:hover { color: var(--danger); }
 
 /* Reply box */
-.reply-box { margin: 8px 0 0 46px; background: var(--bg); border-radius: 9px; padding: 12px; display: none; }
+.reply-box {
+    margin: 8px 0 4px 0; background: var(--bg);
+    border-radius: 9px; padding: 12px; display: none;
+}
 .reply-box.open { display: block; }
-.reply-list { margin-top: 10px; }
-.ri { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.ri:last-child { border-bottom: none; }
+.reply-input-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+.reply-input-row textarea {
+    flex: 1; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 12px; font-family: var(--font);
+    resize: none; height: 48px; color: var(--text); transition: .2s;
+    background: var(--card);
+}
+.reply-input-row textarea:focus {
+    border-color: var(--primary); outline: none;
+    box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.btn-reply-post {
+    background: var(--primary); color: #fff; border: none; border-radius: 8px;
+    padding: 8px 13px; font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: var(--font); transition: .15s; flex-shrink: 0;
+}
+.btn-reply-post:hover { background: var(--primary-dark); }
+.btn-reply-cancel {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 10px; font-size: 11px; color: var(--muted);
+    cursor: pointer; font-family: var(--font);
+}
+
+/* Nested replies indented block */
+.replies-list {
+    margin-top: 8px; padding-left: 14px;
+    border-left: 2px solid var(--border);
+}
+.reply-row {
+    display: flex; gap: 8px; padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+}
+.reply-row:last-child { border-bottom: none; }
+
+/* Empty state */
+.cmts-empty {
+    text-align: center; padding: 28px 18px;
+    color: var(--muted); font-size: 13px;
+}
 
 @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
@@ -263,7 +368,15 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 <div>
     <!-- VIDEO -->
     <div class="vid-box">
-        <video id="videoPlayer" runat="server" controls preload="metadata"></video>
+        <video id="videoPlayer"
+               controls
+               controlsList="nodownload"
+               preload="metadata"
+               oncontextmenu="return false">
+            <source id="vpSrc" src="" type="video/mp4">
+            Your browser does not support HTML5 video.
+        </video>
+
         <div class="skip-z L" onclick="seek(-10)"><div class="sk-lbl"><i class="fas fa-backward"></i><span>10s</span></div></div>
         <div class="skip-z R" onclick="seek(10)"><div class="sk-lbl"><i class="fas fa-forward"></i><span>10s</span></div></div>
         <div class="vid-ov">
@@ -332,14 +445,17 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
         <div class="stat-b"><div class="sn" id="statComments" runat="server">—</div><div class="sl">All Comments</div></div>
     </div>
 
-    <!-- COMMENTS — ALL ROLES VISIBLE -->
+    <!-- ══════════════════════════════════════════════════════════
+         COMMENTS — redesigned to match StudyMaterial UI
+         ══════════════════════════════════════════════════════════ -->
     <div class="cmts-card">
+
+        <!-- Header + filter row -->
         <div class="cmts-hdr">
             <div>
                 <h5><i class="fas fa-comments me-2" style="color:var(--primary)"></i>Discussion</h5>
-                <span class="cmt-count" id="cntBadge"></span>
+                <div class="cmt-count" id="cntBadge"></div>
             </div>
-            <!-- Role filter buttons -->
             <div class="cmt-filters">
                 <button type="button" class="cf active" onclick="filterCmts('all',this)">All</button>
                 <button type="button" class="cf" onclick="filterCmts('Student',this)">Students</button>
@@ -356,20 +472,24 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
                     placeholder="Add a comment — visible to students, teachers, and admins…"
                     onfocus="this.rows=4" onblur="if(!this.value.trim())this.rows=2"></textarea>
                 <div class="cmt-actions">
-                    <button class="btn-cancel" type="button" onclick="document.getElementById('txtCmt').value=''">Cancel</button>
+                    <button class="btn-cancel" type="button"
+                            onclick="document.getElementById('txtCmt').value=''">Cancel</button>
                     <button class="btn-post" type="button" id="btnPost" onclick="postCmt()">
-                        <i class="fas fa-paper-plane me-1"></i>Comment
+                        <i class="fas fa-paper-plane"></i> Comment
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- Comment list (rendered by JS) -->
         <div id="cmtList">
-            <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
+            <div class="cmts-empty">
                 <i class="fas fa-spinner fa-spin me-2"></i>Loading comments…
             </div>
         </div>
-    </div>
+
+    </div><!-- /cmts-card -->
+
 </div><!-- /left -->
 
 <!-- ═══ RIGHT ═══ -->
@@ -454,20 +574,32 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 
 <asp:HiddenField ID="hfVideoId"   runat="server" />
 <asp:HiddenField ID="hfAdminName" runat="server" />
+<asp:HiddenField ID="hfSessionId"  runat="server" />
 <div id="toast-root"></div>
 
 <script>
     /* ── State ── */
-    const vid = document.getElementById('<%= videoPlayer.ClientID %>');
-    const VID_ID = parseInt('<%= VideoId %>') || 0;
-    const SKEY = 'lms_vpos_' + VID_ID;
+    const vid = document.getElementById('videoPlayer');
+
+    /* ── Video Path ── */
+    const path = '<%= VideoPath %>';
+    if (path) {
+        const encodedPath = path.split('/').map(s => encodeURIComponent(s)).join('/');
+        document.getElementById('vpSrc').src = encodedPath;
+        vid.load();
+    }
+
+    const VID_ID  = parseInt('<%= VideoId %>') || 0;
+    const SESS_ID = parseInt(document.getElementById('<%= hfSessionId.ClientID %>').value) || 0;
+    const SKEY    = 'lms_vpos_' + VID_ID;
     let ptimer = null, lastSec = -1, moreOpen = false;
-    let allCmts = [];   // store all comments for filtering
+    let allCmts      = [];   // full unfiltered list
     let activeFilter = 'all';
 
     /* ── Toast ── */
     function toast(msg, t = 'inf') {
-        const w = document.getElementById('toast-root'), d = document.createElement('div');
+        const w = document.getElementById('toast-root');
+        const d = document.createElement('div');
         d.className = 'toast ' + t; d.textContent = msg; w.appendChild(d);
         setTimeout(() => d.remove(), 4500);
     }
@@ -483,19 +615,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
     });
 
     /* ── Progress tracking ── */
-    vid.addEventListener('play', () => { clearInterval(ptimer); ptimer = setInterval(() => saveProg(false), 10000); });
+    vid.addEventListener('play',  () => { clearInterval(ptimer); ptimer = setInterval(() => saveProg(false), 10000); });
     vid.addEventListener('pause', () => clearInterval(ptimer));
     vid.addEventListener('ended', () => {
         clearInterval(ptimer); localStorage.removeItem(SKEY); saveProg(true);
         if (document.getElementById('chkAN').checked) {
             const b = document.getElementById('<%= btnNext.ClientID %>');
-        if (b && !b.disabled) b.click();
-    }
-});
+            if (b && !b.disabled) b.click();
+        }
+    });
 
     function saveProg(force) {
         if (!vid.duration || vid.duration === 0) return;
-        const ws = force ? Math.floor(vid.duration) : Math.floor(vid.currentTime);
+        const ws  = force ? Math.floor(vid.duration) : Math.floor(vid.currentTime);
         const dur = Math.floor(vid.duration);
         if (ws === lastSec && !force) return;
         lastSec = ws;
@@ -503,7 +635,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
             method: 'POST',
             headers: { 'Content-Type': 'application/json;charset=utf-8' },
             body: JSON.stringify({ vid: VID_ID, watchedSec: ws, totalSec: dur })
-        }).catch(() => { });
+        }).catch(() => {});
     }
 
     /* ── Seek / Jump ── */
@@ -527,7 +659,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
     });
     function setSpd(s) {
         vid.playbackRate = s;
-        document.querySelectorAll('.spd').forEach(b => b.classList.toggle('on', parseFloat(b.textContent) === s));
+        document.querySelectorAll('.spd').forEach(b =>
+            b.classList.toggle('on', parseFloat(b.textContent) === s));
     }
 
     /* ── Screenshot ── */
@@ -551,16 +684,94 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
             `<i class="fas fa-chevron-${moreOpen ? 'up' : 'down'}" id="moreIcon"></i> Show ${moreOpen ? 'less' : 'more'}`;
     }
 
-    /* ── Escape HTML ── */
-    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    /* ── Helpers ── */
+    function esc(s) {
+        return String(s || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
-    /* ── Role badge ── */
+    /* ════════════════════════════════════════════════════════════════════════
+       COMMENTS — fully rewritten to match StudyMaterial render style
+    ════════════════════════════════════════════════════════════════════════ */
+
+    /**
+     * Returns the avatar background CSS class based on role.
+     */
+    function avClass(role) {
+        const r = (role || '').toLowerCase();
+        if (r === 'student')                        return 'av-student';
+        if (r === 'teacher')                        return 'av-teacher';
+        if (r === 'admin' || r === 'superadmin')    return 'av-admin';
+        return 'av-other';
+    }
+
+    /**
+     * Returns the role badge HTML span.
+     */
     function roleBadge(role) {
         const r = (role || '').toLowerCase();
-        if (r === 'student') return `<span class="crole role-student">Student</span>`;
-        if (r === 'teacher') return `<span class="crole role-teacher">Teacher</span>`;
-        if (r === 'admin' || r === 'superadmin') return `<span class="crole role-admin">Admin</span>`;
-        return `<span class="crole role-other">${esc(role || 'User')}</span>`;
+        let cls = 'rl-other', label = esc(role || 'User');
+        if (r === 'student')                      { cls = 'rl-student'; label = 'Student'; }
+        else if (r === 'teacher')                  { cls = 'rl-teacher'; label = 'Teacher'; }
+        else if (r === 'admin' || r === 'superadmin') { cls = 'rl-admin'; label = 'Admin'; }
+        return `<span class="c-rl ${cls}">${label}</span>`;
+    }
+
+    /**
+     * Renders a single comment (or reply) row HTML string.
+     * isReply = true → uses reply-row class instead of cmt-row.
+     */
+    function renderOneCmt(c, isReply) {
+        const ini   = (c.Username || '?').charAt(0).toUpperCase();
+        const avcls = avClass(c.Role);
+        const rowCls = isReply ? 'reply-row' : 'cmt-row';
+
+        const repliesHtml = (!isReply && c.Replies && c.Replies.length)
+            ? `<div class="replies-list">${c.Replies.map(r => renderOneCmt(r, true)).join('')}</div>`
+            : '';
+
+        const replyBoxHtml = !isReply ? `
+            <div class="reply-box" id="rb-${c.CommentId}">
+                <div class="reply-input-row">
+                    <textarea id="rt-${c.CommentId}" placeholder="Write a reply…"></textarea>
+                    <button class="btn-reply-post" type="button"
+                            onclick="postReply(${c.CommentId})">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div style="display:flex;justify-content:flex-end;margin-top:4px">
+                    <button class="btn-reply-cancel" type="button"
+                            onclick="toggleRep(${c.CommentId})">Cancel</button>
+                </div>
+            </div>` : '';
+
+        const actionHtml = !isReply ? `
+            <div class="c-meta">
+                <button class="btn-rep" type="button" onclick="toggleRep(${c.CommentId})">
+                    <i class="fas fa-reply"></i>
+                    Reply${c.ReplyCount > 0 ? ' (' + c.ReplyCount + ')' : ''}
+                </button>
+                <button class="btn-del" type="button" onclick="delCmt(${c.CommentId})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>` : '';
+
+        return `
+<div class="${rowCls}" id="ci-${c.CommentId}" data-role="${esc(c.Role || '')}">
+    <div class="c-av ${avcls}">${ini}</div>
+    <div class="cmt-body">
+        <div class="cmt-top">
+            <span class="c-nm">${esc(c.Username || 'Unknown')}</span>
+            ${roleBadge(c.Role)}
+            <span class="c-ts">${esc(c.CommentedOn || '')}</span>
+        </div>
+        <div class="c-tx">${esc(c.Comment || '')}</div>
+        ${actionHtml}
+        ${replyBoxHtml}
+        ${repliesHtml}
+    </div>
+</div>`;
     }
 
     /* ── Filter comments by role ── */
@@ -571,110 +782,74 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
         renderCmts(allCmts);
     }
 
-    /* ── Load ALL comments (no role filter in SQL — filter client-side) ── */
+    /* ── Load ALL comments from server ── */
     function loadCmts() {
         fetch('VideoPlayer.aspx/GetComments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json;charset=utf-8' },
-            body: JSON.stringify({ vid: VID_ID })
+            body: JSON.stringify({ vid: VID_ID, sessId: SESS_ID })
         })
-            .then(r => r.json())
-            .then(res => {
-                allCmts = typeof res.d === 'string' ? JSON.parse(res.d) : (res.d || []);
-                renderCmts(allCmts);
-            })
-            .catch(() => toast('Failed to load comments', 'err'));
+        .then(r => r.json())
+        .then(res => {
+            allCmts = typeof res.d === 'string' ? JSON.parse(res.d) : (res.d || []);
+            renderCmts(allCmts);
+        })
+        .catch(() => toast('Failed to load comments', 'err'));
     }
 
+    /* ── Render comment list into DOM ── */
     function renderCmts(data) {
-        const list = document.getElementById('cmtList');
+        const list  = document.getElementById('cmtList');
         const badge = document.getElementById('cntBadge');
 
-        // Apply role filter
+        // Apply role filter (client-side)
         const filtered = activeFilter === 'all'
             ? data
             : data.filter(c => (c.Role || '').toLowerCase() === activeFilter.toLowerCase());
 
-        if (badge) badge.textContent = '(' + data.length + ' total, ' + filtered.length + ' shown)';
+        if (badge) badge.textContent =
+            '(' + data.length + ' total' +
+            (filtered.length !== data.length ? ', ' + filtered.length + ' shown' : '') + ')';
 
+        // Sync stat counter card
         const stat = document.getElementById('<%= statComments.ClientID %>');
         if (stat) stat.textContent = data.length;
 
         if (!filtered.length) {
-            list.innerHTML = `<p style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
-            No ${activeFilter === 'all' ? '' : '' + activeFilter + ' '}comments yet.</p>`;
+            list.innerHTML = `<div class="cmts-empty">
+                <i class="fas fa-comments" style="font-size:2rem;opacity:.2;display:block;margin-bottom:8px"></i>
+                No ${activeFilter === 'all' ? '' : activeFilter + ' '}comments yet.
+            </div>`;
             return;
         }
 
-        list.innerHTML = filtered.map(c => `
-<div class="ci" id="ci-${c.CommentId}" data-role="${esc(c.Role || '')}">
-    <div class="av" style="width:34px;height:34px;border-radius:50%;background:var(--primary);
-        color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;
-        font-size:12px;flex-shrink:0">${esc((c.Username || '?').charAt(0).toUpperCase())}</div>
-    <div class="cb">
-        <div class="cmt-top">
-            <span class="cn">${esc(c.Username || 'Unknown')}</span>
-            ${roleBadge(c.Role)}
-            <span class="ct">${esc(c.CommentedOn || '')}</span>
-        </div>
-        <div class="cc">${esc(c.Comment || '')}</div>
-        <div class="c-btns">
-            <button class="btn-rep" type="button" onclick="toggleRep(${c.CommentId})">
-                <i class="fas fa-reply"></i> Reply${c.ReplyCount > 0 ? ' (' + c.ReplyCount + ')' : ''}
-            </button>
-            <button class="btn-del" type="button" onclick="delCmt(${c.CommentId})">
-                <i class="fas fa-trash"></i> Delete
-            </button>
-        </div>
-        <div class="reply-box" id="rb-${c.CommentId}">
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-                <div class="av sm">R</div>
-                <div style="flex:1">
-                    <textarea class="ctxt" id="rt-${c.CommentId}" rows="2"
-                        placeholder="Write a reply…" style="font-size:12px;min-height:46px"></textarea>
-                    <div class="cmt-actions" style="margin-top:6px">
-                        <button class="btn-cancel" type="button" onclick="toggleRep(${c.CommentId})">Cancel</button>
-                        <button class="btn-post" type="button" style="padding:5px 12px;font-size:11px"
-                            onclick="postReply(${c.CommentId})">Reply</button>
-                    </div>
-                </div>
-            </div>
-            <div class="reply-list">
-                ${(c.Replies || []).map(r => `
-<div class="ri">
-    <div class="av sm" style="background:#4338ca">${esc((r.Username || '?').charAt(0).toUpperCase())}</div>
-    <div class="cb">
-        <div class="cmt-top">
-            <span class="cn" style="font-size:12px">${esc(r.Username || '')}</span>
-            ${roleBadge(r.Role)}
-            <span class="ct">${esc(r.CommentedOn || '')}</span>
-        </div>
-        <div class="cc" style="font-size:12px">${esc(r.Comment || '')}</div>
-    </div>
-</div>`).join('')}
-            </div>
-        </div>
-    </div>
-</div>`).join('');
+        list.innerHTML = filtered.map(c => renderOneCmt(c, false)).join('');
     }
 
+    /* ── Toggle reply box ── */
     function toggleRep(id) {
         const rb = document.getElementById('rb-' + id);
+        if (!rb) return;
         rb.classList.toggle('open');
-        if (rb.classList.contains('open')) document.getElementById('rt-' + id)?.focus();
+        if (rb.classList.contains('open'))
+            document.getElementById('rt-' + id)?.focus();
     }
 
+    /* ── Post a reply ── */
     function postReply(parentId) {
         const t = (document.getElementById('rt-' + parentId)?.value || '').trim();
         if (!t) { toast('Please type a reply', 'err'); return; }
         fetch('VideoPlayer.aspx/AddReply', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json;charset=utf-8' },
-            body: JSON.stringify({ vid: VID_ID, parentId, msg: t })
-        }).then(r => r.json()).then(() => { loadCmts(); toast('Reply posted!', 'ok'); })
-            .catch(() => toast('Failed to post reply', 'err'));
+            body: JSON.stringify({ vid: VID_ID, parentId, msg: t, sessId: SESS_ID })
+        })
+        .then(r => r.json())
+        .then(() => { loadCmts(); toast('Reply posted!', 'ok'); })
+        .catch(() => toast('Failed to post reply', 'err'));
     }
 
+    /* ── Post a top-level comment ── */
     function postCmt() {
         const box = document.getElementById('txtCmt');
         const msg = (box.value || '').trim();
@@ -684,31 +859,40 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
         fetch('VideoPlayer.aspx/AddComment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json;charset=utf-8' },
-            body: JSON.stringify({ vid: VID_ID, msg })
-        }).then(r => r.json()).then(() => { box.value = ''; loadCmts(); toast('Comment posted!', 'ok'); })
-            .catch(() => toast('Failed', 'err')).finally(() => btn.disabled = false);
+            body: JSON.stringify({ vid: VID_ID, msg, sessId: SESS_ID })
+        })
+        .then(r => r.json())
+        .then(() => { box.value = ''; loadCmts(); toast('Comment posted!', 'ok'); })
+        .catch(() => toast('Failed', 'err'))
+        .finally(() => btn.disabled = false);
     }
 
+    /* ── Delete a comment ── */
     function delCmt(id) {
         if (!confirm('Delete this comment and its replies?')) return;
         fetch('VideoPlayer.aspx/DeleteCommentAjax', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json;charset=utf-8' },
-            body: JSON.stringify({ commentId: id })
-        }).then(() => { loadCmts(); toast('Deleted', 'ok'); })
-            .catch(() => toast('Failed', 'err'));
+            body: JSON.stringify({ commentId: id, sessId: SESS_ID })
+        })
+        .then(() => { loadCmts(); toast('Deleted', 'ok'); })
+        .catch(() => toast('Failed', 'err'));
     }
 
     /* ── Init ── */
     document.addEventListener('DOMContentLoaded', () => {
         loadCmts();
+
+        // Set admin avatar initial from hidden field
         const an = document.getElementById('<%= hfAdminName.ClientID %>');
-    const ai = document.getElementById('<%= adminInitial.ClientID %>');
-    if (an && ai && an.value) ai.textContent = an.value.charAt(0).toUpperCase();
-    const rows = document.querySelectorAll('.er');
-    const eb = document.getElementById('engBadge');
-    if (eb) eb.textContent = rows.length + ' student' + (rows.length !== 1 ? 's' : '');
-});
+        const ai = document.getElementById('<%= adminInitial.ClientID %>');
+        if (an && ai && an.value) ai.textContent = an.value.charAt(0).toUpperCase();
+
+        // Engagement badge count
+        const rows = document.querySelectorAll('.er');
+        const eb = document.getElementById('engBadge');
+        if (eb) eb.textContent = rows.length + ' student' + (rows.length !== 1 ? 's' : '');
+    });
 
     /* ── Keyboard shortcuts ── */
     document.addEventListener('keydown', e => {

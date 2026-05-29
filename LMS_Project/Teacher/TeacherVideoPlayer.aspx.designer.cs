@@ -15,22 +15,22 @@ namespace LMS_Project.Teacher
     {
 
         /// <summary>
-        /// hfVideoId control.
+        /// pageTitle control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hfVideoId;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl pageTitle;
 
         /// <summary>
-        /// videoPlayer control.
+        /// lblMsg control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlVideo videoPlayer;
+        protected global::System.Web.UI.WebControls.Label lblMsg;
 
         /// <summary>
         /// lblVideoTitle control.
@@ -51,6 +51,15 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl liveViews;
 
         /// <summary>
+        /// lblInstructor control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblInstructor;
+
+        /// <summary>
         /// lblUploadDate control.
         /// </summary>
         /// <remarks>
@@ -60,13 +69,13 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblUploadDate;
 
         /// <summary>
-        /// dynamicRating control.
+        /// starRating control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl dynamicRating;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl starRating;
 
         /// <summary>
         /// lblDesc control.
@@ -87,40 +96,49 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.Repeater rptTopics;
 
         /// <summary>
-        /// lblCommentsCount control.
+        /// statViews control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblCommentsCount;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl statViews;
 
         /// <summary>
-        /// progressText control.
+        /// statStudents control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl progressText;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl statStudents;
 
         /// <summary>
-        /// progressBar control.
+        /// statCompletion control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl progressBar;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl statCompletion;
 
         /// <summary>
-        /// rptComments control.
+        /// statComments control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptComments;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl statComments;
+
+        /// <summary>
+        /// teacherInitial control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl teacherInitial;
 
         /// <summary>
         /// rptPlaylist control.
@@ -150,12 +168,75 @@ namespace LMS_Project.Teacher
         protected global::System.Web.UI.WebControls.LinkButton btnNext;
 
         /// <summary>
-        /// engagementLive control.
+        /// avgRatingVal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl engagementLive;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl avgRatingVal;
+
+        /// <summary>
+        /// ratingStars control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl ratingStars;
+
+        /// <summary>
+        /// ratingCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl ratingCount;
+
+        /// <summary>
+        /// rptEngagement control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptEngagement;
+
+        /// <summary>
+        /// rptAIStats control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptAIStats;
+
+        /// <summary>
+        /// hfVideoId control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfVideoId;
+
+        /// <summary>
+        /// hfTeacherName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfTeacherName;
+
+        /// <summary>
+        /// hfSessionId control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfSessionId;
     }
 }

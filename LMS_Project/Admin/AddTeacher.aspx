@@ -9,6 +9,10 @@
 <asp:HiddenField ID="hfTeacherUserId" runat="server" />
 <asp:HiddenField ID="hfReenrolIds"    runat="server" />
 
+<%-- Hidden page-nav trigger (client-side pagination postback) --%>
+<asp:LinkButton ID="lbGotoPage" runat="server" style="display:none"
+    OnClick="lbGotoPage_Click" />
+
 <%-- ══ TOAST ════════════════════════════════════════════════ --%>
 <div class="toast-container position-fixed p-3" style="top:70px;right:16px;z-index:9999;">
     <div id="liveToast" class="toast align-items-center border-0 shadow-lg" role="alert" aria-atomic="true">
@@ -109,7 +113,7 @@
     </div>
 </div>
 
-<%-- ══ FILTER BAR — below stats, above table ═══════════════ --%>
+<%-- ══ FILTER BAR ═══════════════════════════════════════════ --%>
 <div class="tch-filter-bar card border-0 shadow-sm rounded-4 px-3 py-2 mb-3">
     <div class="tch-filter-row">
         <div class="tch-srch-wrap">
@@ -160,7 +164,7 @@
             <Columns>
                 <asp:TemplateField HeaderText="#" ItemStyle-Width="42px">
                     <ItemTemplate>
-                        <span class="text-muted small"><%# ((CurrentPage-1)*12)+Container.DataItemIndex+1 %></span>
+                        <span class="text-muted small"><%# ((CurrentPage-1)*PageSize)+Container.DataItemIndex+1 %></span>
                     </ItemTemplate>
                 </asp:TemplateField>
                 <asp:TemplateField HeaderText="Teacher">
@@ -229,10 +233,11 @@
     </div>
 </div>
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+<%-- ══ PAGINATION (client-side rendered) ═══════════════════ --%>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3"
+     id="pagerWrap" style="display:none!important">
     <span class="small text-muted" id="pagerInfo"></span>
-    <asp:Panel ID="pnlPager" runat="server"
-        CssClass="d-flex align-items-center gap-1 flex-wrap justify-content-center" />
+    <div class="d-flex align-items-center gap-1 flex-wrap justify-content-center" id="pagerBtns"></div>
 </div>
 
 <%-- ══ ADD / EDIT MODAL ══════════════════════════════════════ --%>
@@ -620,11 +625,9 @@
 .tch-filter-bar { background:#fff; }
 .tch-filter-row {
     display:flex;align-items:center;gap:10px;
-    width:100%;flex-wrap:wrap;           /* wrap on small screens */
+    width:100%;flex-wrap:wrap;
 }
-.tch-srch-wrap {
-    position:relative;flex:1;min-width:160px;
-}
+.tch-srch-wrap { position:relative;flex:1;min-width:160px; }
 .tch-srch-ico {
     position:absolute;top:50%;left:10px;
     transform:translateY(-50%);color:#94a3b8;font-size:12px;z-index:2;
@@ -665,43 +668,45 @@
 .tag-stream  { background:#eef2ff;color:#4f46e5; }
 .tag-desig   { background:#e0f2fe;color:#0369a1; }
 
-/* ── Pagination ── */
+/* ── Pagination (client-side) ── */
 .tch-page-btn {
     display:inline-flex;align-items:center;justify-content:center;
     min-width:34px;height:34px;padding:0 10px;border-radius:8px;
     border:1px solid #e2e8f0;background:#fff;font-size:13px;color:#475569;
-    text-decoration:none;transition:.15s;line-height:1;
+    cursor:pointer;transition:.15s;line-height:1;font-family:inherit;
 }
 .tch-page-btn:hover          { background:var(--pri);color:#fff;border-color:var(--pri); }
 .tch-page-btn.active         { background:var(--pri);color:#fff;border-color:var(--pri);font-weight:600; }
 .tch-page-btn.disabled,
 .tch-page-btn[disabled]      { opacity:.4;pointer-events:none;cursor:default; }
 
-/* ══ MODAL — always below fixed header ══
-   Bootstrap's .modal uses `padding-top` to push content down;
-   We use it to clear the fixed navbar (~60px) + a bit of breathing room. */
-.modal { padding-top:68px !important; }
+/* ══ MODAL — always above fixed header ══ */
+#TeacherModal,
+#ViewTeacherModal,
+#BulkModal,
+#ReenrolModal { z-index: 10500 !important; }
+.modal-backdrop { z-index: 10499 !important; }
 
-/* Our modal dialog: fills available height minus header offset */
+/* Push dialog below fixed navbar on all screens */
 .tch-modal-dialog {
-    margin-top:6px !important;
-    margin-bottom:12px !important;
-    max-width:860px;
+    margin-top: 72px !important;
+    margin-bottom: 12px !important;
+    max-width: 860px;
 }
-/* Content box: scrolls internally */
+
+/* Content box scrolls internally */
 .tch-modal-content {
-    border:none !important;
-    border-radius:16px !important;
-    display:flex;
-    flex-direction:column;
-    /* Never exceed viewport, accounting for header offset */
-    max-height:calc(100vh - 96px);
-    overflow:hidden;
+    border: none !important;
+    border-radius: 16px !important;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 100px);
+    overflow: hidden;
 }
 .tch-modal-content .modal-body {
-    overflow-y:auto;
-    overflow-x:hidden;
-    flex:1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1 1 auto;
 }
 
 /* ── Modal header ── */
@@ -768,117 +773,86 @@
 
 /* ── Large tablet / small laptop (≤1100px) ── */
 @media (max-width:1100px) {
-    .tch-col-empid { display:none !important; }   /* hide Emp ID col */
+    .tch-col-empid { display:none !important; }
 }
 
 /* ── Tablet (≤900px) ── */
 @media (max-width:900px) {
-    /* Modal: nearly full viewport width */
     .tch-modal-dialog { max-width:95vw !important; }
-    .tch-modal-content { max-height:calc(100vh - 88px); }
-
-    /* Filter row wraps but stays usable */
+    .tch-modal-content { max-height:calc(100vh - 92px); }
     .tch-srch-wrap { min-width:140px; }
     .tch-flt-sel   { min-width:110px; }
 }
 
 /* ── Mobile landscape / small tablet (≤768px) ── */
 @media (max-width:768px) {
-    /* Header */
     .tch-hdr-icon { width:30px;height:30px; }
     h4 { font-size:1.05rem; }
-
-    /* Header action buttons: keep icons, hide text on very small */
     .tch-btn-text { font-size:12px; }
-
-    /* Stats: 2 per row */
     .col-6.col-sm-3 { flex:0 0 50%;max-width:50%; }
     .tch-ico { width:34px;height:34px;font-size:14px; }
-
-    /* Filter bar */
     .tch-filter-bar { padding:.625rem .875rem !important; }
     .tch-filter-row { gap:8px; }
     .tch-record-count { display:none; }
-
-    /* Table */
     .modern-table    { min-width:580px; }
     .modern-table td { padding:8px 10px;font-size:12px; }
     .tch-tbl-hdr th  { padding:10px 10px !important;font-size:11px; }
     .tch-av          { width:28px;height:28px;font-size:10px; }
     .tbl-act-btn     { width:24px;height:24px;font-size:10px; }
     .tbl-act-cell    { min-width:130px; }
-
-    /* Modal: full width, below header */
-    .modal { padding-top:56px !important; }
     .tch-modal-dialog {
+        margin-top: 62px !important;
         max-width:calc(100vw - 12px) !important;
         margin-left:6px !important;
         margin-right:6px !important;
     }
-    .tch-modal-content { max-height:calc(100vh - 76px); }
-
-    /* Wizard tabs smaller */
+    .tch-modal-content { max-height:calc(100vh - 82px); }
     .tch-wiz-tab { padding:8px 10px;font-size:12px; }
-
-    /* Footer buttons stack */
     .modal-footer .d-flex.flex-wrap { gap:6px; }
     .modal-footer .btn { flex:1;min-width:80px;justify-content:center;font-size:12px; }
-
-    /* Form: 2-col on tablet */
     .col-12.col-sm-6.col-md-4 { flex:0 0 50%;max-width:50%; }
     .col-12.col-sm-4           { flex:0 0 50%;max-width:50%; }
 }
 
 /* ── Mobile portrait (≤560px) ── */
 @media (max-width:560px) {
-    /* Stats compact */
     .tch-stat { padding:.75rem !important; }
-
-    /* Filter: wrap to two rows */
     .tch-srch-wrap { flex:1 1 100%;order:1; }
     .tch-flt-sel   { flex:1;min-width:100px;order:2; }
-
-    /* Table */
     .modern-table { min-width:480px; }
-
-    /* Modal */
-    .modal { padding-top:50px !important; }
-    .tch-modal-content { max-height:calc(100vh - 68px);border-radius:12px !important; }
+    .tch-modal-dialog {
+        margin-top: 55px !important;
+        margin-left: 4px !important;
+        margin-right: 4px !important;
+    }
+    .tch-modal-content { max-height:calc(100vh - 72px);border-radius:12px !important; }
     .modal-header  { padding:.75rem 1rem !important; }
     .modal-body    { padding:.75rem !important; }
     .modal-footer  { padding:.625rem .875rem !important; }
-
-    /* Wizard: show number only */
     .tab-txt { display:none; }
     .tch-wiz-tab { padding:9px 12px; }
-
-    /* Form: all single column */
     .col-12.col-sm-6.col-md-4,
     .col-12.col-sm-6,
     .col-12.col-sm-4,
     .col-12.col-md-4,
     .col-12.col-md-6 { flex:0 0 100%;max-width:100%; }
-
-    /* Toast full width */
     .toast-container { left:8px !important;right:8px !important; }
     .toast { min-width:0;width:100%; }
-
-    /* Pagination */
     .tch-page-btn { min-width:30px;height:30px;font-size:12px; }
 }
 
 /* ── Extra small (≤380px) ── */
 @media (max-width:380px) {
     h4 { font-size:.95rem; }
-    .tch-btn-text { display:none; }     /* icon-only header buttons */
+    .tch-btn-text { display:none; }
     .tch-stat .fw-bold.fs-5 { font-size:.9rem !important; }
     .tbl-act-btn { width:22px;height:22px;font-size:9px; }
-    .modal { padding-top:44px !important; }
-    .tch-modal-content { max-height:calc(100vh - 60px); }
+    .tch-modal-dialog { margin-top: 48px !important; }
+    .tch-modal-content { max-height:calc(100vh - 64px); }
 }
 </style>
 
-<%-- ══ SCRIPTS (all original JS intact) ═══════════════════════════ --%>
+<%-- ══ SCRIPTS ═══════════════════════════════════════════════ --%>
 <script>
     /* ── Role guard ─────────────────────────────────────────── */
     var isSuperAdmin = '<%= Session["Role"]?.ToString() %>' === 'SuperAdmin';
@@ -1114,7 +1088,77 @@
         var jd = document.getElementById('<%= txtJoinDate.ClientID %>');
         if (jd && !jd.value) jd.value = new Date().toISOString().split('T')[0];
     });
+
+    /* ══ CLIENT-SIDE PAGINATION ════════════════════════════════
+       buildClientPager() is called by ScriptManager from code-behind
+       after every BindTeachers(). It builds the pager buttons in JS
+       (zero DOM postback) and fires goToPage() on click.
+    ═══════════════════════════════════════════════════════════ */
+    function buildClientPager(cur, totalPages, fromRow, toRow, totalRows) {
+        var wrap = document.getElementById('pagerWrap');
+        var info = document.getElementById('pagerInfo');
+        var btns = document.getElementById('pagerBtns');
+        if (!wrap || !btns) return;
+
+        if (totalPages <= 1) { wrap.style.display = 'none'; return; }
+        wrap.style.removeProperty('display');
+
+        if (info) info.textContent = totalRows === 0
+            ? 'No teachers found'
+            : 'Showing ' + fromRow + '\u2013' + toRow + ' of ' + totalRows + ' teachers';
+
+        btns.innerHTML = '';
+
+        function makeBtn(label, page, disabled, active) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'tch-page-btn'
+                + (active   ? ' active'   : '')
+                + (disabled ? ' disabled' : '');
+            b.innerHTML = label;
+            if (!disabled) b.onclick = function (e) {
+                e.preventDefault();
+                goToPage(page);
+            };
+            btns.appendChild(b);
+        }
+
+        function ellipsis() {
+            var s = document.createElement('span');
+            s.className = 'tch-page-btn';
+            s.textContent = '\u2026';
+            s.style.cssText = 'cursor:default;pointer-events:none;border:none';
+            btns.appendChild(s);
+        }
+
+        makeBtn('&laquo;', 1, cur === 1);
+        makeBtn('&lsaquo;', cur - 1, cur === 1);
+
+        var lo = Math.max(1, cur - 2), hi = Math.min(totalPages, cur + 2);
+        if (lo > 1) { makeBtn('1', 1, false); if (lo > 2) ellipsis(); }
+        for (var p = lo; p <= hi; p++) makeBtn(String(p), p, false, p === cur);
+        if (hi < totalPages) { if (hi < totalPages - 1) ellipsis(); makeBtn(String(totalPages), totalPages, false); }
+
+        makeBtn('&rsaquo;', cur + 1, cur === totalPages);
+        makeBtn('&raquo;', totalPages, cur === totalPages);
+    }
+
+    /* Fires a lightweight postback: stores target page then clicks the
+       hidden LinkButton lbGotoPage — one round-trip, grid re-binds,
+       buildClientPager() is called again by ScriptManager. */
+    function goToPage(page) {
+        var hf = document.getElementById('__hfGotoPage');
+        if (!hf) {
+            hf = document.createElement('input');
+            hf.type = 'hidden';
+            hf.id   = '__hfGotoPage';
+            hf.name = '__hfGotoPage';
+            document.forms[0].appendChild(hf);
+        }
+        hf.value = page;
+        var lb = document.getElementById('<%= lbGotoPage.ClientID %>');
+        if (lb) lb.click();
+    }
 </script>
 
 </asp:Content>
-

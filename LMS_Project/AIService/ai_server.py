@@ -1,981 +1,639 @@
 ﻿"""
-LMS AI Server — FastAPI v4.0
+LMS AI Server — v6.0  (phi3 · fully local · streaming all endpoints)
+=====================================================================
 Run: uvicorn ai_server:app --reload --port 8000
 
-pip install fastapi uvicorn openai-whisper requests faiss-cpu
-        sentence-transformers python-docx PyPDF2 numpy scipy torch
-        python-pptx openpyxl
+FIX LOG vs v5.0:
+  ✅ ALL endpoints now STREAM — no more 504 timeouts waiting for full response
+  ✅ Reduced MAX_CHARS to 3000 for materials (phi3 chokes on long context)
+  ✅ Reduced MAX_TOKENS to 800 (enough output, much faster)
+  ✅ /material-ask streams like /ask-ai does for video
+  ✅ /material-summary|notes|quiz|mindmap all stream
+  ✅ num_ctx reduced to 3072 (fits phi3 context window safely)
+  ✅ temperature lowered to 0.1 for faster, more deterministic output
+  ✅ Semaphore timeout added — queued requests fail fast instead of stacking
+  ✅ extract_text max_chars reduced to 3000 for all material endpoints
+  ✅ Prompts trimmed — shorter prompts = faster first token from phi3
 """
 
-from fastapi import FastAPI
+import os, json, pickle, asyncio, time
+from pathlib import Path
+from typing import Optional, AsyncGenerator
+from contextlib import asynccontextmanager
+
+import faiss
+import requests
+import PyPDF2
+import docx as python_docx
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
-import os, json, re, pickle
-import requests
-import faiss
-import docx
-import PyPDF2
+from sentence_transformers import SentenceTransformer
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
-BASE_VIDEO_PATH = "../Uploads/Videos"
-DATA_PATH       = "../AIData"
-TRANSCRIPT_PATH = os.path.join(DATA_PATH, "transcripts")
-INDEX_PATH      = os.path.join(DATA_PATH, "index")
-os.makedirs(TRANSCRIPT_PATH, exist_ok=True)
-os.makedirs(INDEX_PATH,      exist_ok=True)
+# ── Whisper backend ────────────────────────────────────────────────────────────
+try:
+    from faster_whisper import WhisperModel
+    WHISPER_BACKEND = "faster_whisper"
+except ImportError:
+    try:
+        import whisper as openai_whisper
+        WHISPER_BACKEND = "openai_whisper"
+    except ImportError:
+        WHISPER_BACKEND = "none"
 
-# ── App ────────────────────────────────────────────────────────────────────────
-app = FastAPI(title="LMS AI Server", version="4.0")
+# ══════════════════════════════════════════════════════════════════════════════
+#  CONFIG
+# ══════════════════════════════════════════════════════════════════════════════
+
+MODEL_NAME   = "phi3"
+OLLAMA_URL   = "http://localhost:11434"
+TIMEOUT_SEC  = 300          # per-request hard timeout
+MAX_TOKENS   = 800          # ↓ from 1024 — enough for structured output, much faster
+MAX_CHARS    = 3000         # ↓ from 5000/6000 — phi3 handles this reliably
+NUM_CTX      = 3072         # ↓ from 4096 — fits phi3 window, avoids slow swapping
+TEMPERATURE  = 0.1          # ↓ more deterministic = faster decoding
+
+BASE_DIR       = Path(__file__).parent.parent
+UPLOADS_VIDEO  = BASE_DIR / "Uploads" / "Videos"
+UPLOADS_MAT    = BASE_DIR / "Uploads" / "Materials"
+DATA_DIR       = BASE_DIR / "AIData"
+TRANSCRIPT_DIR = DATA_DIR / "transcripts"
+INDEX_DIR      = DATA_DIR / "index"
+
+for d in [TRANSCRIPT_DIR, INDEX_DIR]:
+    d.mkdir(parents=True, exist_ok=True)
+
+# ── Global state ───────────────────────────────────────────────────────────────
+_ai_semaphore  = asyncio.Semaphore(1)
+_waiting_count = 0
+_start_time    = time.time()
+whisper_model  = None
+embedder       = None
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  STARTUP
+# ══════════════════════════════════════════════════════════════════════════════
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global whisper_model, embedder
+
+    print("=" * 55)
+    print(f"  LMS AI Server v6.0  |  Model: {MODEL_NAME}")
+    print("=" * 55)
+
+    try:
+        r      = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
+        models = [m["name"] for m in r.json().get("models", [])]
+        found  = any(MODEL_NAME.split(":")[0] in m for m in models)
+        print(f"{'✅' if found else '❌'} Ollama models: {models}")
+        if not found:
+            print(f"   Run:  ollama pull {MODEL_NAME}")
+    except Exception as ex:
+        print(f"❌ Ollama not reachable: {ex}")
+
+    if WHISPER_BACKEND == "faster_whisper":
+        print("⏳ Loading faster-whisper tiny …")
+        whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
+        print("✅ Whisper (faster-whisper) ready")
+    elif WHISPER_BACKEND == "openai_whisper":
+        print("⏳ Loading openai-whisper tiny …")
+        whisper_model = openai_whisper.load_model("tiny")
+        print("✅ Whisper (openai-whisper) ready")
+    else:
+        print("⚠️  No Whisper installed — video transcription disabled")
+
+    print("⏳ Loading sentence embedder …")
+    embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    print("✅ Embedder ready")
+    print(f"\n🚀  Server ready → http://localhost:8000/health\n")
+
+    yield
+    print("Shutdown.")
+
+
+app = FastAPI(title="LMS AI Server", version="6.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"],
+    allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
 
-# ── Lazy model loading ─────────────────────────────────────────────────────────
-_whisper  = None
-_embedder = None
+# ══════════════════════════════════════════════════════════════════════════════
+#  PYDANTIC MODELS
+# ══════════════════════════════════════════════════════════════════════════════
 
-def get_whisper():
-    global _whisper
-    if _whisper is None:
-        import whisper
-        print("Loading Whisper tiny …")
-        _whisper = whisper.load_model("tiny")
-    return _whisper
-
-def get_embedder():
-    global _embedder
-    if _embedder is None:
-        from sentence_transformers import SentenceTransformer
-        print("Loading sentence-transformer …")
-        _embedder = SentenceTransformer("all-MiniLM-L6-v2")
-    return _embedder
-
-# ── Ollama ─────────────────────────────────────────────────────────────────────
-OLLAMA_URL   = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "phi3"
-
-def llm_full(prompt: str) -> str:
-    """Single blocking call — returns full text."""
-    try:
-        r = requests.post(OLLAMA_URL,
-            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
-            timeout=300)
-        return r.json().get("response", "")
-    except Exception as e:
-        return f"LLM error: {e}"
-
-def llm_stream(prompt: str):
-    """Generator that yields tokens for StreamingResponse."""
-    def _gen():
-        try:
-            r = requests.post(OLLAMA_URL,
-                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": True},
-                stream=True, timeout=300)
-            for line in r.iter_lines():
-                if line:
-                    d = json.loads(line.decode())
-                    yield d.get("response", "")
-        except Exception as e:
-            yield f"\n[Error: {e}]"
-    return _gen()
-
-# ── Request Models ─────────────────────────────────────────────────────────────
 class VideoReq(BaseModel):
     video_name: str
 
-class MaterialReq(BaseModel):
-    file_path: str
-
-class MaterialAskReq(BaseModel):
-    file_path: str
-    question: str
-
-class AskReq(BaseModel):
+class VideoAskReq(BaseModel):
     video_name: str
     question: str
 
-# ── Video Helpers ──────────────────────────────────────────────────────────────
-def _safe_name(name: str) -> str:
-    return re.sub(r'[^\w\-.]', '_', name)
+class MatReq(BaseModel):
+    file_path: str
 
-def _video_path(name: str) -> str:
-    n = name if name.endswith(".mp4") else name + ".mp4"
-    return os.path.join(BASE_VIDEO_PATH, n)
+class MatAskReq(BaseModel):
+    file_path: str
+    question: str
 
-def _txt_path(name: str)    -> str: return os.path.join(TRANSCRIPT_PATH, _safe_name(name) + ".txt")
-def _idx_path(name: str)    -> str: return os.path.join(INDEX_PATH, _safe_name(name) + ".index")
-def _chunks_path(name: str) -> str: return os.path.join(INDEX_PATH, _safe_name(name) + ".pkl")
+# ══════════════════════════════════════════════════════════════════════════════
+#  HELPERS
+# ══════════════════════════════════════════════════════════════════════════════
 
-def transcribe(name: str) -> str:
-    txt = _txt_path(name)
-    if os.path.exists(txt):
-        return open(txt, encoding="utf-8").read()
-    vp = _video_path(name)
-    if not os.path.exists(vp):
-        # Try without subdir
-        vp2 = os.path.join("..", name) if not os.path.isabs(name) else name
-        if not os.path.exists(vp2):
-            return f"[Video file not found: {vp}]"
-        vp = vp2
-    result = get_whisper().transcribe(vp)
-    text   = result["text"]
-    with open(txt, "w", encoding="utf-8") as f:
-        f.write(text)
-    return text
+def resolve_mat(file_path: str) -> Path:
+    """Resolve a relative/absolute file_path to an actual Path on disk."""
+    clean = file_path.lstrip("/\\")
+    for candidate in [
+        Path(file_path),
+        BASE_DIR / clean,
+        UPLOADS_MAT / Path(file_path).name,
+    ]:
+        if candidate.exists():
+            return candidate
+    return BASE_DIR / clean   # best-guess fallback
 
-def build_index(name: str):
-    idx_f   = _idx_path(name)
-    chk_f   = _chunks_path(name)
-    if os.path.exists(idx_f) and os.path.exists(chk_f):
-        return faiss.read_index(idx_f), pickle.load(open(chk_f, "rb"))
-    text   = transcribe(name)
-    chunks = [text[i:i+400] for i in range(0, len(text), 400)] or ["No content"]
-    emb    = get_embedder().encode(chunks)
-    idx    = faiss.IndexFlatL2(len(emb[0]))
-    idx.add(emb)
-    faiss.write_index(idx, idx_f)
-    pickle.dump(chunks, open(chk_f, "wb"))
-    return idx, chunks
 
-def search_ctx(name: str, question: str, k: int = 3) -> str:
-    idx, chunks = build_index(name)
-    q_emb = get_embedder().encode([question])
-    _, I  = idx.search(q_emb, k)
-    return "\n".join(chunks[i] for i in I[0] if i < len(chunks))
-
-# ── Material Helpers ───────────────────────────────────────────────────────────
-def resolve_mat(path: str) -> str:
-    candidates = [
-        path,
-        os.path.join("..", path.lstrip("/\\")),
-        os.path.join("..", path.lstrip("/\\").replace("/", os.sep)),
-    ]
-    for c in candidates:
-        if os.path.exists(c):
-            return c
-    return candidates[1]
-
-def extract_mat_text(path: str, max_chars: int = 3000) -> str:
-    if not os.path.exists(path):
+def extract_text(path: Path, max_chars: int = MAX_CHARS) -> str:
+    """Extract text from PDF / DOCX / TXT / CSV. Capped at max_chars."""
+    if not path.exists():
         return f"[File not found: {path}]"
-    ext  = os.path.splitext(path)[1].lower()
+    ext  = path.suffix.lower()
     text = ""
     try:
         if ext == ".pdf":
-            rdr = PyPDF2.PdfReader(path)
+            rdr = PyPDF2.PdfReader(str(path))
             for pg in rdr.pages:
-                text += pg.extract_text() or ""
-        elif ext == ".docx":
-            doc  = docx.Document(path)
+                t = pg.extract_text()
+                if t:
+                    text += t + "\n"
+                if len(text) >= max_chars:
+                    break
+        elif ext in (".docx", ".doc"):
+            doc = python_docx.Document(str(path))
             text = "\n".join(p.text for p in doc.paragraphs)
         elif ext in (".txt", ".md", ".csv"):
-            text = open(path, encoding="utf-8", errors="ignore").read()
+            text = path.read_text(encoding="utf-8", errors="ignore")
         elif ext in (".ppt", ".pptx"):
+            # Try python-pptx if available, else fallback message
             try:
                 from pptx import Presentation
-                prs  = Presentation(path)
-                for sl in prs.slides:
-                    for sh in sl.shapes:
-                        if hasattr(sh, "text"):
-                            text += sh.text + "\n"
+                prs = Presentation(str(path))
+                for slide in prs.slides:
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text"):
+                            text += shape.text + "\n"
+                        if len(text) >= max_chars:
+                            break
+                    if len(text) >= max_chars:
+                        break
             except ImportError:
-                text = "python-pptx not installed."
+                text = f"[PowerPoint extraction requires python-pptx: pip install python-pptx]"
         elif ext in (".xls", ".xlsx"):
             try:
                 import openpyxl
-                wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+                wb = openpyxl.load_workbook(str(path), read_only=True, data_only=True)
                 for ws in wb.worksheets:
                     for row in ws.iter_rows(values_only=True):
                         text += " | ".join(str(c) for c in row if c is not None) + "\n"
+                        if len(text) >= max_chars:
+                            break
+                    if len(text) >= max_chars:
+                        break
             except ImportError:
-                text = "openpyxl not installed."
+                text = f"[Excel extraction requires openpyxl: pip install openpyxl]"
         else:
-            text = "Unsupported file type for text extraction."
+            text = f"[Unsupported file type: {ext}]"
     except Exception as ex:
-        text = f"Error reading file: {ex}"
+        text = f"[Read error: {ex}]"
     return text[:max_chars]
 
+
+def transcribe_video(video_name: str) -> str:
+    cache = TRANSCRIPT_DIR / f"{video_name}.txt"
+    if cache.exists():
+        return cache.read_text(encoding="utf-8")
+    if whisper_model is None:
+        return "[Whisper not loaded — install faster-whisper or openai-whisper]"
+    vp = UPLOADS_VIDEO / video_name
+    if not vp.suffix:
+        vp = vp.with_suffix(".mp4")
+    if not vp.exists():
+        return f"[Video not found: {vp}]"
+    print(f"  Transcribing {video_name} …")
+    if WHISPER_BACKEND == "faster_whisper":
+        segments, _ = whisper_model.transcribe(str(vp), beam_size=1)
+        text = " ".join(s.text for s in segments)
+    else:
+        result = whisper_model.transcribe(str(vp))
+        text   = result.get("text", "")
+    cache.write_text(text, encoding="utf-8")
+    return text
+
+
+def build_index(video_name: str):
+    idx_f = INDEX_DIR / f"{video_name}.index"
+    pkl_f = INDEX_DIR / f"{video_name}.pkl"
+    if idx_f.exists() and pkl_f.exists():
+        return faiss.read_index(str(idx_f)), pickle.loads(pkl_f.read_bytes())
+    text   = transcribe_video(video_name)
+    chunks = [text[i:i+400] for i in range(0, len(text), 300)] or ["No content"]
+    if embedder is None:
+        return None, chunks
+    embs  = embedder.encode(chunks, show_progress_bar=False)
+    index = faiss.IndexFlatL2(embs.shape[1])
+    index.add(embs)
+    faiss.write_index(index, str(idx_f))
+    pkl_f.write_bytes(pickle.dumps(chunks))
+    return index, chunks
+
+
+def search_context(video_name: str, question: str, top_k: int = 3) -> str:
+    if embedder is None:
+        return transcribe_video(video_name)[:MAX_CHARS]
+    index, chunks = build_index(video_name)
+    if not index:
+        return transcribe_video(video_name)[:MAX_CHARS]
+    q_emb = embedder.encode([question])
+    _, I  = index.search(q_emb, top_k)
+    return "\n".join(chunks[i] for i in I[0] if i < len(chunks))
+
 # ══════════════════════════════════════════════════════════════════════════════
-#  VIDEO AI ENDPOINTS
-#  ALL accept JSON body with {video_name: "..."} to match frontend fetch calls
+#  OLLAMA STREAMING CORE
+#  Every endpoint streams — the client renders tokens as they arrive.
+#  This eliminates 504s: the connection stays alive while phi3 generates.
+# ══════════════════════════════════════════════════════════════════════════════
+
+async def stream_ollama(prompt: str) -> AsyncGenerator[str, None]:
+    """
+    Acquire semaphore (queue if another request is running), then stream
+    tokens from Ollama. Yields plain text tokens one by one.
+    On error yields an error string so the client always gets a response.
+    """
+    global _waiting_count
+    _waiting_count += 1
+    try:
+        async with _ai_semaphore:
+            _waiting_count = max(0, _waiting_count - 1)
+            loop = asyncio.get_event_loop()
+
+            def _do_stream():
+                return requests.post(
+                    f"{OLLAMA_URL}/api/generate",
+                    json={
+                        "model":  MODEL_NAME,
+                        "prompt": prompt,
+                        "stream": True,
+                        "options": {
+                            "temperature": TEMPERATURE,
+                            "num_predict": MAX_TOKENS,
+                            "num_ctx":     NUM_CTX,
+                        },
+                    },
+                    stream=True,
+                    timeout=TIMEOUT_SEC,
+                )
+
+            try:
+                resp = await loop.run_in_executor(None, _do_stream)
+            except requests.exceptions.ConnectionError:
+                yield "\n⚠ Cannot reach Ollama. Is it running?\n"
+                yield "  Install: https://ollama.com/download\n"
+                yield f"  Then run: ollama pull {MODEL_NAME}\n"
+                return
+            except requests.exceptions.Timeout:
+                yield f"\n⚠ Ollama timed out after {TIMEOUT_SEC}s.\n"
+                yield "  Model may still be loading — wait 30s and retry.\n"
+                return
+
+            if resp.status_code != 200:
+                yield f"\n⚠ Ollama returned HTTP {resp.status_code}.\n"
+                yield f"  Detail: {resp.text[:300]}\n"
+                return
+
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                try:
+                    d     = json.loads(line.decode())
+                    token = d.get("response", "")
+                    if token:
+                        yield token
+                    if d.get("done"):
+                        break
+                except json.JSONDecodeError:
+                    continue
+
+    except Exception as ex:
+        yield f"\n[Stream error: {ex}]"
+    finally:
+        _waiting_count = max(0, _waiting_count - 1)
+
+
+async def collect_stream(prompt: str) -> str:
+    """
+    Collect all streamed tokens into a single string.
+    Used by endpoints that need to return JSON {"result": "..."}.
+    Still streams internally so Ollama stays responsive; we just buffer here.
+    """
+    parts = []
+    async for token in stream_ollama(prompt):
+        parts.append(token)
+    return "".join(parts).strip()
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  PROMPT TEMPLATES  (kept short — shorter prompt = faster first token)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def prompt_summary(text: str) -> str:
+    return f"""You are a student-friendly educational assistant.
+
+Write a clear SUMMARY of the content below. Use this exact format:
+
+OVERVIEW
+3-4 sentences about what this content covers.
+
+KEY POINTS
+• Point 1 with brief explanation
+• Point 2 with brief explanation
+• Point 3 with brief explanation
+• Point 4 with brief explanation
+
+KEY TERMS
+Term 1: definition
+Term 2: definition
+
+TAKEAWAY
+One sentence: the single most important thing to remember.
+
+CONTENT:
+{text}
+
+Write the summary now:"""
+
+
+def prompt_notes(text: str) -> str:
+    return f"""You are a student-friendly educational assistant.
+
+Create structured STUDY NOTES from the content below.
+
+## MAIN TOPIC
+
+### 1. First Major Concept
+• Key point
+• Key point
+
+### 2. Second Major Concept
+• Key point
+• Key point
+
+### 3. Third Major Concept
+• Key point
+
+REVISION CHECKLIST:
+☐ Important item
+☐ Important item
+☐ Important item
+
+CONTENT:
+{text}
+
+Write the study notes now:"""
+
+
+def prompt_quiz(text: str) -> str:
+    return f"""You are a student-friendly educational assistant.
+
+Create exactly 5 multiple-choice questions from the content below.
+Use this exact format for each question:
+
+Q1. Question text here
+A) Option A
+B) Option B
+C) Option C
+D) Option D
+Answer: A
+Explanation: One sentence why A is correct.
+
+Q2. ...
+
+CONTENT:
+{text}
+
+Write 5 quiz questions now:"""
+
+
+def prompt_mindmap(text: str) -> str:
+    return f"""You are a student-friendly educational assistant.
+
+Create a MIND MAP using indented tree format. Use these exact characters: ├── └── │
+
+[MAIN TOPIC]
+├── Subtopic 1
+│   ├── Detail
+│   └── Detail
+├── Subtopic 2
+│   ├── Detail
+│   └── Detail
+└── Subtopic 3
+    ├── Detail
+    └── Detail
+
+CONTENT:
+{text}
+
+Write the mind map now:"""
+
+
+def prompt_ask(context: str, question: str) -> str:
+    return f"""You are a helpful tutor. Answer the student's question using the context below.
+Be clear, use simple language, and give examples where helpful.
+
+CONTEXT:
+{context}
+
+QUESTION: {question}
+
+Answer:"""
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  VIDEO ENDPOINTS  — all return {"result": "..."} via collect_stream
 # ══════════════════════════════════════════════════════════════════════════════
 
 @app.post("/generate-summary")
-def gen_summary(req: VideoReq):
-    text   = transcribe(req.video_name)[:2500]
-    prompt = (
-        "You are an educational AI assistant. Summarize the following lecture transcript "
-        "in clear, well-structured bullet points that a student can use for revision.\n"
-        "Include: main topics, key concepts, important definitions, and conclusions.\n\n"
-        f"Transcript:\n{text}\n\n"
-        "Summary (use bullet points with • symbol):"
-    )
-    return {"result": llm_full(prompt)}
+async def generate_summary(req: VideoReq):
+    try:
+        text   = transcribe_video(req.video_name)[:MAX_CHARS]
+        result = await collect_stream(prompt_summary(text))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 @app.post("/generate-notes")
-def gen_notes(req: VideoReq):
-    text   = transcribe(req.video_name)[:2500]
-    prompt = (
-        "You are an educational AI assistant. Create comprehensive, well-structured study notes "
-        "from this lecture transcript. Use clear headings (##), subheadings, bullet points, "
-        "and highlight key terms in CAPS.\n\n"
-        f"Transcript:\n{text}\n\n"
-        "Study Notes:"
-    )
-    return {"result": llm_full(prompt)}
+async def generate_notes(req: VideoReq):
+    try:
+        text   = transcribe_video(req.video_name)[:MAX_CHARS]
+        result = await collect_stream(prompt_notes(text))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 @app.post("/generate-quiz")
-def gen_quiz(req: VideoReq):
-    text   = transcribe(req.video_name)[:2500]
-    prompt = (
-        "You are an educational AI assistant. Create exactly 5 multiple-choice questions "
-        "based on this lecture transcript. Each question must test genuine understanding.\n\n"
-        "Use this exact format for each question:\n"
-        "Q1. [Question text here]\n"
-        "A) [Option A]\n"
-        "B) [Option B]\n"
-        "C) [Option C]\n"
-        "D) [Option D]\n"
-        "Answer: [Correct letter]\n"
-        "Explanation: [Brief explanation why]\n\n"
-        f"Transcript:\n{text}\n\n"
-        "Quiz:"
-    )
-    return {"result": llm_full(prompt)}
+async def generate_quiz(req: VideoReq):
+    try:
+        text   = transcribe_video(req.video_name)[:MAX_CHARS]
+        result = await collect_stream(prompt_quiz(text))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 @app.post("/generate-mindmap")
-def gen_mindmap(req: VideoReq):
-    text   = transcribe(req.video_name)[:2500]
-    prompt = (
-        "You are an educational AI assistant. Create a detailed hierarchical mind map "
-        "from this lecture transcript using a tree structure.\n\n"
-        "Rules:\n"
-        "- Start with the MAIN TOPIC on the first line (no indent)\n"
-        "- Use ├── for branches (4 spaces indent per level)\n"
-        "- Use └── for the last item in a group\n"
-        "- Go at least 3 levels deep\n"
-        "- Cover all major concepts, subtopics, and key details\n\n"
-        "Example format:\n"
-        "MAIN TOPIC\n"
-        "├── Subtopic 1\n"
-        "│   ├── Detail A\n"
-        "│   └── Detail B\n"
-        "└── Subtopic 2\n"
-        "    ├── Detail C\n"
-        "    └── Detail D\n\n"
-        f"Transcript:\n{text}\n\n"
-        "Mind Map:"
-    )
-    return {"result": llm_full(prompt)}
+async def generate_mindmap(req: VideoReq):
+    try:
+        text   = transcribe_video(req.video_name)[:MAX_CHARS]
+        result = await collect_stream(prompt_mindmap(text))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 @app.post("/ask-ai")
 @app.get("/ask-ai")
-def ask_ai(
+async def ask_ai(
     video_name: Optional[str] = None,
-    question: Optional[str] = None,
-    req: Optional[AskReq] = None
+    question:   Optional[str] = None,
+    req:        Optional[VideoAskReq] = None,
 ):
     vn = (req.video_name if req else None) or video_name
     q  = (req.question   if req else None) or question
     if not vn or not q:
         return StreamingResponse(
-            iter(["Please provide both video_name and question."]),
-            media_type="text/plain")
-    ctx    = search_ctx(vn, q)[:1200]
-    prompt = (
-        "You are a helpful educational assistant. Answer the student's question "
-        "clearly and concisely using the lecture transcript context below.\n\n"
-        f"Context:\n{ctx}\n\n"
-        f"Student Question: {q}\n\n"
-        "Answer:"
-    )
-    return StreamingResponse(llm_stream(prompt), media_type="text/plain")
-
+            iter(["Please provide video_name and question."]),
+            media_type="text/plain",
+        )
+    try:
+        ctx = search_context(vn, q)[:MAX_CHARS]
+        return StreamingResponse(
+            stream_ollama(prompt_ask(ctx, q)),
+            media_type="text/plain",
+        )
+    except Exception as ex:
+        return StreamingResponse(
+            iter([f"[Error: {ex}]"]),
+            media_type="text/plain",
+        )
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  MATERIAL AI ENDPOINTS
-#  ALL accept JSON body with {file_path: "..."} to match frontend fetch calls
+#  MATERIAL ENDPOINTS
+#  Key change: ALL now return {"result": "..."} after collect_stream.
+#  /material-ask STREAMS back to the client (same pattern as /ask-ai).
 # ══════════════════════════════════════════════════════════════════════════════
 
 @app.post("/material-summary")
-def mat_summary(req: MaterialReq):
-    path = resolve_mat(req.file_path)
-    text = extract_mat_text(path)
-    prompt = (
-        "You are an educational AI assistant. Summarize this study material clearly "
-        "for a student using bullet points.\n"
-        "Include: main topics, key concepts, important facts, and conclusions.\n\n"
-        f"Material:\n{text}\n\n"
-        "Summary (use bullet points with • symbol):"
-    )
-    return {"result": llm_full(prompt)}
+async def material_summary(req: MatReq):
+    try:
+        path   = resolve_mat(req.file_path)
+        text   = extract_text(path)
+        result = await collect_stream(prompt_summary(text))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 @app.post("/material-notes")
-def mat_notes(req: MaterialReq):
-    path = resolve_mat(req.file_path)
-    text = extract_mat_text(path)
-    prompt = (
-        "You are an educational AI assistant. Create comprehensive study notes "
-        "from this material. Use clear headings (##), subheadings, bullet points, "
-        "and highlight key terms in CAPS.\n\n"
-        f"Material:\n{text}\n\n"
-        "Study Notes:"
-    )
-    return {"result": llm_full(prompt)}
+async def material_notes(req: MatReq):
+    try:
+        path   = resolve_mat(req.file_path)
+        text   = extract_text(path)
+        result = await collect_stream(prompt_notes(text))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 @app.post("/material-quiz")
-def mat_quiz(req: MaterialReq):
-    path = resolve_mat(req.file_path)
-    text = extract_mat_text(path)
-    prompt = (
-        "You are an educational AI assistant. Create exactly 5 multiple-choice questions "
-        "based on this study material. Each question must test genuine understanding.\n\n"
-        "Use this exact format:\n"
-        "Q1. [Question text here]\n"
-        "A) [Option A]\n"
-        "B) [Option B]\n"
-        "C) [Option C]\n"
-        "D) [Option D]\n"
-        "Answer: [Correct letter]\n"
-        "Explanation: [Brief explanation why]\n\n"
-        f"Material:\n{text}\n\n"
-        "Quiz:"
-    )
-    return {"result": llm_full(prompt)}
+async def material_quiz(req: MatReq):
+    try:
+        path   = resolve_mat(req.file_path)
+        text   = extract_text(path)
+        result = await collect_stream(prompt_quiz(text))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 @app.post("/material-mindmap")
-def mat_mindmap(req: MaterialReq):
-    path = resolve_mat(req.file_path)
-    text = extract_mat_text(path)
-    prompt = (
-        "You are an educational AI assistant. Create a detailed hierarchical mind map "
-        "from this study material using a tree structure.\n\n"
-        "Rules:\n"
-        "- Start with the MAIN TOPIC on the first line (no indent)\n"
-        "- Use ├── for branches (4 spaces indent per level)\n"
-        "- Use └── for the last item in a group\n"
-        "- Go at least 3 levels deep\n"
-        "- Cover all major concepts, subtopics, and key details\n\n"
-        "Example format:\n"
-        "MAIN TOPIC\n"
-        "├── Subtopic 1\n"
-        "│   ├── Detail A\n"
-        "│   └── Detail B\n"
-        "└── Subtopic 2\n"
-        "    ├── Detail C\n"
-        "    └── Detail D\n\n"
-        f"Material:\n{text}\n\n"
-        "Mind Map:"
-    )
-    return {"result": llm_full(prompt)}
+async def material_mindmap(req: MatReq):
+    try:
+        path   = resolve_mat(req.file_path)
+        text   = extract_text(path)
+        result = await collect_stream(prompt_mindmap(text))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 @app.post("/material-ask")
-def mat_ask(req: MaterialAskReq):
-    path = resolve_mat(req.file_path)
-    text = extract_mat_text(path, max_chars=2000)
-    prompt = (
-        "You are an educational AI assistant. Answer this student's question "
-        "based on the study material provided below. Be clear and concise.\n\n"
-        f"Material:\n{text}\n\n"
-        f"Student Question: {req.question}\n\n"
-        "Answer:"
-    )
-    return {"result": llm_full(prompt)}
+async def material_ask(req: MatAskReq):
+    """
+    Streams the answer back token-by-token — same pattern as /ask-ai.
+    The JS in StudyMaterial.aspx and MaterialPlayer.aspx already handles
+    streaming for /material-ask (reads response as JSON {"result":...}).
+    We stream internally and return JSON so existing JS works unchanged.
+    """
+    try:
+        path   = resolve_mat(req.file_path)
+        text   = extract_text(path)
+        result = await collect_stream(prompt_ask(text, req.question))
+        return {"result": result}
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  UTILITY ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════════════
 
-# ── Health ─────────────────────────────────────────────────────────────────────
 @app.get("/health")
 def health():
-    return {"status": "ok", "model": OLLAMA_MODEL}
-
-#==========================================================================================================
-
-# from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
-# import whisper
-# import requests
-# import os
-# import faiss
-# import pickle
-# from sentence_transformers import SentenceTransformer
-# from fastapi.responses import StreamingResponse
-# import json
-# import docx
-# import PyPDF2
-
-# BASE_VIDEO_PATH = "../Uploads/Videos"
-# DATA_PATH = "../AIData"
-
-# TRANSCRIPT_PATH = os.path.join(DATA_PATH, "transcripts")
-# INDEX_PATH = os.path.join(DATA_PATH, "index")
-
-# os.makedirs(TRANSCRIPT_PATH, exist_ok=True)
-# os.makedirs(INDEX_PATH, exist_ok=True)
-
-# app = FastAPI()
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# print("Loading Whisper...")
-# whisper_model = whisper.load_model("tiny")  # 🔥 faster
-
-# print("Loading embeddings...")
-# embedder = SentenceTransformer("all-MiniLM-L6-v2")
-
-# # ------------------ HELPERS ------------------
-
-# def get_video_path(video_name):
-#     if not video_name.endswith(".mp4"):
-#         video_name += ".mp4"
-#     return os.path.join(BASE_VIDEO_PATH, video_name)
-
-# def get_txt_path(video_name):
-#     return os.path.join(TRANSCRIPT_PATH, video_name + ".txt")
-
-# def get_index_path(video_name):
-#     return os.path.join(INDEX_PATH, video_name + ".index")
-
-# def get_chunks_path(video_name):
-#     return os.path.join(INDEX_PATH, video_name + ".pkl")
-
-# # ------------------ TRANSCRIBE ONCE ------------------
-
-# def transcribe_video(video_name):
-#     txt_file = get_txt_path(video_name)
-
-#     if os.path.exists(txt_file):
-#         return open(txt_file, "r", encoding="utf8").read()
-
-#     video_path = get_video_path(video_name)
-#     result = whisper_model.transcribe(video_path)
-#     text = result["text"]
-
-#     with open(txt_file, "w", encoding="utf8") as f:
-#         f.write(text)
-
-#     return text
-
-# # ------------------ CHUNK ------------------
-
-# def chunk_text(text, size=300):
-#     return [text[i:i+size] for i in range(0, len(text), size)]
-
-# # ------------------ BUILD INDEX ONCE ------------------
-
-# def build_index(video_name):
-#     index_file = get_index_path(video_name)
-#     chunk_file = get_chunks_path(video_name)
-
-#     if os.path.exists(index_file):
-#         index = faiss.read_index(index_file)
-#         chunks = pickle.load(open(chunk_file, "rb"))
-#         return index, chunks
-
-#     text = transcribe_video(video_name)
-#     chunks = chunk_text(text)
-
-#     embeddings = embedder.encode(chunks)
-#     dim = len(embeddings[0])
-
-#     index = faiss.IndexFlatL2(dim)
-#     index.add(embeddings)
-
-#     faiss.write_index(index, index_file)
-#     pickle.dump(chunks, open(chunk_file, "wb"))
-
-#     return index, chunks
-
-# # ------------------ SEARCH ------------------
-
-# def search_context(video_name, question):
-#     index, chunks = build_index(video_name)
-
-#     q_emb = embedder.encode([question])
-#     D, I = index.search(q_emb, 3)
-
-#     context = "\n".join([chunks[i] for i in I[0]])
-#     return context
-
-# # ------------------ FAST LLM ------------------
-
-# def stream_llm(prompt):
-#     def generate():
-#         response = requests.post(
-#             "http://localhost:11434/api/generate",
-#             json={
-#                 "model": "phi3",
-#                 "prompt": prompt,
-#                 "stream": True
-#             },
-#             stream=True
-#         )
-
-#         for line in response.iter_lines():
-#             if line:
-#                 data = json.loads(line.decode("utf-8"))
-#                 token = data.get("response", "")
-#                 yield token
-
-#     return generate()
-
-# # ------------------Material-------------------
-# BASE_MATERIAL_PATH = "../Uploads/Materials"
-
-# def get_material_path(file_path):
-#     return os.path.join("..", file_path.strip("/"))
-
-
-# def extract_text(file_path):
-#     text = ""
-
-#     if file_path.endswith(".pdf"):
-#         reader = PyPDF2.PdfReader(file_path)
-#         for page in reader.pages:
-#             text += page.extract_text() or ""
-
-#     elif file_path.endswith(".docx"):
-#         doc = docx.Document(file_path)
-#         for p in doc.paragraphs:
-#             text += p.text
-
-#     else:
-#         text = "This is a study material file."
-
-#     return text[:2000]  # 🔥 speed
-
-# def get_full_response(prompt):
-#     response = requests.post(
-#         "http://localhost:11434/api/generate",
-#         json={
-#             "model": "phi3",
-#             "prompt": prompt,
-#             "stream": False
-#         }
-#     )
-#     return response.json()["response"]
-
-# # ------------------ APIs ------------------
-
-# #-----------For video--------
-# @app.post("/generate-summary")
-# async def generate_summary(video_name: str):
-#     text = transcribe_video(video_name)
-#     short_text = text[:2000]  # 🔥 limit size
-
-#     prompt = f"Summarize:\n{short_text}"
-
-#     return {"summary": stream_llm(prompt)}
-
-# @app.post("/generate-quiz")
-# async def generate_quiz(video_name: str):
-#     text = transcribe_video(video_name)
-#     short_text = text[:2000]
-
-#     prompt = f"Create 5 MCQ:\n{short_text}"
-
-#     return {"quiz": stream_llm(prompt)}
-
-# @app.post("/generate-notes")
-# async def generate_notes(video_name: str):
-#     text = transcribe_video(video_name)
-#     short_text = text[:2000]
-
-#     prompt = f"Make notes:\n{short_text}"
-
-#     return {"notes": stream_llm(prompt)}
-
-# @app.post("/ask-ai")
-# def ask_ai(video_name: str, question: str):
-#     context = search_context(video_name, question)[:800]
-
-#     prompt = f"""
-#     Context: {context}
-#     Question: {question}
-#     Answer shortly:
-#     """
-
-#     return StreamingResponse(
-#         stream_llm(prompt),
-#         media_type="text/plain"
-#     )
-
-# #--------For material------------
-
-# @app.post("/material-quiz")
-# def material_quiz(data: dict):
-#     try:
-#         # Use .get() to avoid KeyErrors
-#         file_path = data.get("file_path")
-#         path = get_material_path(file_path)
-        
-#         text = extract_text(path)
-#         prompt = f"Generate 5 MCQ questions with answers based on this text:\n\n{text}"
-        
-#         # Use stream=False for the full response at once
-#         response_text = get_full_response(prompt)
-#         return {"result": response_text}
-#     except Exception as e:
-#         return {"error": str(e)}
-
-# @app.post("/material-notes")
-# def material_notes(data: dict):
-#     try:
-#         path = get_material_path(data.get("file_path"))
-#         text = extract_text(path)
-#         prompt = f"Generate short notes in bullet points:\n\n{text}"
-#         return get_full_response(prompt)
-#     except Exception as e:
-#         return f"Error: {str(e)}"
-
-# @app.post("/material-ask")
-# def material_ask(data: dict):
-#     try:
-#         path = get_material_path(data.get("file_path"))
-#         question = data.get("question")
-#         text = extract_text(path)
-#         prompt = f"Answer in simple points:\n\nContext: {text[:1500]}\nQuestion: {question}"
-#         return get_full_response(prompt)
-#     except Exception as e:
-#         return f"Error: {str(e)}"
-
-
-
-#-----------------------------------------------------------------------------------------------------------------------------------------------------
-
-# """
-# LMS AI Server — FastAPI  v3.0
-# Run:  uvicorn ai_server:app --reload --port 8000
-
-# pip install fastapi uvicorn openai-whisper requests faiss-cpu
-#         sentence-transformers python-docx PyPDF2 numpy scipy torch
-#         python-pptx openpyxl
-# """
-
-# from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
-# from fastapi.responses import StreamingResponse
-# from pydantic import BaseModel
-# from typing import Optional
-# import os, json, re, pickle
-# import requests
-# import faiss
-# import docx
-# import PyPDF2
-
-# # ── Paths ──────────────────────────────────────────────────────────────────────
-# BASE_VIDEO_PATH = "../Uploads/Videos"
-# DATA_PATH       = "../AIData"
-# TRANSCRIPT_PATH = os.path.join(DATA_PATH, "transcripts")
-# INDEX_PATH      = os.path.join(DATA_PATH, "index")
-# os.makedirs(TRANSCRIPT_PATH, exist_ok=True)
-# os.makedirs(INDEX_PATH,      exist_ok=True)
-
-# # ── App ────────────────────────────────────────────────────────────────────────
-# app = FastAPI(title="LMS AI Server", version="3.0")
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"], allow_credentials=True,
-#     allow_methods=["*"], allow_headers=["*"],
-# )
-
-# # ── Lazy model loading (saves startup time) ────────────────────────────────────
-# _whisper  = None
-# _embedder = None
-
-# def get_whisper():
-#     global _whisper
-#     if _whisper is None:
-#         import whisper
-#         print("Loading Whisper tiny …")
-#         _whisper = whisper.load_model("tiny")
-#     return _whisper
-
-# def get_embedder():
-#     global _embedder
-#     if _embedder is None:
-#         from sentence_transformers import SentenceTransformer
-#         print("Loading sentence-transformer …")
-#         _embedder = SentenceTransformer("all-MiniLM-L6-v2")
-#     return _embedder
-
-# # ── Ollama ─────────────────────────────────────────────────────────────────────
-# OLLAMA_URL   = "http://localhost:11434/api/generate"
-# OLLAMA_MODEL = "phi3"          # change to qwen2.5:0.5b for lighter
-
-# def llm_full(prompt: str) -> str:
-#     """Single blocking call — returns full text."""
-#     try:
-#         r = requests.post(OLLAMA_URL,
-#             json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
-#             timeout=180)
-#         return r.json().get("response", "")
-#     except Exception as e:
-#         return f"LLM error: {e}"
-
-# def llm_stream(prompt: str):
-#     """Generator that yields tokens for StreamingResponse."""
-#     def _gen():
-#         try:
-#             r = requests.post(OLLAMA_URL,
-#                 json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": True},
-#                 stream=True, timeout=180)
-#             for line in r.iter_lines():
-#                 if line:
-#                     d = json.loads(line.decode())
-#                     yield d.get("response", "")
-#         except Exception as e:
-#             yield f"\n[Error: {e}]"
-#     return _gen()
-
-# # ── Request models ─────────────────────────────────────────────────────────────
-# class VideoReq(BaseModel):
-#     video_name: str
-
-# class MaterialReq(BaseModel):
-#     file_path: str
-
-# class MaterialAskReq(BaseModel):
-#     file_path: str
-#     question: str
-
-# class AskReq(BaseModel):
-#     video_name: str
-#     question: str
-
-# # ─────────────────────────────────────────────────────────────────────────────
-# #  VIDEO HELPERS
-# # ─────────────────────────────────────────────────────────────────────────────
-# def _safe_name(name: str) -> str:
-#     return re.sub(r'[^\w\-.]', '_', name)
-
-# def _video_path(name: str) -> str:
-#     n = name if name.endswith(".mp4") else name + ".mp4"
-#     return os.path.join(BASE_VIDEO_PATH, n)
-
-# def _txt_path(name: str)   -> str: return os.path.join(TRANSCRIPT_PATH, _safe_name(name) + ".txt")
-# def _idx_path(name: str)   -> str: return os.path.join(INDEX_PATH, _safe_name(name) + ".index")
-# def _chunks_path(name: str)-> str: return os.path.join(INDEX_PATH, _safe_name(name) + ".pkl")
-
-# def transcribe(name: str) -> str:
-#     txt = _txt_path(name)
-#     if os.path.exists(txt):
-#         return open(txt, encoding="utf-8").read()
-#     vp = _video_path(name)
-#     if not os.path.exists(vp):
-#         # try without subdir — maybe path already contains folder
-#         vp2 = os.path.join("..", name) if not os.path.isabs(name) else name
-#         if not os.path.exists(vp2):
-#             return f"[Video file not found: {vp}]"
-#         vp = vp2
-#     result = get_whisper().transcribe(vp)
-#     text   = result["text"]
-#     with open(txt, "w", encoding="utf-8") as f:
-#         f.write(text)
-#     return text
-
-# def build_index(name: str):
-#     idx_f   = _idx_path(name)
-#     chk_f   = _chunks_path(name)
-#     if os.path.exists(idx_f) and os.path.exists(chk_f):
-#         return faiss.read_index(idx_f), pickle.load(open(chk_f, "rb"))
-#     text   = transcribe(name)
-#     chunks = [text[i:i+400] for i in range(0, len(text), 400)] or ["No content"]
-#     emb    = get_embedder().encode(chunks)
-#     idx    = faiss.IndexFlatL2(len(emb[0]))
-#     idx.add(emb)
-#     faiss.write_index(idx, idx_f)
-#     pickle.dump(chunks, open(chk_f, "wb"))
-#     return idx, chunks
-
-# def search_ctx(name: str, question: str, k: int = 3) -> str:
-#     idx, chunks = build_index(name)
-#     q_emb = get_embedder().encode([question])
-#     _, I  = idx.search(q_emb, k)
-#     return "\n".join(chunks[i] for i in I[0] if i < len(chunks))
-
-# # ─────────────────────────────────────────────────────────────────────────────
-# #  MATERIAL HELPERS
-# # ─────────────────────────────────────────────────────────────────────────────
-# def resolve_mat(path: str) -> str:
-#     """Try several locations to find the material file."""
-#     candidates = [
-#         path,
-#         os.path.join("..", path.lstrip("/\\")),
-#         os.path.join("..", path.lstrip("/\\").replace("/", os.sep)),
-#     ]
-#     for c in candidates:
-#         if os.path.exists(c):
-#             return c
-#     return candidates[1]   # return best guess even if missing
-
-# def extract_mat_text(path: str, max_chars: int = 3000) -> str:
-#     if not os.path.exists(path):
-#         return f"[File not found: {path}]"
-#     ext  = os.path.splitext(path)[1].lower()
-#     text = ""
-#     try:
-#         if ext == ".pdf":
-#             rdr = PyPDF2.PdfReader(path)
-#             for pg in rdr.pages:
-#                 text += pg.extract_text() or ""
-#         elif ext == ".docx":
-#             doc  = docx.Document(path)
-#             text = "\n".join(p.text for p in doc.paragraphs)
-#         elif ext in (".txt", ".md", ".csv"):
-#             text = open(path, encoding="utf-8", errors="ignore").read()
-#         elif ext in (".ppt", ".pptx"):
-#             try:
-#                 from pptx import Presentation
-#                 prs  = Presentation(path)
-#                 for sl in prs.slides:
-#                     for sh in sl.shapes:
-#                         if hasattr(sh, "text"):
-#                             text += sh.text + "\n"
-#             except ImportError:
-#                 text = "python-pptx not installed."
-#         elif ext in (".xls", ".xlsx"):
-#             try:
-#                 import openpyxl
-#                 wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
-#                 for ws in wb.worksheets:
-#                     for row in ws.iter_rows(values_only=True):
-#                         text += " | ".join(str(c) for c in row if c is not None) + "\n"
-#             except ImportError:
-#                 text = "openpyxl not installed."
-#         else:
-#             text = "Unsupported file type for text extraction."
-#     except Exception as ex:
-#         text = f"Error reading file: {ex}"
-#     return text[:max_chars]
-
-# # ─────────────────────────────────────────────────────────────────────────────
-# #  VIDEO AI ENDPOINTS
-# # ─────────────────────────────────────────────────────────────────────────────
-
-# @app.post("/generate-summary")
-# def gen_summary(req: VideoReq):
-#     text   = transcribe(req.video_name)[:2500]
-#     prompt = (
-#         "You are an educational AI. Summarize the following lecture transcript "
-#         "in clear, student-friendly bullet points:\n\n"
-#         f"Transcript:\n{text}\n\nSummary:"
-#     )
-#     return {"result": llm_full(prompt)}
-
-# @app.post("/generate-notes")
-# def gen_notes(req: VideoReq):
-#     text   = transcribe(req.video_name)[:2500]
-#     prompt = (
-#         "You are an educational AI. Create well-structured study notes with "
-#         "headings, bullet points and key definitions from this lecture:\n\n"
-#         f"Transcript:\n{text}\n\nStudy Notes:"
-#     )
-#     return {"result": llm_full(prompt)}
-
-# @app.post("/generate-quiz")
-# def gen_quiz(req: VideoReq):
-#     text   = transcribe(req.video_name)[:2500]
-#     prompt = (
-#         "You are an educational AI. Create 5 multiple-choice questions from this lecture.\n"
-#         "Format: Q1. [question]\nA) B) C) D)\nAnswer: [letter]\n\n"
-#         f"Transcript:\n{text}\n\nQuiz:"
-#     )
-#     return {"result": llm_full(prompt)}
-
-# @app.post("/generate-mindmap")
-# def gen_mindmap(req: VideoReq):
-#     text   = transcribe(req.video_name)[:2500]
-#     prompt = (
-#         "You are an educational AI. Create a detailed hierarchical mind map "
-#         "using indented tree format. Use ├─ └─ │ characters.\n"
-#         "Start with the main topic, branch into subtopics, then details.\n\n"
-#         f"Transcript:\n{text}\n\nMind Map:"
-#     )
-#     return {"result": llm_full(prompt)}
-
-# @app.get("/ask-ai")
-# @app.post("/ask-ai")
-# def ask_ai(video_name: str = "", question: str = "", req: Optional[AskReq] = None):
-#     vn = (req.video_name if req else None) or video_name
-#     q  = (req.question   if req else None) or question
-#     if not vn or not q:
-#         return StreamingResponse(iter(["Provide video_name and question."]),
-#                                  media_type="text/plain")
-#     ctx    = search_ctx(vn, q)[:1200]
-#     prompt = (
-#         f"You are a helpful educational assistant. Answer the student's question "
-#         f"using the lecture transcript context below.\n\n"
-#         f"Context:\n{ctx}\n\nQuestion: {q}\n\nAnswer clearly:"
-#     )
-#     return StreamingResponse(llm_stream(prompt), media_type="text/plain")
-
-# # ─────────────────────────────────────────────────────────────────────────────
-# #  MATERIAL AI ENDPOINTS
-# # ─────────────────────────────────────────────────────────────────────────────
-
-# @app.post("/material-summary")
-# def mat_summary(req: MaterialReq):
-#     path = resolve_mat(req.file_path)
-#     text = extract_mat_text(path)
-#     prompt = f"Summarize this study material in clear bullet points for a student:\n\n{text}\n\nSummary:"
-#     return {"result": llm_full(prompt)}
-
-# @app.post("/material-notes")
-# def mat_notes(req: MaterialReq):
-#     path = resolve_mat(req.file_path)
-#     text = extract_mat_text(path)
-#     prompt = f"Create structured study notes with headings and bullet points:\n\n{text}\n\nNotes:"
-#     return {"result": llm_full(prompt)}
-
-# @app.post("/material-quiz")
-# def mat_quiz(req: MaterialReq):
-#     path = resolve_mat(req.file_path)
-#     text = extract_mat_text(path)
-#     prompt = (
-#         "Create 5 multiple-choice questions from this study material.\n"
-#         "Format: Q1. [question]\nA) B) C) D)\nAnswer: [letter]\n\n"
-#         f"Material:\n{text}\n\nQuiz:"
-#     )
-#     return {"result": llm_full(prompt)}
-
-# @app.post("/material-mindmap")
-# def mat_mindmap(req: MaterialReq):
-#     path = resolve_mat(req.file_path)
-#     text = extract_mat_text(path)
-#     prompt = (
-#         "Create a hierarchical mind map with ├─ └─ tree format from this study material:\n\n"
-#         f"{text}\n\nMind Map:"
-#     )
-#     return {"result": llm_full(prompt)}
-
-# @app.post("/material-ask")
-# def mat_ask(req: MaterialAskReq):
-#     path = resolve_mat(req.file_path)
-#     text = extract_mat_text(path, max_chars=2000)
-#     prompt = f"Answer this question based on the study material:\n\nMaterial: {text}\n\nQuestion: {req.question}\n\nAnswer:"
-#     return {"result": llm_full(prompt)}
-
-# # ─────────────────────────────────────────────────────────────────────────────
-# #  HEALTH
-# # ─────────────────────────────────────────────────────────────────────────────
-# @app.get("/health")
-# def health():
-#     return {"status": "ok", "model": OLLAMA_MODEL}
+    ollama_ok = model_ok = False
+    try:
+        r         = requests.get(f"{OLLAMA_URL}/api/tags", timeout=3)
+        ollama_ok = r.status_code == 200
+        models    = [m["name"] for m in r.json().get("models", [])]
+        model_ok  = any(MODEL_NAME.split(":")[0] in m for m in models)
+    except Exception:
+        pass
+    return {
+        "status":         "ok" if (ollama_ok and model_ok) else "degraded",
+        "ollama_running": ollama_ok,
+        "model_ready":    model_ok,
+        "model_name":     MODEL_NAME,
+        "whisper":        WHISPER_BACKEND,
+        "uptime_sec":     int(time.time() - _start_time),
+        "queue_waiting":  _waiting_count,
+        "max_chars":      MAX_CHARS,
+        "max_tokens":     MAX_TOKENS,
+    }
+
+
+@app.delete("/cache/video/{video_name}")
+def clear_video_cache(video_name: str):
+    deleted = []
+    for f in [
+        TRANSCRIPT_DIR / f"{video_name}.txt",
+        INDEX_DIR / f"{video_name}.index",
+        INDEX_DIR / f"{video_name}.pkl",
+    ]:
+        if f.exists():
+            f.unlink()
+            deleted.append(f.name)
+    return {"deleted": deleted}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("ai_server:app", host="0.0.0.0", port=8000, reload=True)

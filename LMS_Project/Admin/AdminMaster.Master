@@ -11,9 +11,9 @@
 
 <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server"></asp:ContentPlaceHolder>
 
-<link href="../assets/css/bootstrap.min.css" rel="stylesheet" />
-<link href="../assets/icons/fontawesome/css/all.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="<%= ResolveUrl("~/assets/css/bootstrap.min.css") %>" rel="stylesheet" />
+<link href="<%= ResolveUrl("~/assets/icons/fontawesome/css/all.min.css") %>" rel="stylesheet" />
+
 
 <style>
 
@@ -176,6 +176,7 @@ body {
     gap: 12px;
 }
 
+
 #main-wrapper.sidebar-collapsed .header {
     left: 20px;
 }
@@ -184,6 +185,33 @@ body {
     color: #fff;
     font-size: 18px;
     font-weight: 700;
+}
+/* Header icon wrapper — needed for dot positioning */
+.header-icon-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Red alert dot */
+.alert-dot {
+    display: none;              /* hidden by default; JS shows it */
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    width: 10px;
+    height: 10px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #1565c0; /* matches header background */
+    animation: dotPulse 1.8s ease-in-out infinite;
+    z-index: 10;
+}
+
+@keyframes dotPulse {
+    0%, 100% { transform: scale(1);    opacity: 1; }
+    50%       { transform: scale(1.3); opacity: 0.7; }
 }
 
 .admin-badge {
@@ -466,7 +494,7 @@ body {
             <ul class="sidebar-submenu">
                 <li><a runat="server" href="~/Admin/StreamList.aspx">Streams</a></li>
                 <li><a runat="server" href="~/Admin/CourseList.aspx">Courses</a></li>
-                <li><a runat="server" href="~/Admin/Subjects.aspx">Subjects</a></li>
+                <li><a runat="server" href="~/Admin/Subjects.aspx">Upload Video/Materials</a></li>
                 <li><a runat="server" href="~/Admin/StudentsList.aspx">Students</a></li>
                 <li><a runat="server" href="~/Admin/TeacherList.aspx">Teachers</a></li>
                 <li><a runat="server" href="~/Admin/ParentList.aspx">Parents</a></li>
@@ -520,23 +548,41 @@ body {
     </div>
 
     <!-- RIGHT -->
-    <div class="header-right">
-        <a runat="server" href="~/Admin/AdminHelp.aspx"><i class="far fa-message text-white"></i></a>
-        <a runat="server" href="~/Admin/AdminCalendar.aspx"><i class="far fa-calendar-alt text-white"></i></a>
-        <a runat="server" href="~/Admin/Notifications.aspx"><i class="far fa-bell text-white"></i></a>
+    <!-- RIGHT -->
+<div class="header-right">
 
-        <div class="dropdown">
-            <a href="#" data-bs-toggle="dropdown" class="d-flex align-items-center">
-                <asp:Image ID="imgProfilePhoto" runat="server" CssClass="profile-img me-2" />
-                <i class="fas fa-chevron-down text-white"></i>
-            </a>
-             <ul class="dropdown-menu dropdown-menu-end">
-                 <li><a class="dropdown-item" href="~/Admin/AdminProfile.aspx" runat="server">Profile</a></li>
-                 <li><hr /></li>
-                 <li><a class="dropdown-item text-danger" href="../Default.aspx">Logout</a></li>
-             </ul>
-        </div>
+    <a runat="server" href="~/Admin/AdminHelp.aspx" 
+       class="header-icon-wrap" title="Help Requests">
+        <i class="far fa-message text-white"></i>
+        <span class="alert-dot" id="dotHelp"></span>
+    </a>
+
+    <a runat="server" href="~/Admin/AdminCalendar.aspx" 
+       class="header-icon-wrap" title="Calendar Events">
+        <i class="far fa-calendar-alt text-white"></i>
+        <span class="alert-dot" id="dotCal"></span>
+    </a>
+
+    <a runat="server" href="~/Admin/Notifications.aspx" 
+       class="header-icon-wrap" title="Notifications">
+        <i class="far fa-bell text-white"></i>
+        <span class="alert-dot" id="dotNotif"></span>
+    </a>
+
+    <div class="dropdown">
+        <a href="#" data-bs-toggle="dropdown" aria-expanded="false"
+           class="d-flex align-items-center" id="profileDropBtn">
+            <asp:Image ID="imgProfilePhoto" runat="server" CssClass="profile-img me-2" />
+            <i class="fas fa-chevron-down text-white"></i>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="~/Admin/AdminProfile.aspx" runat="server">Profile</a></li>
+            <li><hr /></li>
+            <li><a class="dropdown-item text-danger" href="../Default.aspx">Logout</a></li>
+        </ul>
     </div>
+
+</div>
 
 </div>
 
@@ -547,52 +593,115 @@ body {
 </div>
 </div>
 
-<script src="../assets/js/bootstrap.bundle.min.js"></script>
+<script src="<%= ResolveUrl("~/assets/js/bootstrap.bundle.min.js") %>"></script>
 
 <script>
-   
-    document.addEventListener("DOMContentLoaded", function () {
+    (function () {
 
-        const wrapper = document.getElementById("main-wrapper");
-        const toggleBtn = document.querySelector(".collapse-sidebar");
-        const overlay = document.querySelector(".sidebar-overlay");
+        /* ── Wait until Bootstrap is truly ready ── */
+        function initAll() {
 
-        // ✅ TOGGLE
-        toggleBtn.addEventListener("click", function () {
+            /* 1. SIDEBAR TOGGLE */
+            var wrapper = document.getElementById("main-wrapper");
+            var toggleBtn = document.querySelector(".collapse-sidebar");
+            var overlay = document.querySelector(".sidebar-overlay");
 
-            if (window.innerWidth <= 992) {
-                wrapper.classList.toggle("sidebar-open"); // MOBILE
-            } else {
-                wrapper.classList.toggle("sidebar-collapsed"); // DESKTOP
+            if (toggleBtn) {
+                toggleBtn.addEventListener("click", function () {
+                    if (window.innerWidth <= 992)
+                        wrapper.classList.toggle("sidebar-open");
+                    else
+                        wrapper.classList.toggle("sidebar-collapsed");
+                });
             }
-        });
+            if (overlay) {
+                overlay.addEventListener("click", function () {
+                    wrapper.classList.remove("sidebar-open");
+                });
+            }
 
-        // ✅ CLOSE ON OVERLAY CLICK
-        overlay.addEventListener("click", function () {
-            wrapper.classList.remove("sidebar-open");
-        });
-
-        // ✅ SUBMENU
-        document.querySelectorAll(".submenu-parent").forEach(function (menu) {
-            menu.addEventListener("click", function (e) {
-                e.preventDefault();
-                this.closest(".submenu").classList.toggle("open");
+            /* 2. SUBMENU */
+            document.querySelectorAll(".submenu-parent").forEach(function (menu) {
+                menu.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    this.closest(".submenu").classList.toggle("open");
+                });
             });
-        });
 
-        // ✅ ACTIVE MENU
-        const current = window.location.pathname.split("/").pop().toLowerCase();
+            /* 3. ACTIVE LINK */
+            var current = window.location.pathname.split("/").pop().toLowerCase();
+            document.querySelectorAll(".sidebar-link").forEach(function (link) {
+                var href = (link.getAttribute("href") || "").toLowerCase();
+                if (href && href !== "#" && href.split("/").pop() === current) {
+                    link.classList.add("active");
+                    var parent = link.closest(".submenu");
+                    if (parent) parent.classList.add("open");
+                }
+            });
 
-        document.querySelectorAll(".sidebar-link").forEach(link => {
-            if (link.getAttribute("href")?.toLowerCase() === current) {
-                link.classList.add("active");
-
-                const parent = link.closest(".submenu");
-                if (parent) parent.classList.add("open");
+            /* 4. DROPDOWN — force init AFTER bootstrap is confirmed loaded */
+            function initDropdowns() {
+                if (typeof bootstrap !== "undefined" && bootstrap.Dropdown) {
+                    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function (el) {
+                        try {
+                            // Dispose existing instance first to avoid double-bind
+                            var existing = bootstrap.Dropdown.getInstance(el);
+                            if (existing) existing.dispose();
+                            new bootstrap.Dropdown(el);
+                        } catch (e) { }
+                    });
+                } else {
+                    /* Bootstrap not yet available — retry in 100ms */
+                    setTimeout(initDropdowns, 100);
+                }
             }
-        });
+            initDropdowns();
 
-    });
+            /* 5. ALERT DOTS */
+            initAlertDots();
+        }
+
+        /* ── Alert dots ─────────────────────────────────────────────── */
+        function initAlertDots() {
+
+            /* Build an absolute path so it works from any subfolder depth:
+               /Admin/GetHeaderAlerts.ashx  (always from root)             */
+            var base = window.location.pathname;
+            /* Find the /Admin/ segment and keep everything up to it */
+            var adminIdx = base.toLowerCase().indexOf("/admin/");
+            var handlerUrl = (adminIdx !== -1)
+                ? base.substring(0, adminIdx) + "/Admin/GetHeaderAlerts.ashx"
+                : "/Admin/GetHeaderAlerts.ashx";
+
+            function setDot(id, show) {
+                var el = document.getElementById(id);
+                if (el) el.style.display = show ? "block" : "none";
+            }
+
+            function checkAlerts() {
+                fetch(handlerUrl, { credentials: "same-origin" })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (data) {
+                        if (!data) return;
+                        setDot("dotHelp", data.unreadHelp > 0);
+                        setDot("dotCal", data.newEvents > 0);
+                        setDot("dotNotif", data.unreadNotif > 0);
+                    })
+                    .catch(function () { /* silent — dots stay hidden */ });
+            }
+
+            checkAlerts();                        /* immediate check on load */
+            setInterval(checkAlerts, 30000);      /* then every 30 s        */
+        }
+
+        /* Run after DOM is ready */
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initAll);
+        } else {
+            initAll();   /* DOM already ready (happens on some postbacks) */
+        }
+
+    })();
 </script>
 
 </form>

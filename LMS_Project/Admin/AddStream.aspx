@@ -311,7 +311,7 @@
 
     <!-- ================= EDIT MODAL ================= -->
     <div class="modal fade" id="EditModal">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
             <div class="modal-content rounded-4">
 
                 <div class="modal-header bg-primary text-white">

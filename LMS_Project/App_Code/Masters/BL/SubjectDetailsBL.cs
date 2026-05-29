@@ -89,49 +89,49 @@ using System.Data.SqlClient;
             _dl.ExecuteCMD(cmd);
         }
 
-    // ══ VIDEOS ════════════════════════════════════════════════════════════
-    //public DataTable GetVideosByChapter(int chapterId, int sessionId)
-    //{
-    //    SqlCommand cmd = new SqlCommand(@"
-    //        SELECT V.VideoId, V.Title, V.Duration, V.VideoPath,
-    //               V.ViewCount, V.UploadedOn, V.IsActive,
-    //               ISNULL(UP.FullName, ISNULL(U.Username,'Unknown')) AS InstructorName
-    //        FROM Videos V
-    //        LEFT JOIN Users       U  ON V.InstructorId = U.UserId
-    //        LEFT JOIN UserProfile UP ON V.InstructorId = UP.UserId
-    //        WHERE V.ChapterId=@Cid AND V.SessionId=@SessionId AND V.IsActive=1
-    //        ORDER BY V.VideoId");
-    //    cmd.Parameters.AddWithValue("@Cid", chapterId);
-    //    cmd.Parameters.AddWithValue("@SessionId", sessionId);
-    //    return _dl.GetDataTable(cmd) ?? new DataTable();
-    //}
-
     public DataTable GetVideosByChapter(int chapterId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
-        SELECT 
-            V.VideoId, 
-            V.Title, 
-            V.Description,   -- ✅ ADD THIS LINE
-            V.Duration, 
-            V.VideoPath,
-            V.ViewCount, 
-            V.UploadedOn, 
-            V.IsActive,
-            ISNULL(UP.FullName, ISNULL(U.Username,'Unknown')) AS InstructorName
-        FROM Videos V
-        LEFT JOIN Users       U  ON V.InstructorId = U.UserId
-        LEFT JOIN UserProfile UP ON V.InstructorId = UP.UserId
-        WHERE V.ChapterId=@Cid 
-          AND V.SessionId=@SessionId 
-          AND V.IsActive=1
-        ORDER BY V.VideoId");
+    SELECT 
+        V.VideoId, 
+        V.Title, 
+        V.Description,
+        V.Duration, 
+        V.VideoPath,
+
+        -- Only STUDENT unique views from VideoViews table
+        ISNULL((
+            SELECT COUNT(DISTINCT VV.UserId)
+            FROM VideoViews VV
+            INNER JOIN Users US 
+                ON VV.UserId = US.UserId
+            WHERE VV.VideoId   = V.VideoId
+              AND VV.SessionId = @SessionId
+              AND US.RoleId    = 4
+        ), 0) AS ViewCount,
+
+        V.UploadedOn, 
+        V.IsActive,
+
+        ISNULL(UP.FullName, ISNULL(U.Username,'Unknown')) AS InstructorName
+
+    FROM Videos V
+
+    LEFT JOIN Users       U  ON V.InstructorId = U.UserId
+    LEFT JOIN UserProfile UP ON V.InstructorId = UP.UserId
+
+    WHERE V.ChapterId = @Cid 
+      AND V.SessionId = @SessionId 
+      AND V.IsActive  = 1
+
+    ORDER BY V.VideoId");
 
         cmd.Parameters.AddWithValue("@Cid", chapterId);
         cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
         return _dl.GetDataTable(cmd) ?? new DataTable();
     }
+
 
     public int InsertVideo(int societyId, int instituteId, int sessionId,
             int chapterId, int subjectId, string title, string desc,

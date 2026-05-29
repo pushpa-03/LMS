@@ -16,7 +16,7 @@ namespace LearningManagementSystem.Admin
         private readonly AddTeacherBL _bl = new AddTeacherBL();
 
         // ─── Pagination ───────────────────────────────────────────────────────
-        private const int PageSize = 10;
+        public const int PageSize = 10;          // public so ASPX row-number expression can read it
 
         public int CurrentPage
         {
@@ -42,9 +42,8 @@ namespace LearningManagementSystem.Admin
                 CurrentPage = 1;
             }
 
-            // ★ CRITICAL: BindTeachers must run on EVERY request so dynamic
-            // pager LinkButton controls are re-added to the control tree
-            // before ASP.NET processes postback events.
+            // ★ CRITICAL: BindTeachers must run on EVERY request so the grid
+            // is always populated — including after pagination postbacks.
             if (SessionId > 0)
                 BindTeachers();
         }
@@ -129,6 +128,20 @@ namespace LearningManagementSystem.Admin
         protected void ddlFilterStatus_Changed(object sender, EventArgs e) { CurrentPage = 1; }
 
         // ═════════════════════════════════════════════════════════════════════
+        //  CLIENT-SIDE PAGINATION — hidden LinkButton handler
+        //  The ASPX calls goToPage(n) → stores n in __hfGotoPage → clicks
+        //  lbGotoPage → this handler reads the value and sets CurrentPage.
+        //  BindTeachers() runs automatically via Page_Load immediately after.
+        // ═════════════════════════════════════════════════════════════════════
+        protected void lbGotoPage_Click(object sender, EventArgs e)
+        {
+            string raw = Request.Form["__hfGotoPage"];
+            if (int.TryParse(raw, out int p) && p >= 1)
+                CurrentPage = p;
+            // BindTeachers() is called at the bottom of Page_Load — no extra call needed.
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
         //  BIND GRID + STATS
         // ═════════════════════════════════════════════════════════════════════
         private void BindTeachers()
@@ -139,7 +152,6 @@ namespace LearningManagementSystem.Admin
                 gvTeachers.DataSource = null;
                 gvTeachers.DataBind();
                 UpdateStats(null);
-                pnlPager.Controls.Clear();
                 return;
             }
 
@@ -166,22 +178,19 @@ namespace LearningManagementSystem.Admin
             gvTeachers.DataSource = dtPage;
             gvTeachers.DataBind();
 
-            // Record count label
+            // ── Record-count label (client span) ─────────────────────────────
             string countText = total == 0
                 ? "No teachers found"
-                : $"Showing {start + 1}–{end} of {total} teachers";
+                : $"Showing {start + 1}\u2013{end} of {total} teachers";
 
             ScriptManager.RegisterStartupScript(this, GetType(), "recCnt",
                 $"var rc=document.getElementById('recordCount');" +
                 $"if(rc)rc.textContent='{countText}';", true);
 
-            // Pagination info
-            string pageInfo = total > 0 ? $"Page {CurrentPage} of {totalPages}" : "";
-            ScriptManager.RegisterStartupScript(this, GetType(), "pgInfo",
-                $"var pi=document.getElementById('pagerInfo');" +
-                $"if(pi)pi.textContent='{pageInfo}';", true);
-
-            BuildPager(totalPages);
+            // ── Inject client-side pagination builder ─────────────────────────
+            // buildClientPager(currentPage, totalPages, firstRow, lastRow, totalRows)
+            ScriptManager.RegisterStartupScript(this, GetType(), "buildPager",
+                $"buildClientPager({CurrentPage},{totalPages},{start + 1},{end},{total});", true);
 
             if (IsSuperAdmin)
                 ScriptManager.RegisterStartupScript(this, GetType(), "hideSA",
@@ -200,67 +209,6 @@ namespace LearningManagementSystem.Admin
             lblActive.Text = dt.Select("IsActive = 1").Length.ToString();
             lblInactive.Text = dt.Select("IsActive = 0").Length.ToString();
             lblPending.Text = dt.Select("IsFirstLogin = 1").Length.ToString();
-        }
-
-        // ═════════════════════════════════════════════════════════════════════
-        //  PAGINATION
-        // ═════════════════════════════════════════════════════════════════════
-        private void BuildPager(int totalPages)
-        {
-            pnlPager.Controls.Clear();
-            if (totalPages <= 1) return;
-
-            AddPagerBtn("«", 1, CurrentPage == 1);
-            AddPagerBtn("‹", CurrentPage - 1, CurrentPage == 1);
-
-            int from = Math.Max(1, CurrentPage - 2);
-            int to = Math.Min(totalPages, CurrentPage + 2);
-
-            if (from > 1)
-            {
-                AddPagerBtn("1", 1, false);
-                if (from > 2)
-                    pnlPager.Controls.Add(new LiteralControl(
-                        "<span class='tch-page-btn' style='cursor:default;pointer-events:none;" +
-                        "border:none'>…</span>"));
-            }
-
-            for (int p = from; p <= to; p++)
-                AddPagerBtn(p.ToString(), p, false, p == CurrentPage);
-
-            if (to < totalPages)
-            {
-                if (to < totalPages - 1)
-                    pnlPager.Controls.Add(new LiteralControl(
-                        "<span class='tch-page-btn' style='cursor:default;pointer-events:none;" +
-                        "border:none'>…</span>"));
-                AddPagerBtn(totalPages.ToString(), totalPages, false);
-            }
-
-            AddPagerBtn("›", CurrentPage + 1, CurrentPage == totalPages);
-            AddPagerBtn("»", totalPages, CurrentPage == totalPages);
-        }
-
-        private void AddPagerBtn(string text, int page, bool disabled, bool active = false)
-        {
-            var btn = new LinkButton
-            {
-                Text = text,
-                CommandArgument = page.ToString(),
-                CssClass = "tch-page-btn"
-                                   + (active ? " active" : "")
-                                   + (disabled ? " disabled" : ""),
-                Enabled = !disabled
-            };
-            btn.Click += PageBtn_Click;
-            pnlPager.Controls.Add(btn);
-        }
-
-        protected void PageBtn_Click(object sender, EventArgs e)
-        {
-            if (int.TryParse(((LinkButton)sender).CommandArgument, out int p))
-                CurrentPage = p;
-            // BindTeachers() will be called at the end of Page_Load on the next request.
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -287,7 +235,7 @@ namespace LearningManagementSystem.Admin
             string dobStr = txtDOB.Text.Trim();
 
             int userId = string.IsNullOrEmpty(hfTeacherUserId.Value) ? 0
-                          : Convert.ToInt32(hfTeacherUserId.Value);
+                            : Convert.ToInt32(hfTeacherUserId.Value);
             bool isInsert = userId == 0;
 
             int streamId = int.TryParse(ddlStream.SelectedValue, out int sid) && sid > 0 ? sid : 0;
@@ -428,9 +376,6 @@ namespace LearningManagementSystem.Admin
         // ═════════════════════════════════════════════════════════════════════
         //  ROW COMMANDS
         // ═════════════════════════════════════════════════════════════════════
-        protected void rptTeachers_ItemCommand(object source, RepeaterCommandEventArgs e)
-            => HandleCommand(e.CommandName, e.CommandArgument?.ToString());
-
         protected void gvTeachers_RowCommand(object sender, GridViewCommandEventArgs e)
             => HandleCommand(e.CommandName, e.CommandArgument?.ToString());
 
@@ -524,8 +469,6 @@ namespace LearningManagementSystem.Admin
         }
 
         // ── Edit ──────────────────────────────────────────────────────────────
-        //  ★ FIX: Use SafeSelect (clears existing selections before setting new one)
-        //         to prevent "Cannot have multiple items selected in a DropDownList"
         private void HandleEdit(int userId)
         {
             DataTable dt = _bl.GetTeacherById(userId, SessionId);
@@ -536,11 +479,10 @@ namespace LearningManagementSystem.Admin
 
             hfTeacherUserId.Value = userId.ToString();
 
-            // Text fields
             txtFullName.Text = dr["FullName"].ToString();
             txtUsername.Text = dr["Username"].ToString();
             txtEmail.Text = dr["Email"].ToString();
-            txtPassword.Text = string.Empty;     // never pre-fill password
+            txtPassword.Text = string.Empty;
             txtContact.Text = dr["ContactNo"].ToString();
             txtEmpId.Text = dr["EmployeeId"].ToString();
             txtDesignation.Text = dr["Designation"].ToString();
@@ -559,15 +501,13 @@ namespace LearningManagementSystem.Admin
             txtSkills.Text = dr["Skills"].ToString();
             txtDOB.Text = FormatDateInput(dr["DOB"]);
 
-            // ★ FIX — SafeSelect clears ALL items' Selected flag before
-            //   setting the one matching value, preventing the multi-select crash.
             SafeSelect(ddlStream, dr["StreamId"].ToString());
             SafeSelect(ddlGender, dr["Gender"].ToString());
 
             ScriptManager.RegisterStartupScript(this, GetType(), "openEdit", "openModal();", true);
         }
 
-        // ── Toggle ─────────────────────────────────────────────────────────────
+        // ── Toggle ────────────────────────────────────────────────────────────
         private void HandleToggle(int userId)
         {
             DataTable dt = _bl.GetTeacherById(userId, SessionId);
@@ -579,7 +519,7 @@ namespace LearningManagementSystem.Admin
             ShowToast($"'{name}' has been {(wasActive ? "deactivated" : "activated")} successfully.", "success");
         }
 
-        // ── Reset password ──────────────────────────────────────────────────────
+        // ── Reset password ────────────────────────────────────────────────────
         private void HandleResetPassword(int userId)
         {
             string tempPwd = "Tchr@" + new Random().Next(1000, 9999);
@@ -589,7 +529,7 @@ namespace LearningManagementSystem.Admin
             ShowToast($"Password reset to: <strong>{tempPwd}</strong> — Share with the teacher securely.", "warning");
         }
 
-        // ── Delete ──────────────────────────────────────────────────────────────
+        // ── Delete ────────────────────────────────────────────────────────────
         private void HandleDelete(int userId)
         {
             bool inUse = _bl.IsTeacherInUse(userId);
@@ -794,7 +734,6 @@ namespace LearningManagementSystem.Admin
                     cell.Style.Font.Color.SetColor(System.Drawing.Color.White);
                     ws.Column(i + 1).Width = 20;
                 }
-                // Sample row
                 ws.Cells[2, 1].Value = "Dr. Priya Sharma";
                 ws.Cells[2, 2].Value = "priya_sharma25";
                 ws.Cells[2, 3].Value = "priya@school.edu";
@@ -910,26 +849,15 @@ namespace LearningManagementSystem.Admin
                 $"serverToast('{msg}','{type}');", true);
         }
 
-        // ★ THE KEY FIX ──────────────────────────────────────────────────────
-        // SafeSelect: deselect ALL items first, then select the matching one.
-        // This prevents WebForms' "Cannot have multiple items selected" crash
-        // which occurs when a DropDownList still has an item marked Selected
-        // from the previous postback and you select a different one without
-        // clearing first.
-        // ────────────────────────────────────────────────────────────────────
+        // ★ SafeSelect: deselect ALL items first, then select the matching one.
+        // Prevents "Cannot have multiple items selected" WebForms crash.
         private static void SafeSelect(DropDownList ddl, string value)
         {
             if (ddl == null) return;
-
-            // Step 1: clear ALL selections
-            foreach (ListItem item in ddl.Items)
-                item.Selected = false;
-
-            // Step 2: find and select the target value
+            foreach (ListItem item in ddl.Items) item.Selected = false;
             if (string.IsNullOrWhiteSpace(value)) return;
             ListItem match = ddl.Items.FindByValue(value);
-            if (match != null)
-                match.Selected = true;
+            if (match != null) match.Selected = true;
         }
 
         private string FormatDate(object val) =>
@@ -940,7 +868,6 @@ namespace LearningManagementSystem.Admin
             val != null && DateTime.TryParse(val.ToString(), out DateTime d)
                 ? d.ToString("yyyy-MM-dd") : string.Empty;
 
-        // HTML-encode a DataRow value safely (prevents XSS in profile HTML)
         private static string Encode(object val) =>
             System.Web.HttpUtility.HtmlEncode(val?.ToString() ?? "");
     }

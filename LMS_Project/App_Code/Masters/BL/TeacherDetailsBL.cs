@@ -358,16 +358,34 @@ namespace LearningManagementSystem.BL
                     (SELECT COUNT(1) FROM Materials M
                      WHERE M.ChapterId = CH.ChapterId AND M.SessionId = @Sess) AS MaterialCount,
 
+
                     -- Student-only views (VideoViews table)
+                    --ISNULL((
+                    --    SELECT COUNT(DISTINCT VIW.UserId)
+                    --    FROM Videos V2
+                    --    LEFT JOIN VideoViews VIW ON VIW.VideoId = V2.VideoId AND VIW.SessionId = @Sess
+                    --    LEFT JOIN Users UVIU ON UVIU.UserId = VIW.UserId
+                    --    LEFT JOIN Roles RVIU ON RVIU.RoleId = UVIU.RoleId AND RVIU.RoleName = 'Student'
+                    --    WHERE V2.ChapterId = CH.ChapterId AND V2.SessionId = @Sess
+                    --      AND V2.IsActive = 1
+                    --), 0) AS TotalViews,
+
+                    -- Unique student viewers across ALL videos in the chapter
                     ISNULL((
                         SELECT COUNT(DISTINCT VIW.UserId)
                         FROM Videos V2
-                        LEFT JOIN VideoViews VIW ON VIW.VideoId = V2.VideoId AND VIW.SessionId = @Sess
-                        LEFT JOIN Users UVIU ON UVIU.UserId = VIW.UserId
-                        LEFT JOIN Roles RVIU ON RVIU.RoleId = UVIU.RoleId AND RVIU.RoleName = 'Student'
-                        WHERE V2.ChapterId = CH.ChapterId AND V2.SessionId = @Sess
+                        INNER JOIN VideoViews VIW
+                            ON VIW.VideoId = V2.VideoId
+                           AND VIW.SessionId = @Sess
+                        INNER JOIN Users UVIU
+                            ON UVIU.UserId = VIW.UserId
+                        INNER JOIN Roles RVIU
+                            ON RVIU.RoleId = UVIU.RoleId
+                           AND RVIU.RoleName = 'Student'
+                        WHERE V2.ChapterId = CH.ChapterId
+                          AND V2.SessionId = @Sess
                           AND V2.IsActive = 1
-                    ), 0)                                               AS TotalViews,
+                    ), 0) AS TotalViews,
 
                     -- Students who completed ≥80% of any video
                     (SELECT COUNT(DISTINCT WP.UserId)

@@ -908,9 +908,7 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
 </div><%-- /study-layout --%>
 
 </asp:Panel>
-<%-- ══════════════════════════════════════════════════════════════════════════
-     JAVASCRIPT — fixed AI calls, mind map, full AI history display
-═══════════════════════════════════════════════════════════════════════════ --%>
+
 <script>
     /* ─── GLOBALS ─────────────────────────────────────────────────────────── */
     const AI_URL = 'http://localhost:8000';
@@ -931,11 +929,7 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
         loadOverallProgress();
         const saved = localStorage.getItem('lv_' + hfSubj());
         if (saved) {
-            try {
-                const d = JSON.parse(saved);
-                const el = document.getElementById('vi_' + d.id);
-                if (el) el.click();
-            } catch (_) { }
+            try { const d = JSON.parse(saved); const el = document.getElementById('vi_' + d.id); if (el) el.click(); } catch (_) { }
         }
     });
 
@@ -945,28 +939,25 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
         const wasOpen = body.classList.contains('open');
         document.querySelectorAll('.ch-body').forEach(b => b.classList.remove('open'));
         document.querySelectorAll('.ch-toggle').forEach(b => b.classList.remove('open'));
-        if (!wasOpen) {
-            body.classList.add('open');
-            btn.classList.add('open');
-        }
+        if (!wasOpen) { body.classList.add('open'); btn.classList.add('open'); }
     }
 
     /* ─── VIDEO SELECTION ─────────────────────────────────────────────────── */
+    function selectVideoEl(el) {
+        selectVideo(+el.dataset.vid, el.dataset.title||'', el.dataset.desc||'',
+            el.dataset.instr||'', el.dataset.path||'', +el.dataset.views||0, el);
+    }
+
     function selectVideo(vid, title, desc, instr, path, views, el) {
         document.querySelectorAll('.ci').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
-
-        curVid = vid;
-        curVName = title;
+        curVid = vid; curVName = title;
 
         $('dVideo'); $$('dMat'); $$('dPrompt');
+        setText('vTitle', title); setText('vInstr', instr||'—');
+        setText('vDesc', desc||''); setText('vViews', views||'0');
 
-        setText('vTitle', title);
-        setText('vInstr', instr || '—');
-        setText('vDesc', desc || '');
-        setText('vViews', views || '0');
-
-        // Reset AI panel
+        // Reset AI panel on new video
         const res = document.getElementById('aiResult');
         res.className = 'ai-result dim';
         res.innerText = 'Select an action or ask a question above…';
@@ -975,42 +966,27 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
         const encodedPath = path.split('/').map(s => encodeURIComponent(s)).join('/');
         document.getElementById('vpSrc').src = encodedPath;
         vp.load();
-
-        vp.addEventListener('error', function onErr() {
-            vp.removeEventListener('error', onErr);
-            const codes = { 1: 'ABORTED', 2: 'NETWORK', 3: 'DECODE', 4: 'NOT_SUPPORTED' };
-            console.error('Video error:', codes[vp.error && vp.error.code] || vp.error, '| src:', encodedPath);
-        }, { once: true });
-
-        vp.addEventListener('canplay', function onCanPlay() {
-            vp.removeEventListener('canplay', onCanPlay);
+        vp.addEventListener('canplay', function cp() {
+            vp.removeEventListener('canplay', cp);
             vp.play().catch(e => console.warn('Autoplay blocked:', e));
         }, { once: true });
 
         localStorage.setItem('lv_' + hfSubj(), JSON.stringify({ id: vid, title, path }));
 
         const hfT = document.getElementById('<%= hfTopicVideoId.ClientID %>');
-        if (hfT) {
-            hfT.value = String(vid);
-            __doPostBack('<%= hfTopicVideoId.ClientID %>', '');
-        }
+        if (hfT) { hfT.value = String(vid); __doPostBack('<%= hfTopicVideoId.ClientID %>', ''); }
 
         ajPost('StudyMaterial.aspx/GetVideoStatus', { videoId: vid, sessionId: +hfSess() })
             .then(d => {
-                completed = !!(d && d.IsCompleted);
-                lastPos = (d && d.LastPosition) || 0;
+                completed = !!(d && d.IsCompleted); lastPos = (d && d.LastPosition) || 0;
                 document.getElementById('btnFwd').disabled = !completed;
                 if (!completed) {
                     const ov = document.getElementById('ovSkip');
-                    ov.classList.remove('hidden');
-                    setTimeout(() => ov.classList.add('hidden'), 3500);
+                    ov.classList.remove('hidden'); setTimeout(() => ov.classList.add('hidden'), 3500);
                 }
-                if (lastPos > 3) {
-                    vp.addEventListener('loadedmetadata', () => { vp.currentTime = lastPos; }, { once: true });
-                }
+                if (lastPos > 3) vp.addEventListener('loadedmetadata', () => { vp.currentTime = lastPos; }, { once: true });
                 updateWpFill(lastPos, vp.duration || 0);
-            })
-            .catch(() => { completed = false; lastPos = 0; });
+            }).catch(() => { completed = false; lastPos = 0; });
 
         let viewTracked = false;
         const trackFn = () => {
@@ -1022,214 +998,112 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
         };
         vp.addEventListener('timeupdate', trackFn);
 
-        loadVStats(vid);
-        loadRating(vid);
-        loadComments(vid);
-        loadNotes(vid);
-        loadOverallProgress();
-        startEngagement();
-        startProgSave();
-    }
-
-    function selectVideoEl(el) {
-        const vid = +el.dataset.vid;
-        selectVideo(vid,
-            el.dataset.title || '',
-            el.dataset.desc || '',
-            el.dataset.instr || '',
-            el.dataset.path || '',
-            +el.dataset.views || 0,
-            el);
+        loadVStats(vid); loadRating(vid); loadComments(vid);
+        loadNotes(vid); loadOverallProgress(); startEngagement(); startProgSave();
     }
 
     /* ─── VIDEO EVENTS ────────────────────────────────────────────────────── */
     vp.addEventListener('seeking', () => {
-        if (!completed && vp.currentTime > lastPos + 1.5) {
-            vp.currentTime = lastPos;
-            flashSkipBanner();
-        }
+        if (!completed && vp.currentTime > lastPos + 1.5) { vp.currentTime = lastPos; flashSkipBanner(); }
     });
-
     vp.addEventListener('timeupdate', () => {
         if (!vp.duration) return;
         const pct = (vp.currentTime / vp.duration) * 100;
         updateWpFill(vp.currentTime, vp.duration);
-        setText('pCurrent', Math.round(pct) + '%');
-        setText('pCurrentLbl', curVName || '—');
+        setText('pCurrent', Math.round(pct) + '%'); setText('pCurrentLbl', curVName || '—');
         setWidth('fCurrent', pct);
         if (!completed && vp.currentTime > lastPos) lastPos = vp.currentTime;
-        if (pct >= 95 && !completed) {
-            completed = true;
-            document.getElementById('btnFwd').disabled = false;
-            markComplete();
-        }
+        if (pct >= 95 && !completed) { completed = true; document.getElementById('btnFwd').disabled = false; markComplete(); }
         if (ccOn) updateCC(vp.currentTime);
     });
-
     vp.addEventListener('ended', () => {
-        markComplete();
-        const d = document.getElementById('vd_' + curVid);
-        if (d) d.classList.add('show');
-        if (autoNext) playNext();
-        loadOverallProgress();
-        stopProgSave();
+        markComplete(); const d = document.getElementById('vd_' + curVid); if (d) d.classList.add('show');
+        if (autoNext) playNext(); loadOverallProgress(); stopProgSave();
     });
-
     vp.addEventListener('pause', () => saveProgress());
 
-    function updateWpFill(pos, dur) {
-        if (!dur) return;
-        setWidth('wpFill', Math.min((pos / dur) * 100, 100));
-    }
-
+    function updateWpFill(pos, dur) { if (!dur) return; setWidth('wpFill', Math.min((pos / dur) * 100, 100)); }
     function flashSkipBanner() {
-        const ov = document.getElementById('ovSkip');
-        ov.classList.remove('hidden');
+        const ov = document.getElementById('ovSkip'); ov.classList.remove('hidden');
         setTimeout(() => ov.classList.add('hidden'), 2200);
     }
 
     /* ─── PROGRESS SAVE ───────────────────────────────────────────────────── */
     function startProgSave() { stopProgSave(); progTimer = setInterval(saveProgress, 15000); }
     function stopProgSave() { clearInterval(progTimer); }
-
     function saveProgress() {
         if (!curVid || !vp.duration) return;
-        const pct = (vp.currentTime / vp.duration) * 100;
         ajPost('StudyMaterial.aspx/SaveProgress', {
             videoId: curVid, sessionId: +hfSess(),
             position: Math.floor(vp.currentTime),
-            percentage: Math.round(pct), isCompleted: completed
+            percentage: Math.round((vp.currentTime / vp.duration) * 100),
+            isCompleted: completed
         }).catch(() => { });
     }
-
     function markComplete() {
         if (!curVid) return;
         ajPost('StudyMaterial.aspx/MarkComplete', { videoId: curVid, sessionId: +hfSess() })
-            .then(() => {
-                const d = document.getElementById('vd_' + curVid);
-                if (d) d.classList.add('show');
-                loadOverallProgress();
-            }).catch(() => { });
+            .then(() => { const d = document.getElementById('vd_' + curVid); if (d) d.classList.add('show'); loadOverallProgress(); })
+            .catch(() => { });
     }
 
     /* ─── VIDEO CONTROLS ──────────────────────────────────────────────────── */
-    function vSkip(sec) {
-        if (sec > 0 && !completed) { flashSkipBanner(); return; }
-        vp.currentTime = Math.max(0, vp.currentTime + sec);
-    }
-
-    function toggleLoop(btn) {
-        vp.loop = !vp.loop;
-        btn.classList.toggle('on', vp.loop);
-        if (vp.loop) { autoNext = false; document.getElementById('btnAuto').classList.remove('on'); }
-    }
-
-    function toggleAuto(btn) {
-        autoNext = !autoNext;
-        btn.classList.toggle('on', autoNext);
-        if (autoNext) { vp.loop = false; document.getElementById('btnLoop').classList.remove('on'); }
-    }
-
-    function toggleCC(btn) {
-        ccOn = !ccOn;
-        btn.classList.toggle('on', ccOn);
-        const bar = document.getElementById('capBar');
-        bar.classList.toggle('show', ccOn);
-        if (!ccOn) bar.innerText = '';
-    }
-
-    function doPiP() {
-        if (document.pictureInPictureElement) document.exitPictureInPicture();
-        else vp.requestPictureInPicture().catch(() => alert('PiP not supported.'));
-    }
-
-    function doFS() {
-        const w = document.getElementById('vpWrap');
-        if (document.fullscreenElement) document.exitFullscreen();
-        else w.requestFullscreen();
-    }
-
+    function vSkip(sec) { if (sec > 0 && !completed) { flashSkipBanner(); return; } vp.currentTime = Math.max(0, vp.currentTime + sec); }
+    function toggleLoop(btn) { vp.loop = !vp.loop; btn.classList.toggle('on', vp.loop); if (vp.loop) { autoNext = false; document.getElementById('btnAuto').classList.remove('on'); } }
+    function toggleAuto(btn) { autoNext = !autoNext; btn.classList.toggle('on', autoNext); if (autoNext) { vp.loop = false; document.getElementById('btnLoop').classList.remove('on'); } }
+    function toggleCC(btn) { ccOn = !ccOn; btn.classList.toggle('on', ccOn); const bar = document.getElementById('capBar'); bar.classList.toggle('show', ccOn); if (!ccOn) bar.innerText = ''; }
+    function doPiP() { if (document.pictureInPictureElement) document.exitPictureInPicture(); else vp.requestPictureInPicture().catch(() => alert('PiP not supported.')); }
+    function doFS() { const w = document.getElementById('vpWrap'); if (document.fullscreenElement) document.exitFullscreen(); else w.requestFullscreen(); }
     function doShot() {
-        const c = document.createElement('canvas');
-        c.width = vp.videoWidth; c.height = vp.videoHeight;
+        const c = document.createElement('canvas'); c.width = vp.videoWidth; c.height = vp.videoHeight;
         c.getContext('2d').drawImage(vp, 0, 0);
-        const fl = document.getElementById('ssFlash');
-        fl.style.opacity = '.9';
-        setTimeout(() => fl.style.opacity = '0', 120);
-        const a = document.createElement('a');
-        a.download = 'screenshot_' + Date.now() + '.png';
-        a.href = c.toDataURL(); a.click();
+        const fl = document.getElementById('ssFlash'); fl.style.opacity = '.9'; setTimeout(() => fl.style.opacity = '0', 120);
+        const a = document.createElement('a'); a.download = 'screenshot_' + Date.now() + '.png'; a.href = c.toDataURL(); a.click();
     }
 
     /* ─── LIVE CAPTIONS ───────────────────────────────────────────────────── */
     function updateCC(t) {
-        const bar = document.getElementById('capBar');
-        let cur = '';
+        const bar = document.getElementById('capBar'); let cur = '';
         captTopics.forEach(tp => { if (t >= toSecs(tp.time)) cur = tp.title; });
         bar.innerText = cur;
     }
-
     function toSecs(s) {
         const p = (s || '').split(':').map(Number);
-        return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2]
-            : p.length === 2 ? p[0] * 60 + p[1] : +p[0] || 0;
+        return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : +p[0] || 0;
     }
 
     /* ─── TOPICS ──────────────────────────────────────────────────────────── */
     function renderTopics() {
-        captTopics = [];
-        const list = document.getElementById('topicsList');
-        const strip = document.getElementById('topicsStrip');
-        if (!list) return;
-        list.innerHTML = '';
+        captTopics = []; const list = document.getElementById('topicsList'); const strip = document.getElementById('topicsStrip');
+        if (!list) return; list.innerHTML = '';
         document.querySelectorAll('.tdata').forEach(el => {
-            const t = el.dataset.time, title = el.dataset.title;
-            if (!t || !title) return;
+            const t = el.dataset.time, title = el.dataset.title; if (!t || !title) return;
             captTopics.push({ time: t, title });
-            const div = document.createElement('div');
-            div.className = 'topic-row';
+            const div = document.createElement('div'); div.className = 'topic-row';
             div.innerHTML = '<span class="ttm" onclick="jumpTo(\'' + esc(t) + '\')">' + esc(t) + '</span>' + esc(title);
             list.appendChild(div);
         });
         strip.style.display = list.children.length ? 'block' : 'none';
     }
-    if (typeof Sys !== 'undefined')
-        Sys.WebForms.PageRequestManager.getInstance().add_endRequest(renderTopics);
-
+    if (typeof Sys !== 'undefined') Sys.WebForms.PageRequestManager.getInstance().add_endRequest(renderTopics);
     function jumpTo(ts) { vp.currentTime = toSecs(ts); vp.play(); }
 
     /* ─── ENGAGEMENT ──────────────────────────────────────────────────────── */
     const EQ = [
         { q: "Are you still watching?", o: ["Yes, I'm watching", "Checking phone", "Browsing other tabs", "Taking a break"], c: 0 },
         { q: "Quick check — click 'Watching' to continue.", o: ["Watching", "Distracted", "Almost asleep", "Away from screen"], c: 0 },
-        { q: "Stay engaged! Pick the correct answer to resume.", o: ["I'm here and watching", "I walked away", "On my phone", "Sleeping"], c: 0 }
     ];
-
-    function startEngagement() {
-        clearInterval(engTimer);
-        engTimer = setInterval(() => { if (!vp.paused && !vp.ended) showEngagement(); }, 120000);
-    }
-
+    function startEngagement() { clearInterval(engTimer); engTimer = setInterval(() => { if (!vp.paused && !vp.ended) showEngagement(); }, 120000); }
     function showEngagement() {
-        vp.pause();
-        const q = EQ[Math.floor(Math.random() * EQ.length)];
-        const ov = document.getElementById('ovEngage');
-        document.getElementById('engQ').innerText = q.q;
-        const oEl = document.getElementById('engOpts');
-        oEl.innerHTML = '';
+        vp.pause(); const q = EQ[Math.floor(Math.random() * EQ.length)];
+        const ov = document.getElementById('ovEngage'); document.getElementById('engQ').innerText = q.q;
+        const oEl = document.getElementById('engOpts'); oEl.innerHTML = '';
         q.o.forEach((opt, i) => {
-            const b = document.createElement('button');
-            b.type = 'button'; b.className = 'engage-opt'; b.innerText = opt;
+            const b = document.createElement('button'); b.type = 'button'; b.className = 'engage-opt'; b.innerText = opt;
             b.onclick = () => {
                 oEl.querySelectorAll('.engage-opt').forEach(x => x.onclick = null);
-                if (i === q.c) {
-                    b.classList.add('correct');
-                    setTimeout(() => { ov.classList.remove('show'); vp.play(); }, 700);
-                } else {
-                    b.classList.add('wrong');
-                    if (oEl.children[q.c]) oEl.children[q.c].classList.add('correct');
-                    setTimeout(() => { ov.classList.remove('show'); vp.play(); }, 1500);
-                }
+                if (i === q.c) { b.classList.add('correct'); setTimeout(() => { ov.classList.remove('show'); vp.play(); }, 700); }
+                else { b.classList.add('wrong'); if (oEl.children[q.c]) oEl.children[q.c].classList.add('correct'); setTimeout(() => { ov.classList.remove('show'); vp.play(); }, 1500); }
             };
             oEl.appendChild(b);
         });
@@ -1238,76 +1112,56 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
 
     /* ─── AUTO NEXT ───────────────────────────────────────────────────────── */
     function playNext() {
-        const all = [...document.querySelectorAll('.ci')];
-        const idx = all.findIndex(e => e.classList.contains('active'));
+        const all = [...document.querySelectorAll('.ci')]; const idx = all.findIndex(e => e.classList.contains('active'));
         if (idx >= 0 && idx < all.length - 1) all[idx + 1].click();
     }
 
-    /* ─── VIDEO STATS ─────────────────────────────────────────────────────── */
+    /* ─── STATS / RATING ──────────────────────────────────────────────────── */
     function loadVStats(vid) {
         ajPost('StudyMaterial.aspx/GetVideoStats', { videoId: vid, sessionId: +hfSess() })
-            .then(d => { if (!d) return; setText('vViews', d.TotalViews || 0); setText('vUniq', d.UniqueStudents || 0); })
-            .catch(() => { });
+            .then(d => { if (!d) return; setText('vViews', d.TotalViews || 0); setText('vUniq', d.UniqueStudents || 0); }).catch(() => { });
     }
-
-    /* ─── RATING ──────────────────────────────────────────────────────────── */
     function loadRating(vid) {
         ajPost('StudyMaterial.aspx/GetRating', { videoId: vid, sessionId: +hfSess() })
             .then(d => {
-                if (!d) return;
-                myRating = d.MyRating || 0;
-                renderStars(myRating);
-                document.getElementById('ratingInfo').innerText =
-                    d.AvgRating ? d.AvgRating.toFixed(1) + ' (' + d.TotalRatings + ' ratings)' : 'No ratings yet';
+                if (!d) return; myRating = d.MyRating || 0; renderStars(myRating);
+                document.getElementById('ratingInfo').innerText = d.AvgRating ? d.AvgRating.toFixed(1) + ' (' + d.TotalRatings + ' ratings)' : 'No ratings yet';
             }).catch(() => { });
     }
-
-    function renderStars(val) {
-        document.querySelectorAll('#starRow .star').forEach(s => s.classList.toggle('on', +s.dataset.v <= val));
-    }
+    function renderStars(val) { document.querySelectorAll('#starRow .star').forEach(s => s.classList.toggle('on', +s.dataset.v <= val)); }
     function starHover(v) { document.querySelectorAll('#starRow .star').forEach(s => s.classList.toggle('hover', +s.dataset.v <= v)); }
     function starOut() { document.querySelectorAll('#starRow .star').forEach(s => s.classList.remove('hover')); renderStars(myRating); }
     function doRate(v) {
-        if (!curVid) return;
-        myRating = v; renderStars(v);
-        ajPost('StudyMaterial.aspx/SaveRating', { videoId: curVid, sessionId: +hfSess(), rating: v })
-            .then(() => loadRating(curVid)).catch(() => { });
+        if (!curVid) return; myRating = v; renderStars(v);
+        ajPost('StudyMaterial.aspx/SaveRating', { videoId: curVid, sessionId: +hfSess(), rating: v }).then(() => loadRating(curVid)).catch(() => { });
     }
 
     /* ─── OVERALL PROGRESS ────────────────────────────────────────────────── */
     function loadOverallProgress() {
         ajPost('StudyMaterial.aspx/GetProgress', { subjectId: +hfSubj(), sessionId: +hfSess() })
             .then(raw => {
-                const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
-                if (!d || d.error) return;
+                const d = typeof raw === 'string' ? JSON.parse(raw) : raw; if (!d || d.error) return;
                 const pct = d.TotalCount > 0 ? Math.round(d.WatchedCount / d.TotalCount * 100) : 0;
                 const spct = d.TotalChapters > 0 ? Math.round(d.CompletedChapters / d.TotalChapters * 100) : 0;
                 setText('pOverall', pct + '%'); setWidth('fOverall', pct);
-                setText('pWatched', d.WatchedCount);
-                setText('pWatchedSub', 'of ' + d.TotalCount + ' total');
+                setText('pWatched', d.WatchedCount); setText('pWatchedSub', 'of ' + d.TotalCount + ' total');
                 setText('pSyllabus', spct + '%'); setWidth('fSyllabus', spct);
                 (d.ChapterProgress || []).forEach(cp => {
                     const bar = document.getElementById('cpb_' + cp.ChapterId);
                     const lbl = document.querySelector('.ch-pct-lbl[data-cid="' + cp.ChapterId + '"]');
-                    if (bar) bar.style.width = cp.Pct + '%';
-                    if (lbl) lbl.innerText = cp.Pct + '%';
+                    if (bar) bar.style.width = cp.Pct + '%'; if (lbl) lbl.innerText = cp.Pct + '%';
                 });
-                (d.CompletedVideoIds || []).forEach(id => {
-                    const el = document.getElementById('vd_' + id);
-                    if (el) el.classList.add('show');
-                });
+                (d.CompletedVideoIds || []).forEach(id => { const el = document.getElementById('vd_' + id); if (el) el.classList.add('show'); });
             }).catch(() => { });
     }
-
     function loadProgressDetail() {
         ajPost('StudyMaterial.aspx/GetProgress', { subjectId: +hfSubj(), sessionId: +hfSess() })
             .then(raw => {
-                const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
-                if (!d || d.error) return;
+                const d = typeof raw === 'string' ? JSON.parse(raw) : raw; if (!d || d.error) return;
                 let h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
                     + '<div class="prog-card"><div class="pc-lbl">Videos</div><div class="pc-val">' + d.WatchedCount + '/' + d.TotalCount + '</div></div>'
-                    + '<div class="prog-card"><div class="pc-lbl">Chapters Done</div><div class="pc-val">' + d.CompletedChapters + '/' + d.TotalChapters + '</div></div>'
-                    + '</div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px">Chapter Breakdown</div>';
+                    + '<div class="prog-card"><div class="pc-lbl">Chapters Done</div><div class="pc-val">' + d.CompletedChapters + '/' + d.TotalChapters + '</div></div></div>'
+                    + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px">Chapter Breakdown</div>';
                 (d.ChapterProgress || []).forEach(cp => {
                     h += '<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">'
                         + '<span style="font-weight:600">' + esc(cp.ChapterName) + '</span>'
@@ -1318,17 +1172,15 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
             }).catch(() => { });
     }
 
-    /* ─── VIDEO AI ────────────────────────────────────────────────────────── */
-    /*
-     * All endpoints now POST JSON body: { video_name: "..." }
-     * Returns: { result: "..." }
-     */
+    /* ════════════════════════════════════════════════════════════════════════
+       VIDEO AI  —  all POST JSON body,  server returns { result: "..." }
+    ════════════════════════════════════════════════════════════════════════ */
     function aiAct(type) {
         if (!curVName) { setAI('⚠ Please select a video first.'); return; }
         const res = document.getElementById('aiResult');
         res.className = 'ai-result typing';
-
-        const labels = { summary: 'Summarizing…', notes: 'Generating notes…', quiz: 'Creating quiz…', mindmap: 'Building mind map…' };
+        res.style.fontFamily = '';  // reset font; mindmap sets monospace
+        const labels = { summary: 'Summarising…', notes: 'Generating notes…', quiz: 'Creating quiz…', mindmap: 'Building mind map…' };
         res.innerText = labels[type] || 'Generating…';
 
         fetch(AI_URL + '/generate-' + type, {
@@ -1337,15 +1189,15 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
             body: JSON.stringify({ video_name: curVName })
         })
             .then(r => {
-                if (!r.ok) throw new Error('Server returned ' + r.status);
+                if (!r.ok) return r.json().then(e => { throw new Error(e.detail || ('HTTP ' + r.status)); });
                 return r.json();
             })
             .then(d => {
                 const txt = d.result || d.error || JSON.stringify(d);
-                setAI(txt);
-                saveAIHist(type.charAt(0).toUpperCase() + type.slice(1) + ': ' + curVName, txt);
+                setAI(txt, type);
+                saveAIHist(type.charAt(0).toUpperCase() + type.slice(1) + ' — ' + curVName, txt);
             })
-            .catch(err => setAI('⚠ AI server error: ' + err.message + '\nMake sure server is running on port 8000.'));
+            .catch(err => setAI('⚠ AI error: ' + err.message + '\n\nMake sure:\n1. Ollama is running\n2. Server is on port 8000\n3. phi3 model is downloaded'));
     }
 
     function askAI() {
@@ -1353,12 +1205,11 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
         if (!q) return;
         if (!curVName) { setAI('⚠ Please select a video first.'); return; }
         const res = document.getElementById('aiResult');
-        res.className = 'ai-result typing'; res.innerText = '';
+        res.className = 'ai-result typing'; res.style.fontFamily = ''; res.innerText = '';
 
-        // ask-ai uses streaming GET with query params
         fetch(AI_URL + '/ask-ai?video_name=' + encodeURIComponent(curVName) + '&question=' + encodeURIComponent(q))
             .then(r => {
-                if (!r.ok) throw new Error('Server returned ' + r.status);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
                 const reader = r.body.getReader(), dec = new TextDecoder();
                 let txt = ''; res.className = 'ai-result';
                 (function pump() {
@@ -1367,14 +1218,18 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
                         txt += dec.decode(value); res.innerText = txt; pump();
                     });
                 })();
-            })
-            .catch(err => setAI('⚠ AI server error: ' + err.message));
+            }).catch(err => setAI('⚠ ' + err.message));
     }
 
-    function setAI(txt) {
+    /**
+     * setAI — renders AI result text with proper styling.
+     * type = 'mindmap' → monospace font so tree chars align.
+     */
+    function setAI(txt, type) {
         const r = document.getElementById('aiResult');
         r.className = 'ai-result';
-        r.innerText = txt;
+        r.style.fontFamily = (type === 'mindmap') ? '"Courier New", Courier, monospace' : '';
+        r.innerText = txt;   // innerText preserves whitespace/newlines correctly
     }
 
     function saveAIHist(q, a) {
@@ -1383,7 +1238,7 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
             { videoId: curVid, sessionId: +hfSess(), question: q, answer: a }).catch(() => { });
     }
 
-    /* ─── AI HISTORY — shows FULL text with expand/collapse ──────────────── */
+    /* ─── AI HISTORY — full answer, no truncation ─────────────────────────── */
     function toggleHist() {
         const body = document.getElementById('histBody');
         const chev = document.getElementById('histChev');
@@ -1395,47 +1250,59 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
     function loadAIHistory() {
         const el = document.getElementById('histList');
         el.innerHTML = '<div style="padding:8px 13px;font-size:12px;color:var(--dim)">Loading…</div>';
-
         ajPost('StudyMaterial.aspx/GetAIHistory', { videoId: curVid, sessionId: +hfSess() })
             .then(raw => {
                 const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
                 if (!Array.isArray(d) || !d.length) {
-                    el.innerHTML = '<div style="padding:8px 13px;font-size:12px;color:var(--dim)">No history yet.</div>';
-                    return;
+                    el.innerHTML = '<div style="padding:8px 13px;font-size:12px;color:var(--dim)">No history yet.</div>'; return;
                 }
                 el.innerHTML = d.map((h, idx) => {
-                    const uid = 'hist_' + idx;
-                    // Show full answer — no truncation
+                    const isMindmap = (h.Question || '').toLowerCase().includes('mindmap') || (h.Question || '').toLowerCase().includes('mind map');
+                    const ansFont = isMindmap ? '"Courier New",monospace' : 'inherit';
                     return `
-                        <div class="hist-item">
-                            <div class="hi-q"><i class="fas fa-question-circle me-1"></i>${esc(h.Question)}</div>
-                            <div class="hi-a" id="${uid}" style="white-space:pre-wrap;margin-top:5px">${esc(h.Answer || '')}</div>
-                            <div class="hi-t" style="margin-top:4px">
-                                <i class="fas fa-clock me-1"></i>${h.CreatedOn}
-                            </div>
-                        </div>`;
+                    <div class="hist-item">
+                        <div class="hi-q">
+                            <i class="fas fa-question-circle me-1"></i>${esc(h.Question)}
+                        </div>
+                        <div class="hi-a" style="font-family:${ansFont};white-space:pre-wrap;margin-top:6px;
+                             max-height:400px;overflow-y:auto;font-size:12px;line-height:1.6">
+                            ${esc(h.Answer || '')}
+                        </div>
+                        <div class="hi-t" style="margin-top:5px">
+                            <i class="fas fa-clock me-1"></i>${h.CreatedOn}
+                            <button type="button" onclick="copyHistItem(this)"
+                                data-text="${h.Answer ? h.Answer.replace(/"/g, '&quot;') : ''}"
+                                style="margin-left:10px;background:none;border:1px solid var(--purple);
+                                       color:var(--purple);border-radius:5px;padding:1px 8px;
+                                       font-size:10px;cursor:pointer;font-family:var(--f)">
+                                <i class="fas fa-copy me-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>`;
                 }).join('');
-            })
-            .catch(() => {
+            }).catch(() => {
                 el.innerHTML = '<div style="padding:8px 13px;font-size:12px;color:var(--dim)">Failed to load history.</div>';
             });
+    }
+
+    function copyHistItem(btn) {
+        const text = btn.getAttribute('data-text') || '';
+        navigator.clipboard.writeText(text).then(() => {
+            btn.innerText = '✓ Copied'; setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy'; }, 2000);
+        }).catch(() => { });
     }
 
     /* ─── COMMENTS ────────────────────────────────────────────────────────── */
     function loadComments(vid) {
         const v = vid || curVid; if (!v) return;
         ajPost('StudyMaterial.aspx/GetComments', { videoId: v, sessionId: +hfSess() })
-            .then(raw => { const d = typeof raw === 'string' ? JSON.parse(raw) : raw; renderCmts(Array.isArray(d) ? d : []); })
-            .catch(() => { });
+            .then(raw => { const d = typeof raw === 'string' ? JSON.parse(raw) : raw; renderCmts(Array.isArray(d) ? d : []); }).catch(() => { });
     }
-
     function renderCmts(data) {
         const list = document.getElementById('cmtList');
         const items = cmtFilter === 'all' ? data : data.filter(c => (c.Role || '').toLowerCase().includes(cmtFilter));
-        if (!items.length) { list.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:12px">No comments yet.</div>'; return; }
-        list.innerHTML = items.map(c => renderOneCmt(c)).join('');
+        list.innerHTML = items.length ? items.map(c => renderOneCmt(c)).join('') : '<div style="padding:12px;color:var(--dim);font-size:12px">No comments yet.</div>';
     }
-
     function renderOneCmt(c) {
         const cls = ({ student: 'rl-s', teacher: 'rl-t', admin: 'rl-a' })[(c.Role || '').toLowerCase()] || 'rl-s';
         const av = c.Role === 'Teacher' ? '#2e7d32' : c.Role === 'Admin' ? '#c62828' : '#1565c0';
@@ -1443,8 +1310,7 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
         const reps = c.Replies && c.Replies.length ? '<div class="replies">' + c.Replies.map(r => renderOneCmt(r)).join('') + '</div>' : '';
         return '<div class="cmt" data-role="' + (c.Role || '').toLowerCase() + '">'
             + '<div class="c-av" style="background:' + av + '">' + ini + '</div>'
-            + '<div style="flex:1;min-width:0">'
-            + '<span class="c-nm">' + esc(c.FullName || c.Username) + '</span>'
+            + '<div style="flex:1;min-width:0"><span class="c-nm">' + esc(c.FullName || c.Username) + '</span>'
             + '<span class="c-rl ' + cls + '">' + (c.Role || 'Student') + '</span>'
             + '<div class="c-tx">' + esc(c.CommentText) + '</div>'
             + '<div class="c-mt"><span>' + c.CreatedOn + '</span>'
@@ -1454,32 +1320,22 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
             + '<button type="button" class="post-btn" onclick="postReply(' + c.CommentId + ')" style="padding:7px 11px"><i class="fas fa-paper-plane"></i></button></div></div>'
             + reps + '</div></div>';
     }
-
     function toggleReply(id) { const b = document.getElementById('rbox_' + id); if (b) b.style.display = b.style.display === 'none' ? 'block' : 'none'; }
-
     function postCmt() {
-        const txt = document.getElementById('cmtTxt').value.trim();
-        if (!txt || !curVid) return;
+        const txt = document.getElementById('cmtTxt').value.trim(); if (!txt || !curVid) return;
         ajPost('StudyMaterial.aspx/PostComment', { videoId: curVid, sessionId: +hfSess(), commentText: txt, parentId: null })
             .then(() => { document.getElementById('cmtTxt').value = ''; loadComments(); }).catch(() => { });
     }
-
     function postReply(pid) {
-        const el = document.getElementById('rtxt_' + pid);
-        const txt = el ? el.value.trim() : '';
-        if (!txt || !curVid) return;
+        const el = document.getElementById('rtxt_' + pid); const txt = el ? el.value.trim() : ''; if (!txt || !curVid) return;
         ajPost('StudyMaterial.aspx/PostComment', { videoId: curVid, sessionId: +hfSess(), commentText: txt, parentId: pid })
             .then(() => loadComments()).catch(() => { });
     }
-
     function filterCmt(role, btn) {
-        cmtFilter = role;
-        document.querySelectorAll('.cf-btn').forEach(b => b.classList.remove('on'));
-        btn.classList.add('on');
-        loadComments();
+        cmtFilter = role; document.querySelectorAll('.cf-btn').forEach(b => b.classList.remove('on')); btn.classList.add('on'); loadComments();
     }
 
-    /* ─── NOTES (video) ───────────────────────────────────────────────────── */
+    /* ─── VIDEO NOTES ─────────────────────────────────────────────────────── */
     function loadNotes(vid) {
         ajPost('StudyMaterial.aspx/GetNotes', { videoId: vid, sessionId: +hfSess() })
             .then(raw => {
@@ -1488,100 +1344,75 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
                 setText('nSt', d && d.Content ? 'Last saved: ' + (d.UpdatedOn || '') : 'No notes saved yet');
             }).catch(() => { });
     }
-
     function saveNotes() {
         if (!curVid) return;
         ajPost('StudyMaterial.aspx/SaveNotes', { videoId: curVid, sessionId: +hfSess(), content: document.getElementById('notesEd').innerHTML })
             .then(() => setText('nSt', 'Saved at ' + new Date().toLocaleTimeString())).catch(() => { });
     }
-
     function onNoteInput() { setText('nSt', 'Unsaved changes…'); clearTimeout(notesTimer); notesTimer = setTimeout(saveNotes, 3000); }
     function fmt(cmd, val) { document.getElementById('notesEd').focus(); document.execCommand(cmd, false, val || null); }
-
     function insertTbl() {
-        const r = prompt('Rows:', '3'), c = prompt('Columns:', '3');
-        if (!r || !c) return;
+        const r = prompt('Rows:', '3'), c = prompt('Columns:', '3'); if (!r || !c) return;
         let t = '<table border="1" style="border-collapse:collapse;width:100%;margin:7px 0">';
-        for (let i = 0; i < +r; i++) {
-            t += '<tr>';
-            for (let j = 0; j < +c; j++) t += '<td style="padding:5px;border:1px solid #ccc">&nbsp;</td>';
-            t += '</tr>';
-        }
-        t += '</table><br>';
-        document.getElementById('notesEd').focus();
-        document.execCommand('insertHTML', false, t);
+        for (let i = 0; i < +r; i++) { t += '<tr>'; for (let j = 0; j < +c; j++)t += '<td style="padding:5px;border:1px solid #ccc">&nbsp;</td>'; t += '</tr>'; }
+        t += '</table><br>'; document.getElementById('notesEd').focus(); document.execCommand('insertHTML', false, t);
     }
-
     function insertImg() {
-        const u = prompt('Image URL:');
-        if (u) { document.getElementById('notesEd').focus(); document.execCommand('insertHTML', false, '<img src="' + u + '" style="max-width:100%;border-radius:7px;margin:7px 0">'); }
+        const u = prompt('Image URL:'); if (u) { document.getElementById('notesEd').focus(); document.execCommand('insertHTML', false, '<img src="' + u + '" style="max-width:100%;border-radius:7px;margin:7px 0">'); }
     }
-
-    function clearNotes() {
-        if (confirm('Clear all notes for this video?')) { document.getElementById('notesEd').innerHTML = ''; onNoteInput(); }
-    }
+    function clearNotes() { if (confirm('Clear all notes?')) { document.getElementById('notesEd').innerHTML = ''; onNoteInput(); } }
 
     /* ─── MATERIAL SELECTION ──────────────────────────────────────────────── */
     function selectMat(title, path, fileType, el) {
-        document.querySelectorAll('.ci').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-        curMatPath = path;
-
-        $('dMat'); $$('dVideo'); $$('dPrompt');
-
-        setText('matTitle', title); setText('matName', title);
-        setText('matMeta', 'Type: ' + fileType);
+        document.querySelectorAll('.ci').forEach(c => c.classList.remove('active')); el.classList.add('active');
+        curMatPath = path; $('dMat'); $$('dVideo'); $$('dPrompt');
+        setText('matTitle', title); setText('matName', title); setText('matMeta', 'Type: ' + fileType);
         document.getElementById('matLink').href = path;
 
-        // Reset material AI
-        const mr = document.getElementById('matAiRes');
-        mr.className = 'ai-result dim'; mr.innerText = 'Select an action or ask a question above…';
+        // Reset AI
+        const mr = document.getElementById('matAiRes'); mr.className = 'ai-result dim';
+        mr.style.fontFamily = ''; mr.innerText = 'Select an action or ask a question above…';
         document.getElementById('matAiInput').value = '';
 
-        const emb = document.getElementById('matEmbedArea');
-        const fall = document.getElementById('matFallback');
+        const emb = document.getElementById('matEmbedArea'), fall = document.getElementById('matFallback');
         const ext = (fileType || '').toLowerCase().replace('.', '');
-
         emb.innerHTML = '';
-        if (ext === 'pdf') {
-            emb.innerHTML = '<iframe class="mat-embed-frame" src="' + path + '"></iframe>';
-            emb.style.display = 'block'; fall.style.display = 'none';
-        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
-            emb.innerHTML = '<div style="padding:18px;text-align:center"><img src="' + path + '" style="max-width:100%;border-radius:8px;max-height:480px"></div>';
-            emb.style.display = 'block'; fall.style.display = 'none';
-        } else if (['mp4', 'webm'].includes(ext)) {
-            emb.innerHTML = '<video controls style="width:100%"><source src="' + path + '"></video>';
-            emb.style.display = 'block'; fall.style.display = 'none';
-        } else if (['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext)) {
-            const full = window.location.origin + '/' + path.replace(/^\//, '');
-            emb.innerHTML = '<iframe class="mat-embed-frame" src="https://docs.google.com/viewer?url=' + encodeURIComponent(full) + '&embedded=true"></iframe>';
-            emb.style.display = 'block'; fall.style.display = 'none';
-        } else {
-            emb.style.display = 'none'; fall.style.display = 'block';
-        }
+        if (ext === 'pdf') { emb.innerHTML = '<iframe class="mat-embed-frame" src="' + path + '"></iframe>'; emb.style.display = 'block'; fall.style.display = 'none'; }
+        else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) { emb.innerHTML = '<div style="padding:18px;text-align:center"><img src="' + path + '" style="max-width:100%;border-radius:8px;max-height:480px"></div>'; emb.style.display = 'block'; fall.style.display = 'none'; }
+        else if (['mp4', 'webm'].includes(ext)) { emb.innerHTML = '<video controls style="width:100%"><source src="' + path + '"></video>'; emb.style.display = 'block'; fall.style.display = 'none'; }
+        else if (['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext)) { const full = window.location.origin + '/' + path.replace(/^\//, ''); emb.innerHTML = '<iframe class="mat-embed-frame" src="https://docs.google.com/viewer?url=' + encodeURIComponent(full) + '&embedded=true"></iframe>'; emb.style.display = 'block'; fall.style.display = 'none'; }
+        else { emb.style.display = 'none'; fall.style.display = 'block'; }
 
-        const icons = {
-            pdf: 'fa-file-pdf #c62828', doc: 'fa-file-word #1565c0', docx: 'fa-file-word #1565c0',
-            ppt: 'fa-file-powerpoint #e65100', pptx: 'fa-file-powerpoint #e65100',
-            xls: 'fa-file-excel #2e7d32', xlsx: 'fa-file-excel #2e7d32'
-        };
+        const icons = { pdf: 'fa-file-pdf #c62828', doc: 'fa-file-word #1565c0', docx: 'fa-file-word #1565c0', ppt: 'fa-file-powerpoint #e65100', pptx: 'fa-file-powerpoint #e65100', xls: 'fa-file-excel #2e7d32', xlsx: 'fa-file-excel #2e7d32' };
         const iv = (icons[ext] || 'fa-file-alt #6a1b9a').split(' ');
         setHtml('matIcon', '<i class="fas ' + iv[0] + '" style="color:' + iv[1] + '"></i>');
-
         loadMatNotes();
     }
 
-    /* ─── MATERIAL AI ─────────────────────────────────────────────────────── */
-    /*
-     * All material endpoints POST JSON body: { file_path: "..." }
-     * Returns: { result: "..." }
-     */
+    /* ============================================================
+      PASTE THIS BLOCK to REPLACE the two functions in StudyMaterial.aspx
+      (inside the <script> tag, find matAI() and askMatAI() and swap them)
+      ============================================================ */
+
+    /* ════════════════════════════════════════════════════════════════════════
+       MATERIAL AI — POST JSON {file_path}, returns {result}
+       Shows a live "Generating…" spinner while waiting, then renders result.
+    ════════════════════════════════════════════════════════════════════════ */
     function matAI(type) {
         if (!curMatPath) { showMatAI('⚠ Please select a material first.'); return; }
         const res = document.getElementById('matAiRes');
-        res.className = 'ai-result typing';
-        const labels = { summary: 'Summarizing…', notes: 'Generating notes…', quiz: 'Creating quiz…', mindmap: 'Building mind map…' };
-        res.innerText = labels[type] || 'Generating…';
+        res.className = 'ai-result';
+        res.style.fontFamily = '';
+
+        // Show animated waiting message while phi3 generates
+        let dots = 0;
+        const labels = { summary: 'Summarising', notes: 'Generating notes', quiz: 'Creating quiz', mindmap: 'Building mind map' };
+        const baseLabel = labels[type] || 'Generating';
+        res.innerText = baseLabel + '…';
+        const spinner = setInterval(() => {
+            dots = (dots + 1) % 4;
+            res.innerText = baseLabel + '.'.repeat(dots + 1);
+        }, 600);
 
         fetch(AI_URL + '/material-' + type, {
             method: 'POST',
@@ -1589,19 +1420,41 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
             body: JSON.stringify({ file_path: curMatPath })
         })
             .then(r => {
-                if (!r.ok) throw new Error('Server returned ' + r.status);
+                if (!r.ok) return r.json().then(e => { throw new Error(e.detail || ('HTTP ' + r.status)); });
                 return r.json();
             })
-            .then(d => showMatAI(d.result || d.error || JSON.stringify(d)))
-            .catch(err => showMatAI('⚠ AI server error: ' + err.message + '\nMake sure server is running on port 8000.'));
+            .then(d => {
+                clearInterval(spinner);
+                const txt = d.result || d.error || JSON.stringify(d);
+                showMatAI(txt, type);
+            })
+            .catch(err => {
+                clearInterval(spinner);
+                showMatAI('⚠ AI error: ' + err.message
+                    + '\n\nMake sure:\n1. Ollama is running  (ollama serve)\n'
+                    + '2. Server is on port 8000  (uvicorn ai_server:app --port 8000)\n'
+                    + '3. phi3 model is pulled  (ollama pull phi3)');
+            });
     }
 
     function askMatAI() {
         const q = document.getElementById('matAiInput').value.trim();
         if (!q) return;
         if (!curMatPath) { showMatAI('⚠ Please select a material first.'); return; }
+
         const res = document.getElementById('matAiRes');
-        res.className = 'ai-result typing'; res.innerText = 'Thinking…';
+        res.className = 'ai-result';
+        res.style.fontFamily = '';
+
+        // Show question header immediately, then stream answer below it
+        res.innerHTML = '<div style="background:#e8f5e9;border-radius:8px;padding:9px 12px;'
+            + 'margin-bottom:10px;font-size:12px">'
+            + '<strong style="color:var(--green)"><i class="fas fa-question-circle me-1"></i>Question:</strong><br>'
+            + esc(q) + '</div>'
+            + '<div id="_matAnsDiv" style="white-space:pre-wrap;font-size:13px;line-height:1.65">'
+            + '<em style="color:var(--dim)">Thinking…</em></div>';
+
+        const ansDiv = document.getElementById('_matAnsDiv');
 
         fetch(AI_URL + '/material-ask', {
             method: 'POST',
@@ -1609,16 +1462,24 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
             body: JSON.stringify({ file_path: curMatPath, question: q })
         })
             .then(r => {
-                if (!r.ok) throw new Error('Server returned ' + r.status);
+                if (!r.ok) return r.json().then(e => { throw new Error(e.detail || ('HTTP ' + r.status)); });
                 return r.json();
             })
-            .then(d => showMatAI(d.result || d.error || JSON.stringify(d)))
-            .catch(err => showMatAI('⚠ AI server error: ' + err.message));
+            .then(d => {
+                const txt = d.result || d.error || JSON.stringify(d);
+                ansDiv.innerText = txt;
+                document.getElementById('matAiInput').value = '';
+            })
+            .catch(err => {
+                ansDiv.innerText = '⚠ ' + err.message;
+            });
     }
 
-    function showMatAI(txt) {
+    /* ---- showMatAI helper (keep this in place of the old one) ---- */
+    function showMatAI(txt, type) {
         const r = document.getElementById('matAiRes');
         r.className = 'ai-result';
+        r.style.fontFamily = (type === 'mindmap') ? '"Courier New",Courier,monospace' : '';
         r.innerText = txt;
     }
 
@@ -1632,30 +1493,21 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
                 setText('mNSt', d && d.Content ? 'Last saved: ' + (d.UpdatedOn || '') : 'No notes saved');
             }).catch(() => { });
     }
-
     function saveMatNotes() {
         if (!curMatPath) return;
         ajPost('StudyMaterial.aspx/SaveMaterialNotes', { materialPath: curMatPath, sessionId: +hfSess(), content: document.getElementById('matNotesEd').innerHTML })
             .then(() => setText('mNSt', 'Saved at ' + new Date().toLocaleTimeString())).catch(() => { });
     }
-
     function onMatNoteInput() { setText('mNSt', 'Unsaved changes…'); clearTimeout(matNotesTimer); matNotesTimer = setTimeout(saveMatNotes, 3000); }
     function mFmt(cmd) { document.getElementById('matNotesEd').focus(); document.execCommand(cmd, false, null); }
-
-    function clearMatNotes() {
-        if (confirm('Clear material notes?')) { document.getElementById('matNotesEd').innerHTML = ''; onMatNoteInput(); }
-    }
+    function clearMatNotes() { if (confirm('Clear material notes?')) { document.getElementById('matNotesEd').innerHTML = ''; onMatNoteInput(); } }
 
     /* ─── TABS ────────────────────────────────────────────────────────────── */
     function switchTab(btn, paneId, barId) {
-        const bar = document.getElementById(barId);
-        if (!bar) return;
+        const bar = document.getElementById(barId); if (!bar) return;
         bar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
-        const card = btn.closest('.vc');
-        if (card) card.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
-        btn.classList.add('on');
-        const pane = document.getElementById(paneId);
-        if (pane) pane.classList.add('on');
+        const card = btn.closest('.vc'); if (card) card.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
+        btn.classList.add('on'); const pane = document.getElementById(paneId); if (pane) pane.classList.add('on');
         if (paneId === 'tComments') loadComments();
         if (paneId === 'tNotes' && curVid) loadNotes(curVid);
         if (paneId === 'tProgress') loadProgressDetail();
@@ -1667,21 +1519,11 @@ body{font-family:var(--f);background:var(--bg);color:#263238;font-size:14px}
     function setText(id, v) { const e = document.getElementById(id); if (e) e.innerText = String(v != null ? v : ''); }
     function setHtml(id, v) { const e = document.getElementById(id); if (e) e.innerHTML = v; }
     function setWidth(id, w) { const e = document.getElementById(id); if (e) e.style.width = Math.min(Math.max(+w || 0, 0), 100) + '%'; }
-
-    function esc(s) {
-        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
+    function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     async function ajPost(url, data) {
-        const r = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const j = await r.json();
-        const raw = (j && j.d !== undefined) ? j.d : j;
-        if (typeof raw === 'string') { try { return JSON.parse(raw); } catch (_) { return raw; } }
-        return raw;
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const j = await r.json(); const raw = (j && j.d !== undefined) ? j.d : j;
+        if (typeof raw === 'string') { try { return JSON.parse(raw); } catch (_) { return raw; } } return raw;
     }
 </script>
 

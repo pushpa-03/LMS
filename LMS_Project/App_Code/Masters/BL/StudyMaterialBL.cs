@@ -158,22 +158,86 @@ public class StudyMaterialBL
     // ══════════════════════════════════════════════════════════════════════
     //  GET VIDEO STATS — total views + unique students
     // ══════════════════════════════════════════════════════════════════════
+    //public object GetVideoStats(int videoId, int sessionId)
+    //{
+    //    var cmd = new SqlCommand(@"
+    //        SELECT
+    //            ISNULL(V.ViewCount,0) AS TotalViews,
+    //            (SELECT COUNT(DISTINCT UserId) FROM VideoViews
+    //             WHERE VideoId=@Vid AND SessionId=@Sess) AS UniqueStudents,
+    //            (SELECT COUNT(*) FROM VideoViews
+    //             WHERE VideoId=@Vid AND SessionId=@Sess AND IsCompleted=1) AS CompletedCount
+    //        FROM Videos V WHERE V.VideoId=@Vid");
+    //    cmd.Parameters.AddWithValue("@Vid", videoId);
+    //    cmd.Parameters.AddWithValue("@Sess", sessionId);
+    //    DataTable dt = _dl.GetDataTable(cmd);
+    //    if (dt == null || dt.Rows.Count == 0)
+    //        return new { TotalViews = 0, UniqueStudents = 0, CompletedCount = 0 };
+    //    var r = dt.Rows[0];
+    //    return new
+    //    {
+    //        TotalViews = Convert.ToInt32(r["TotalViews"]),
+    //        UniqueStudents = Convert.ToInt32(r["UniqueStudents"]),
+    //        CompletedCount = Convert.ToInt32(r["CompletedCount"])
+    //    };
+    //}
+
+
     public object GetVideoStats(int videoId, int sessionId)
     {
         var cmd = new SqlCommand(@"
-            SELECT
-                ISNULL(V.ViewCount,0) AS TotalViews,
-                (SELECT COUNT(DISTINCT UserId) FROM VideoViews
-                 WHERE VideoId=@Vid AND SessionId=@Sess) AS UniqueStudents,
-                (SELECT COUNT(*) FROM VideoViews
-                 WHERE VideoId=@Vid AND SessionId=@Sess AND IsCompleted=1) AS CompletedCount
-            FROM Videos V WHERE V.VideoId=@Vid");
+        SELECT
+            -- Total student views (distinct students only)
+            (
+                SELECT COUNT(DISTINCT VV.UserId)
+                FROM VideoViews VV
+                INNER JOIN Users U
+                    ON VV.UserId = U.UserId
+                WHERE VV.VideoId   = @Vid
+                  AND VV.SessionId = @Sess
+                  AND U.RoleId     = 4
+            ) AS TotalViews,
+
+            -- Unique student viewers
+            (
+                SELECT COUNT(DISTINCT VV.UserId)
+                FROM VideoViews VV
+                INNER JOIN Users U
+                    ON VV.UserId = U.UserId
+                WHERE VV.VideoId   = @Vid
+                  AND VV.SessionId = @Sess
+                  AND U.RoleId     = 4
+            ) AS UniqueStudents,
+
+            -- Completed student count
+            (
+                SELECT COUNT(DISTINCT VV.UserId)
+                FROM VideoViews VV
+                INNER JOIN Users U
+                    ON VV.UserId = U.UserId
+                WHERE VV.VideoId    = @Vid
+                  AND VV.SessionId  = @Sess
+                  AND VV.IsCompleted = 1
+                  AND U.RoleId      = 4
+            ) AS CompletedCount");
+
         cmd.Parameters.AddWithValue("@Vid", videoId);
         cmd.Parameters.AddWithValue("@Sess", sessionId);
+
         DataTable dt = _dl.GetDataTable(cmd);
+
         if (dt == null || dt.Rows.Count == 0)
-            return new { TotalViews = 0, UniqueStudents = 0, CompletedCount = 0 };
-        var r = dt.Rows[0];
+        {
+            return new
+            {
+                TotalViews = 0,
+                UniqueStudents = 0,
+                CompletedCount = 0
+            };
+        }
+
+        DataRow r = dt.Rows[0];
+
         return new
         {
             TotalViews = Convert.ToInt32(r["TotalViews"]),
@@ -181,6 +245,7 @@ public class StudyMaterialBL
             CompletedCount = Convert.ToInt32(r["CompletedCount"])
         };
     }
+
 
     // ══════════════════════════════════════════════════════════════════════
     //  RATING — save (upsert) and get

@@ -16,6 +16,9 @@
 <asp:HiddenField ID="hfFilterStatus"  runat="server" Value="All" />
 <asp:HiddenField ID="hfToastMsg"      runat="server" />
 <asp:HiddenField ID="hfToastType"     runat="server" />
+<%-- Preserve client pagination/filter state across async postbacks --%>
+<asp:HiddenField ID="hfClientPage"    runat="server" Value="1" />
+<asp:HiddenField ID="hfClientFilter"  runat="server" Value="All" />
 
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -115,9 +118,9 @@
   font-family: var(--f); font-size: 12px; font-weight: 700; cursor: pointer;
   background: var(--surf); color: var(--ink3); transition: all .18s; white-space: nowrap;
 }
-.ac-filter-btn.active-filter { background: var(--green-lt); color: var(--green); border-color: #a5d6a7; }
-.ac-filter-btn.inactive-filter { background: var(--red-lt); color: var(--red); border-color: #ef9a9a; }
-.ac-filter-btn.all-filter { background: var(--blue-lt); color: var(--blue); border-color: var(--blue-mid); }
+.ac-filter-btn.active-filter  { background: var(--green-lt); color: var(--green); border-color: #a5d6a7; }
+.ac-filter-btn.inactive-filter{ background: var(--red-lt);   color: var(--red);   border-color: #ef9a9a; }
+.ac-filter-btn.all-filter     { background: var(--blue-lt);  color: var(--blue);  border-color: var(--blue-mid); }
 .ac-filter-btn:hover { transform: translateY(-1px); }
 .ac-add-btn {
   display: inline-flex; align-items: center; gap: 7px;
@@ -163,16 +166,13 @@
   background: rgba(255,255,255,.18); display: flex; align-items: center;
   justify-content: center; font-size: 16px; color: #fff;
 }
-.ac-stream-name { font-size: 15px; font-weight: 700; color: #fff; }
+.ac-stream-name  { font-size: 15px; font-weight: 700; color: #fff; }
 .ac-stream-count {
   display: inline-flex; align-items: center; gap: 4px;
   background: rgba(255,255,255,.22); border-radius: 20px;
   padding: 2px 11px; font-size: 11px; font-weight: 700; color: #fff;
 }
-.ac-stream-chevron {
-  color: rgba(255,255,255,.8); font-size: 13px;
-  transition: transform .25s;
-}
+.ac-stream-chevron { color: rgba(255,255,255,.8); font-size: 13px; transition: transform .25s; }
 .ac-stream-section.collapsed .ac-stream-chevron { transform: rotate(-90deg); }
 
 .ac-stream-body { overflow: hidden; }
@@ -180,15 +180,12 @@
 
 /* ── COURSE TABLE ── */
 .ac-table-wrap { overflow-x: auto; }
-.ac-table {
-  width: 100%; border-collapse: collapse; font-size: 13px;
-}
+.ac-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .ac-table thead th {
   padding: 10px 16px; text-align: left;
   font-size: 10px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .07em; color: var(--muted);
-  background: var(--surf3); border-bottom: 1px solid var(--bdr);
-  white-space: nowrap;
+  background: var(--surf3); border-bottom: 1px solid var(--bdr); white-space: nowrap;
 }
 .ac-table tbody tr { transition: background .15s; }
 .ac-table tbody tr:hover { background: #f5f8ff; }
@@ -197,7 +194,6 @@
   vertical-align: middle; color: var(--ink3);
 }
 .ac-table tbody tr:last-child td { border-bottom: none; }
-
 .ac-course-name { font-weight: 600; color: var(--ink2); }
 .ac-code-chip {
   display: inline-block; font-family: var(--mono); font-size: 11px;
@@ -261,15 +257,9 @@
 .ac-pg-btn:hover:not(.active):not(.disabled) {
   border-color: var(--blue2); color: var(--blue); background: var(--blue-lt);
 }
-.ac-pg-btn.active {
-  background: var(--blue); border-color: var(--blue);
-  color: #fff; box-shadow: 0 4px 12px rgba(21,101,192,.28);
-}
+.ac-pg-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 4px 12px rgba(21,101,192,.28); }
 .ac-pg-btn.disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
-.ac-pg-sep {
-  width: 36px; height: 36px; display: inline-flex; align-items: center;
-  justify-content: center; color: var(--dim); font-size: 13px;
-}
+.ac-pg-sep { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; color: var(--dim); font-size: 13px; }
 
 /* ── MODAL ── */
 .modal { z-index: 99999 !important; }
@@ -307,6 +297,21 @@
 .ac-modal-btn.cancel { background: var(--surf3); color: var(--ink3); border: 1.5px solid var(--bdr); }
 .ac-modal-btn.cancel:hover { background: var(--bdr); }
 
+/* ── UpdatePanel loading overlay ── */
+#gridLoadOverlay {
+  display: none; position: absolute; inset: 0;
+  background: rgba(255,255,255,.65); border-radius: var(--rlg);
+  z-index: 50; align-items: center; justify-content: center;
+}
+#gridLoadOverlay.show { display: flex; }
+.grid-spinner {
+  width: 28px; height: 28px; border: 3px solid var(--bdr);
+  border-top-color: var(--blue); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.grid-relative { position: relative; }
+
 /* ── TOAST ── */
 .ac-toast {
   position: fixed; top: 20px; right: 20px; z-index: 999999;
@@ -327,10 +332,7 @@
 .ac-toast.warning .ac-toast-icon { background: var(--amber-lt); color: var(--amber); }
 .ac-toast-msg { font-size: 13px; font-weight: 600; color: var(--ink3); flex: 1; }
 .ac-toast-close { background: none; border: none; cursor: pointer; color: var(--dim); font-size: 14px; }
-.ac-toast-bar {
-  position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 0 0 12px 12px;
-  animation: shrinkBar 4.5s linear forwards;
-}
+.ac-toast-bar { position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 0 0 12px 12px; animation: shrinkBar 4.5s linear forwards; }
 .ac-toast.success .ac-toast-bar { background: var(--green); }
 .ac-toast.error   .ac-toast-bar { background: var(--red); }
 .ac-toast.warning .ac-toast-bar { background: var(--amber); }
@@ -348,268 +350,215 @@
 }
 </style>
 
-<%-- ══ TOAST ══════════════════════════════════════════════════════════ --%>
+<%-- ══ TOAST (outside UpdatePanel so it's never replaced) ══════════ --%>
 <div class="ac-toast" id="acToast">
     <div class="ac-toast-icon" id="acToastIco"><i class="fa fa-check" id="acToastIcoI"></i></div>
-    <div class="ac-toast-msg" id="acToastMsg"></div>
+    <div class="ac-toast-msg"  id="acToastMsg"></div>
     <button class="ac-toast-close" onclick="hideToast()" type="button"><i class="fa fa-times"></i></button>
-    <div class="ac-toast-bar" id="acToastBar"></div>
+    <div class="ac-toast-bar"  id="acToastBar"></div>
 </div>
 
 <div class="ac-root">
 
-<%-- ══ PAGE HEADER ═══════════════════════════════════════════════════ --%>
+<%-- ══ PAGE HEADER (static — outside UpdatePanel) ═════════════════ --%>
 <div class="ac-header">
-    <div class="ac-h-left">
-        <div class="ac-h-eyebrow">Academic Setup</div>
-        <div class="ac-h-title">Course <span>Management</span></div>
-        <div class="ac-h-sub">
-            Manage courses grouped by stream &nbsp;·&nbsp;
-            <b><%= DateTime.Now.ToString("dd MMM yyyy") %></b>
-        </div>
+    <div>
+        <h3 class="fw-bold mb-1">Course Management</h3>
+        <small class="text-muted">Manage all academic Courses</small>
+        <span>|</span>
+        <small class="text-muted">Last updated: <%= DateTime.Now.ToString("dd MMM yyyy hh:mm tt") %></small>
     </div>
     <div class="ac-h-right">
         <% if (!IsSuperAdmin) { %>
-        <a href="#" data-bs-toggle="modal" data-bs-target="#CreateModal"
-           class="ac-add-btn">
+        <a href="#" data-bs-toggle="modal" data-bs-target="#CreateModal" class="ac-add-btn">
             <i class="fa fa-plus"></i> Add Course
         </a>
         <% } %>
     </div>
 </div>
 
-<%-- ══ STAT CARDS ═════════════════════════════════════════════════════ --%>
-<div class="ac-stats">
-    <div class="ac-stat" style="animation-delay:.04s">
-        <div class="ac-stat-ico" style="background:#e3f2fd;color:#1565c0"><i class="fa fa-book"></i></div>
-        <div>
-            <div class="ac-stat-val"><asp:Label ID="lblTotal"    runat="server" Text="0" /></div>
-            <div class="ac-stat-lbl">Total Courses</div>
+<%-- ══════════════════════════════════════════════════════════════════
+     MAIN UPDATE PANEL — wraps everything that changes after CRUD
+     UpdateMode=Always + ChildrenAsTriggers=true means any button
+     inside (repeater LinkButtons, Save, Update) triggers async refresh.
+══════════════════════════════════════════════════════════════════ --%>
+<asp:UpdatePanel ID="upMain" runat="server" UpdateMode="Always" ChildrenAsTriggers="true">
+<ContentTemplate>
+
+    <%-- Stat cards — reflect live counts --%>
+    <div class="ac-stats">
+        <div class="ac-stat" style="animation-delay:.04s">
+            <div class="ac-stat-ico" style="background:#e3f2fd;color:#1565c0"><i class="fa fa-book"></i></div>
+            <div>
+                <div class="ac-stat-val"><asp:Label ID="lblTotal"    runat="server" Text="0" /></div>
+                <div class="ac-stat-lbl">Total Courses</div>
+            </div>
+        </div>
+        <div class="ac-stat" style="animation-delay:.09s">
+            <div class="ac-stat-ico" style="background:#e8f5e9;color:#2e7d32"><i class="fa fa-check-circle"></i></div>
+            <div>
+                <div class="ac-stat-val"><asp:Label ID="lblActive"   runat="server" Text="0" /></div>
+                <div class="ac-stat-lbl">Active</div>
+            </div>
+        </div>
+        <div class="ac-stat" style="animation-delay:.14s">
+            <div class="ac-stat-ico" style="background:#ffebee;color:#c62828"><i class="fa fa-times-circle"></i></div>
+            <div>
+                <div class="ac-stat-val"><asp:Label ID="lblInactive" runat="server" Text="0" /></div>
+                <div class="ac-stat-lbl">Inactive</div>
+            </div>
         </div>
     </div>
-    <div class="ac-stat" style="animation-delay:.09s">
-        <div class="ac-stat-ico" style="background:#e8f5e9;color:#2e7d32"><i class="fa fa-check-circle"></i></div>
-        <div>
-            <div class="ac-stat-val"><asp:Label ID="lblActive"   runat="server" Text="0" /></div>
-            <div class="ac-stat-lbl">Active</div>
+
+    <%-- Toolbar — search + filter buttons --%>
+    <div class="ac-toolbar">
+        <div class="ac-search-wrap">
+            <i class="fa fa-search"></i>
+            <input type="text" id="txtSearch" runat="server"
+                   class="ac-search-input"
+                   placeholder="Search course name or code…"
+                   onkeyup="this.form.submit()" />
         </div>
+        <button type="button" class="ac-filter-btn all-filter"     id="btnFilterAll"      onclick="applyFilter('All',      this)"><i class="fa fa-list me-1"></i> All</button>
+        <button type="button" class="ac-filter-btn"                id="btnFilterActive"   onclick="applyFilter('active',   this)"><i class="fa fa-check-circle me-1"></i> Active</button>
+        <button type="button" class="ac-filter-btn"                id="btnFilterInactive" onclick="applyFilter('inactive', this)"><i class="fa fa-times-circle me-1"></i> Inactive</button>
     </div>
-    <div class="ac-stat" style="animation-delay:.14s">
-        <div class="ac-stat-ico" style="background:#ffebee;color:#c62828"><i class="fa fa-times-circle"></i></div>
-        <div>
-            <div class="ac-stat-val"><asp:Label ID="lblInactive" runat="server" Text="0" /></div>
-            <div class="ac-stat-lbl">Inactive</div>
+
+    <%-- Info bar --%>
+    <div class="ac-info-bar">
+        <div class="ac-showing">
+            Showing streams <b><asp:Label ID="lblRangeFrom"     runat="server" Text="—" /></b>
+            – <b><asp:Label ID="lblRangeTo"       runat="server" Text="—" /></b>
+            of <b><asp:Label ID="lblTotalStreams"  runat="server" Text="0" /></b>
+            &nbsp;·&nbsp; <b><asp:Label ID="lblTotalCourses" runat="server" Text="0" /></b> courses total
         </div>
-    </div>
-</div>
-
-<%-- ══ TOOLBAR ════════════════════════════════════════════════════════ --%>
-<div class="ac-toolbar">
-
-    <%-- Search --%>
-    <div class="ac-search-wrap">
-        <i class="fa fa-search"></i>
-        <input type="text" id="txtSearch" runat="server"
-               class="ac-search-input"
-               placeholder="Search course name or code…"
-               onkeyup="this.form.submit()" />
+        <span id="filterBadgeClient" class="ac-filter-active-badge ac-filter-btn all-filter">Showing: All courses</span>
     </div>
 
-    <%-- Filter buttons (postback, keep current page) --%>
-    <asp:LinkButton ID="btnFilterAll"      runat="server" CssClass="ac-filter-btn all-filter"
-        OnClick="FilterStatus_Click" CommandArgument="All">
-        <i class="fa fa-list me-1"></i> All
-    </asp:LinkButton>
+    <%-- Loading overlay wraps the grid --%>
+    <div class="grid-relative">
+        <div id="gridLoadOverlay"><div class="grid-spinner"></div></div>
 
-    <asp:LinkButton ID="btnFilterActive"   runat="server" CssClass="ac-filter-btn"
-        OnClick="FilterStatus_Click" CommandArgument="1">
-        <i class="fa fa-check-circle me-1"></i> Active
-    </asp:LinkButton>
+        <%-- Stream groups --%>
+        <asp:Repeater ID="rptStreams" runat="server"
+            OnItemDataBound="rptStreams_ItemDataBound">
+            <ItemTemplate>
+                <div class="ac-stream-section" id='stream_<%# Eval("StreamId") %>'>
 
-    <asp:LinkButton ID="btnFilterInactive" runat="server" CssClass="ac-filter-btn"
-        OnClick="FilterStatus_Click" CommandArgument="0">
-        <i class="fa fa-times-circle me-1"></i> Inactive
-    </asp:LinkButton>
-
-</div>
-
-<%-- ══ INFO BAR ═══════════════════════════════════════════════════════ --%>
-<div class="ac-info-bar">
-    <div class="ac-showing">
-        Showing streams <b><asp:Label ID="lblRangeFrom" runat="server" Text="—" /></b>
-        – <b><asp:Label ID="lblRangeTo"   runat="server" Text="—" /></b>
-        of <b><asp:Label ID="lblTotalStreams" runat="server" Text="0" /></b>
-        &nbsp;·&nbsp; <b><asp:Label ID="lblTotalCourses" runat="server" Text="0" /></b> courses total
-    </div>
-    <asp:Label ID="lblFilterBadge" runat="server" CssClass="ac-filter-active-badge" />
-</div>
-
-<%-- ══ STREAM GROUPS (server-paged) ═══════════════════════════════════ --%>
-<asp:Repeater ID="rptStreams" runat="server"
-    OnItemDataBound="rptStreams_ItemDataBound">
-    <ItemTemplate>
-
-        <div class="ac-stream-section" id='stream_<%# Eval("StreamId") %>'>
-
-            <%-- Stream header — click to collapse/expand --%>
-            <div class="ac-stream-head"
-                 onclick="toggleStream('<%# Eval("StreamId") %>')">
-                <div class="ac-stream-head-left">
-                    <div class="ac-stream-icon"><i class="fa fa-layer-group"></i></div>
-                    <div>
-                        <div class="ac-stream-name"><%# System.Web.HttpUtility.HtmlEncode(Eval("StreamName").ToString()) %></div>
+                    <div class="ac-stream-head" onclick="toggleStream('<%# Eval("StreamId") %>')">
+                        <div class="ac-stream-head-left">
+                            <div class="ac-stream-icon"><i class="fa fa-layer-group"></i></div>
+                            <div>
+                                <div class="ac-stream-name"><%# System.Web.HttpUtility.HtmlEncode(Eval("StreamName").ToString()) %></div>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <span class="ac-stream-count">
+                                <i class="fa fa-book" style="font-size:10px"></i>
+                                <%# Eval("CourseCount") %> courses
+                            </span>
+                            <i class="fa fa-chevron-down ac-stream-chevron" id='chev_<%# Eval("StreamId") %>'></i>
+                        </div>
                     </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px">
-                    <span class="ac-stream-count">
-                        <i class="fa fa-book" style="font-size:10px"></i>
-                        <%# Eval("CourseCount") %> courses
-                    </span>
-                    <i class="fa fa-chevron-down ac-stream-chevron" id='chev_<%# Eval("StreamId") %>'></i>
-                </div>
-            </div>
 
-            <%-- Course table for this stream --%>
-            <div class="ac-stream-body" id='body_<%# Eval("StreamId") %>'>
-                <div class="ac-table-wrap">
-                    <table class="ac-table">
-                        <thead>
-                            <tr>
-                                <th style="width:40px">#</th>
-                                <th>Course Name</th>
-                                <th>Code</th>
-                                <th>Status</th>
-                                <th style="text-align:right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <asp:Repeater ID="rptCourses" runat="server"
-                                OnItemCommand="rptCourses_ItemCommand">
-                                <ItemTemplate>
+                    <div class="ac-stream-body" id='body_<%# Eval("StreamId") %>'>
+                        <div class="ac-table-wrap">
+                            <table class="ac-table">
+                                <thead>
                                     <tr>
-                                        <td style="color:var(--dim);font-family:var(--mono);font-size:11px">
-                                            <%# Container.ItemIndex + 1 %>
-                                        </td>
-                                        <td>
-                                            <div class="ac-course-name">
-                                                <%# System.Web.HttpUtility.HtmlEncode(Eval("CourseName").ToString()) %>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <%# !string.IsNullOrWhiteSpace(Eval("CourseCode").ToString())
-                                                ? $"<span class='ac-code-chip'>{System.Web.HttpUtility.HtmlEncode(Eval("CourseCode").ToString())}</span>"
-                                                : "<span style='color:var(--dim);font-size:12px'>—</span>" %>
-                                        </td>
-                                        <td>
-                                            <%# Convert.ToBoolean(Eval("IsActive"))
-                                                ? "<span class='ac-status-badge active'>Active</span>"
-                                                : "<span class='ac-status-badge inactive'>Inactive</span>" %>
-                                        </td>
-                                        <td>
-                                            <div class="ac-act" style="justify-content:flex-end">
-                                                <% if (!IsSuperAdmin) { %>
-                                                <asp:LinkButton runat="server"
-                                                    CommandName="EditRow"
-                                                    CommandArgument='<%# Eval("CourseId") %>'
-                                                    CssClass="ac-act-btn edit" ToolTip="Edit">
-                                                    <i class="fa fa-pen"></i>
-                                                </asp:LinkButton>
-
-                                                <asp:LinkButton runat="server"
-                                                    CommandName="Toggle"
-                                                    CommandArgument='<%# Eval("CourseId") %>'
-                                                    CssClass="ac-act-btn toggle" ToolTip="Toggle Status"
-                                                    OnClientClick="return confirm('Change course status?');">
-                                                    <i class="fa fa-toggle-on"></i>
-                                                </asp:LinkButton>
-
-                                                <asp:LinkButton runat="server"
-                                                    CommandName="DeleteRow"
-                                                    CommandArgument='<%# Eval("CourseId") %>'
-                                                    CssClass="ac-act-btn del" ToolTip="Delete"
-                                                    OnClientClick="return confirm('Delete this course? This cannot be undone.');">
-                                                    <i class="fa fa-trash"></i>
-                                                </asp:LinkButton>
-                                                <% } else { %>
-                                                <span class="ac-view-only"><i class="fa fa-eye me-1"></i>View Only</span>
-                                                <% } %>
-                                            </div>
-                                        </td>
+                                        <th style="width:40px">#</th>
+                                        <th>Course Name</th>
+                                        <th>Code</th>
+                                        <th>Status</th>
+                                        <th style="text-align:right">Actions</th>
                                     </tr>
-                                </ItemTemplate>
-                               <FooterTemplate>
-                                <asp:PlaceHolder ID="phEmpty" runat="server"
-                                    Visible='<%# ((Repeater)Container.NamingContainer).Items.Count == 0 %>'>
-                                    <tr>
-                                        <td colspan="5"
-                                            style="text-align:center;padding:20px;color:var(--dim);font-size:12px">
+                                </thead>
+                                <tbody>
+                                    <asp:Repeater ID="rptCourses" runat="server"
+                                        OnItemCommand="rptCourses_ItemCommand">
+                                        <ItemTemplate>
+                                            <tr>
+                                                <td style="color:var(--dim);font-family:var(--mono);font-size:11px"><%# Container.ItemIndex + 1 %></td>
+                                                <td><div class="ac-course-name"><%# System.Web.HttpUtility.HtmlEncode(Eval("CourseName").ToString()) %></div></td>
+                                                <td>
+                                                    <%# !string.IsNullOrWhiteSpace(Eval("CourseCode").ToString())
+                                                        ? $"<span class='ac-code-chip'>{System.Web.HttpUtility.HtmlEncode(Eval("CourseCode").ToString())}</span>"
+                                                        : "<span style='color:var(--dim);font-size:12px'>—</span>" %>
+                                                </td>
+                                                <td>
+                                                    <%# Convert.ToBoolean(Eval("IsActive"))
+                                                        ? "<span class='ac-status-badge active'>Active</span>"
+                                                        : "<span class='ac-status-badge inactive'>Inactive</span>" %>
+                                                </td>
+                                                <td>
+                                                    <div class="ac-act" style="justify-content:flex-end">
+                                                        <% if (!IsSuperAdmin) { %>
+                                                        <asp:LinkButton runat="server"
+                                                            CommandName="EditRow"
+                                                            CommandArgument='<%# Eval("CourseId") %>'
+                                                            CssClass="ac-act-btn edit" ToolTip="Edit">
+                                                            <i class="fa fa-pen"></i>
+                                                        </asp:LinkButton>
+                                                        <asp:LinkButton runat="server"
+                                                            CommandName="Toggle"
+                                                            CommandArgument='<%# Eval("CourseId") %>'
+                                                            CssClass="ac-act-btn toggle" ToolTip="Toggle Status"
+                                                            OnClientClick="return confirm('Change course status?');">
+                                                            <i class="fa fa-toggle-on"></i>
+                                                        </asp:LinkButton>
+                                                        <asp:LinkButton runat="server"
+                                                            CommandName="DeleteRow"
+                                                            CommandArgument='<%# Eval("CourseId") %>'
+                                                            CssClass="ac-act-btn del" ToolTip="Delete"
+                                                            OnClientClick="return confirm('Delete this course? This cannot be undone.');">
+                                                            <i class="fa fa-trash"></i>
+                                                        </asp:LinkButton>
+                                                        <% } else { %>
+                                                        <span class="ac-view-only"><i class="fa fa-eye me-1"></i>View Only</span>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:PlaceHolder ID="phEmpty" runat="server"
+                                                Visible='<%# ((Repeater)Container.NamingContainer).Items.Count == 0 %>'>
+                                                <tr>
+                                                    <td colspan="5" style="text-align:center;padding:20px;color:var(--dim);font-size:12px">
+                                                        <i class="fa fa-book me-2"></i>No courses in this stream
+                                                    </td>
+                                                </tr>
+                                            </asp:PlaceHolder>
+                                        </FooterTemplate>
+                                    </asp:Repeater>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                                            <i class="fa fa-book me-2"></i>
-                                            No courses in this stream
-                                        </td>
-                                    </tr>
-                                </asp:PlaceHolder>
-                            </FooterTemplate>
-
-                            </asp:Repeater>
-                        </tbody>
-                    </table>
                 </div>
-            </div>
+            </ItemTemplate>
+            <FooterTemplate>
+                <%# rptStreams.Items.Count == 0
+                    ? "<div class='ac-empty'><div class='ac-empty-icon'><i class='fa fa-book'></i></div><div class='ac-empty-title'>No Courses Found</div><div class='ac-empty-sub'>Add a course using the button above, or change the filter.</div></div>"
+                    : "" %>
+            </FooterTemplate>
+        </asp:Repeater>
 
-        </div>
+    </div><%-- /grid-relative --%>
 
-    </ItemTemplate>
-    <FooterTemplate>
-        <%# rptStreams.Items.Count == 0
-            ? "<div class='ac-empty'><div class='ac-empty-icon'><i class='fa fa-book'></i></div><div class='ac-empty-title'>No Courses Found</div><div class='ac-empty-sub'>Add a course using the button above, or change the filter.</div></div>"
-            : "" %>
-    </FooterTemplate>
-</asp:Repeater>
-
-<%-- ══ PAGINATION ════════════════════════════════════════════════════ --%>
-<asp:Panel ID="pnlPagination" runat="server" Visible="false">
-<div class="ac-pagination-wrap">
-    <div class="ac-page-info">
-        Page <b><asp:Label ID="lblCurrentPage"  runat="server" /></b>
-        of   <b><asp:Label ID="lblTotalPages"   runat="server" /></b>
+    <%-- Pagination bar --%>
+    <div class="ac-pagination-wrap" id="pagerWrap" style="display:none;">
+        <div class="ac-page-info" id="pagerInfo"></div>
+        <div class="ac-page-btns" id="pager"></div>
     </div>
-    <div class="ac-page-btns">
 
-        <%-- First --%>
-        <asp:LinkButton ID="btnFirst" runat="server"
-            CssClass="ac-pg-btn"
-            CommandArgument="First"
-            OnClick="Pager_Click">«</asp:LinkButton>
-
-        <%-- Prev --%>
-        <asp:LinkButton ID="btnPrev" runat="server"
-            CssClass="ac-pg-btn"
-            CommandArgument="Prev"
-            OnClick="Pager_Click">‹</asp:LinkButton>
-
-        <%-- Numbered page buttons — built server-side into this PlaceHolder --%>
-        <asp:PlaceHolder ID="phPageNums" runat="server" />
-
-        <%-- Next --%>
-        <asp:LinkButton ID="btnNext" runat="server"
-            CssClass="ac-pg-btn"
-            CommandArgument="Next"
-            OnClick="Pager_Click">›</asp:LinkButton>
-
-        <%-- Last --%>
-        <asp:LinkButton ID="btnLast" runat="server"
-            CssClass="ac-pg-btn"
-            CommandArgument="Last"
-            OnClick="Pager_Click">»</asp:LinkButton>
-
-    </div>
-</div>
-</asp:Panel>
+</ContentTemplate>
+</asp:UpdatePanel>
 
 </div><%-- /ac-root --%>
 
-<%-- ══ ADD MODAL ══════════════════════════════════════════════════════ --%>
+<%-- ══ ADD MODAL (outside UpdatePanel — Bootstrap modals need to be in body root) ═ --%>
 <div class="modal fade" id="CreateModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -627,16 +576,14 @@
                     <label>Course Name <span class="req">*</span></label>
                     <asp:TextBox ID="txtCourseName" runat="server" CssClass="ac-fi"
                         placeholder="e.g. Bachelor of Computer Applications"
-                        oninput="validateName(this,'errAddName')"
-                        MaxLength="150" />
+                        oninput="validateName(this,'errAddName')" MaxLength="150" />
                     <div class="ac-fi-err" id="errAddName"></div>
                 </div>
                 <div class="ac-field">
                     <label>Course Code <span style="color:var(--dim);font-size:10px">(optional)</span></label>
                     <asp:TextBox ID="txtCourseCode" runat="server" CssClass="ac-fi"
                         placeholder="e.g. BCA"
-                        oninput="validateCode(this,'errAddCode')"
-                        MaxLength="20" />
+                        oninput="validateCode(this,'errAddCode')" MaxLength="20" />
                     <div class="ac-fi-err" id="errAddCode"></div>
                 </div>
             </div>
@@ -653,7 +600,7 @@
     </div>
 </div>
 
-<%-- ══ EDIT MODAL ═════════════════════════════════════════════════════ --%>
+<%-- ══ EDIT MODAL ══════════════════════════════════════════════════════ --%>
 <div class="modal fade" id="EditModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -671,16 +618,14 @@
                     <label>Course Name <span class="req">*</span></label>
                     <asp:TextBox ID="txtCourseNameEdit" runat="server" CssClass="ac-fi"
                         placeholder="Course name"
-                        oninput="validateName(this,'errEditName')"
-                        MaxLength="150" />
+                        oninput="validateName(this,'errEditName')" MaxLength="150" />
                     <div class="ac-fi-err" id="errEditName"></div>
                 </div>
                 <div class="ac-field">
                     <label>Course Code <span style="color:var(--dim);font-size:10px">(optional)</span></label>
                     <asp:TextBox ID="txtCourseCodeEdit" runat="server" CssClass="ac-fi"
                         placeholder="Course code"
-                        oninput="validateCode(this,'errEditCode')"
-                        MaxLength="20" />
+                        oninput="validateCode(this,'errEditCode')" MaxLength="20" />
                     <div class="ac-fi-err" id="errEditCode"></div>
                 </div>
             </div>
@@ -699,22 +644,22 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════
-   TOAST
+   TOAST  (lives outside UpdatePanel — never wiped by async refresh)
 ═══════════════════════════════════════════════════════════════════ */
 var _toastTimer;
 function showToast(msg, type) {
     type = type || 'success';
     var icons = { success:'fa-check-circle', error:'fa-exclamation-circle', warning:'fa-exclamation-triangle' };
-    var toast  = document.getElementById('acToast');
-    var msgEl  = document.getElementById('acToastMsg');
-    var icoEl  = document.getElementById('acToastIcoI');
-    var barEl  = document.getElementById('acToastBar');
+    var toast = document.getElementById('acToast');
+    var msgEl = document.getElementById('acToastMsg');
+    var icoEl = document.getElementById('acToastIcoI');
+    var barEl = document.getElementById('acToastBar');
     if (!toast) return;
-    msgEl.textContent  = msg;
-    icoEl.className    = 'fa ' + (icons[type] || 'fa-info-circle');
-    toast.className    = 'ac-toast ' + type;
+    msgEl.textContent = msg;
+    icoEl.className   = 'fa ' + (icons[type] || 'fa-info-circle');
+    toast.className   = 'ac-toast ' + type;
     barEl.style.animation = 'none';
-    barEl.offsetHeight;
+    barEl.offsetHeight;                           // reflow to restart animation
     barEl.style.animation = 'shrinkBar 4.5s linear forwards';
     toast.classList.add('show');
     clearTimeout(_toastTimer);
@@ -725,25 +670,227 @@ function hideToast() {
     if (t) t.classList.remove('show');
 }
 
-/* ─── Fire toast from server hidden fields after postback ─── */
+/* ─── Fire toast from server hidden fields (works for async postback too) ─── */
 function fireServerToast() {
     var hm = document.getElementById('<%= hfToastMsg.ClientID %>');
     var ht = document.getElementById('<%= hfToastType.ClientID %>');
     if (hm && hm.value && hm.value.trim()) {
         showToast(hm.value, ht ? ht.value : 'success');
-        hm.value = '';
-        if (ht) ht.value = '';
+        hm.value = ''; if (ht) ht.value = '';
     }
 }
+/* On first load */
 document.addEventListener('DOMContentLoaded', fireServerToast);
 
 /* ═══════════════════════════════════════════════════════════════════
-   STREAM COLLAPSE/EXPAND (pure JS — no postback)
+   UPDATEPANEL HOOKS
+   pageLoad fires after every async postback, replacing DOMContentLoaded.
+   We use it to:
+     1. Fire any pending toast from hidden fields
+     2. Close open modals (after Save / Update)
+     3. Restore the active filter + current pagination page
+═══════════════════════════════════════════════════════════════════ */
+var Sys = window.Sys || {};
+
+/* pageLoad is called by ASP.NET ScriptManager after every async update */
+function pageLoad() {
+    fireServerToast();
+
+    /* Close Add modal after successful save */
+    var addModal = document.getElementById('CreateModal');
+    if (addModal && addModal.classList.contains('show')) {
+        var m = bootstrap.Modal.getInstance(addModal);
+        if (m) m.hide();
+    }
+
+    /* Re-init pagination/filter with the previously active state */
+    var savedFilter = document.getElementById('<%= hfClientFilter.ClientID %>').value || 'All';
+    var savedPage   = parseInt(document.getElementById('<%= hfClientPage.ClientID %>').value  || '1', 10);
+
+    /* Re-collect all cards (DOM was replaced by UpdatePanel) */
+    _allCards      = Array.from(document.querySelectorAll('.ac-stream-section'));
+    _filteredCards = _allCards.slice();
+
+    /* Re-apply filter silently (no button click needed) */
+    _applyFilterSilent(savedFilter);
+    _render(savedPage);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOADING OVERLAY — show during async postback, hide when done
+═══════════════════════════════════════════════════════════════════ */
+if (typeof Sys !== 'undefined' && Sys.WebForms) {
+    Sys.WebForms.PageRequestManager.getInstance().add_beginRequest(function() {
+        var ov = document.getElementById('gridLoadOverlay');
+        if (ov) ov.classList.add('show');
+    });
+    Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function() {
+        var ov = document.getElementById('gridLoadOverlay');
+        if (ov) ov.classList.remove('show');
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CLIENT-SIDE FILTER + PAGINATION
+═══════════════════════════════════════════════════════════════════ */
+var PAGE_SIZE      = 3;
+var _currentPage   = 1;
+var _currentFilter = 'All';
+var _allCards      = [];
+var _filteredCards = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    _allCards      = Array.from(document.querySelectorAll('.ac-stream-section'));
+    _filteredCards = _allCards.slice();
+    _render(1);
+});
+
+/* Public: called by filter buttons */
+window.applyFilter = function(filter, btn) {
+    /* Persist into hidden field so pageLoad can restore it */
+    var hf = document.getElementById('<%= hfClientFilter.ClientID %>');
+    if (hf) hf.value = filter;
+
+    _applyFilterSilent(filter);
+    _updateFilterBtnStyles(filter);
+    _updateFilterBadge(filter);
+    _render(1);
+};
+
+/* Internal: apply filter without updating button/badge styles */
+function _applyFilterSilent(filter) {
+    _currentFilter = filter;
+
+    _allCards.forEach(function(card) {
+        var rows = card.querySelectorAll('tbody tr');
+        rows.forEach(function(row) {
+            if (filter === 'All') { row.style.display = ''; return; }
+            var badge = row.querySelector('.ac-status-badge');
+            row.style.display = (badge && badge.classList.contains(filter)) ? '' : 'none';
+        });
+    });
+
+    _filteredCards = _allCards.filter(function(card) {
+        if (filter === 'All') return true;
+        var badges = card.querySelectorAll('.ac-status-badge');
+        for (var i = 0; i < badges.length; i++) {
+            if (badges[i].classList.contains(filter)) return true;
+        }
+        return false;
+    });
+}
+
+function _updateFilterBtnStyles(filter) {
+    document.querySelectorAll('.ac-filter-btn').forEach(function(b) {
+        b.classList.remove('all-filter','active-filter','inactive-filter');
+    });
+    var btnMap = { All:'btnFilterAll', active:'btnFilterActive', inactive:'btnFilterInactive' };
+    var activeBtn = document.getElementById(btnMap[filter]);
+    if (activeBtn) {
+        if (filter === 'All')      activeBtn.classList.add('all-filter');
+        if (filter === 'active')   activeBtn.classList.add('active-filter');
+        if (filter === 'inactive') activeBtn.classList.add('inactive-filter');
+    }
+}
+
+function _updateFilterBadge(filter) {
+    var badge = document.getElementById('filterBadgeClient');
+    if (!badge) return;
+    var labels = { All:'Showing: All courses', active:'Showing: Active only', inactive:'Showing: Inactive only' };
+    var classes = { All:'all-filter', active:'active-filter', inactive:'inactive-filter' };
+    badge.textContent = labels[filter] || '';
+    badge.className   = 'ac-filter-active-badge ac-filter-btn ' + (classes[filter] || 'all-filter');
+}
+
+/* ── Render one page of stream cards ── */
+function _render(page) {
+    _currentPage = page;
+    var total      = _filteredCards.length;
+    var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (_currentPage > totalPages) _currentPage = totalPages;
+    if (_currentPage < 1)          _currentPage = 1;
+
+    /* Persist page into hidden field */
+    var hfPg = document.getElementById('<%= hfClientPage.ClientID %>');
+    if (hfPg) hfPg.value = _currentPage;
+
+    var start = (_currentPage - 1) * PAGE_SIZE;
+    var end   = Math.min(start + PAGE_SIZE, total);
+
+    _allCards.forEach(function(card) {
+        var idx = _filteredCards.indexOf(card);
+        card.style.display = (idx >= start && idx < end) ? '' : 'none';
+    });
+
+    /* Info bar labels */
+    var lFrom    = document.getElementById('<%= lblRangeFrom.ClientID %>');
+    var lTo      = document.getElementById('<%= lblRangeTo.ClientID %>');
+    var lTotStr  = document.getElementById('<%= lblTotalStreams.ClientID %>');
+
+    if (lFrom)   lFrom.textContent   = total === 0 ? '0' : (start + 1).toString();
+    if (lTo)     lTo.textContent     = end.toString();
+    if (lTotStr) lTotStr.textContent = total.toString();
+
+    /* Pagination bar */
+    var wrap  = document.getElementById('pagerWrap');
+    var info  = document.getElementById('pagerInfo');
+    var pager = document.getElementById('pager');
+    if (!wrap) return;
+
+    if (total === 0 || totalPages <= 1) {
+        wrap.style.display = 'none';
+    } else {
+        wrap.style.display = 'flex';
+        if (info) info.innerHTML = 'Page <b>' + _currentPage + '</b> of <b>' + totalPages + '</b>';
+        _buildPager(pager, totalPages, _currentPage);
+    }
+}
+
+function _buildPager(wrap, totalPages, cur) {
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    function btn(label, page, disabled, active) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ac-pg-btn' + (active ? ' active' : '') + (disabled ? ' disabled' : '');
+        b.textContent = label;
+        if (!disabled && !active) {
+            b.addEventListener('click', function(e) {
+                e.preventDefault();
+                _render(page);
+                var first = document.querySelector('.ac-stream-section');
+                if (first) first.scrollIntoView({ behavior:'smooth', block:'start' });
+            });
+        }
+        wrap.appendChild(b);
+    }
+    function ellipsis() {
+        var sp = document.createElement('span');
+        sp.className = 'ac-pg-sep'; sp.textContent = '…';
+        wrap.appendChild(sp);
+    }
+
+    btn('«', 1,          cur === 1);
+    btn('‹', cur - 1,    cur === 1);
+
+    var from = Math.max(1, cur - 2);
+    var to   = Math.min(totalPages, cur + 2);
+    if (from > 1) { btn('1', 1, false); if (from > 2) ellipsis(); }
+    for (var p = from; p <= to; p++) btn(p.toString(), p, false, p === cur);
+    if (to < totalPages) { if (to < totalPages - 1) ellipsis(); btn(totalPages.toString(), totalPages, false); }
+
+    btn('›', cur + 1,    cur === totalPages);
+    btn('»', totalPages, cur === totalPages);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STREAM COLLAPSE / EXPAND
 ═══════════════════════════════════════════════════════════════════ */
 function toggleStream(id) {
-    var body  = document.getElementById('body_'  + id);
-    var chev  = document.getElementById('chev_'  + id);
-    var card  = document.getElementById('stream_' + id);
+    var body = document.getElementById('body_'   + id);
+    var chev = document.getElementById('chev_'   + id);
+    var card = document.getElementById('stream_' + id);
     if (!body) return;
     if (body.style.display === 'none') {
         body.style.display = '';
@@ -757,16 +904,15 @@ function toggleStream(id) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   CLIENT-SIDE VALIDATION (Add Modal)
+   CLIENT-SIDE VALIDATION
 ═══════════════════════════════════════════════════════════════════ */
 function validateName(inp, errId) {
-    var v = inp.value.trim();
-    var e = document.getElementById(errId);
+    var v  = inp.value.trim();
+    var e  = document.getElementById(errId);
     var ok = v.length >= 2 && /^[A-Za-z][A-Za-z0-9 ]*$/.test(v);
     inp.classList.toggle('is-invalid', !ok && v.length > 0);
-    inp.classList.toggle('is-valid',   ok);
-    if (e) e.textContent = (!ok && v.length > 0)
-        ? 'Must start with a letter, only letters, numbers and spaces.' : '';
+    inp.classList.toggle('is-valid',    ok);
+    if (e) e.textContent = (!ok && v.length > 0) ? 'Must start with a letter, only letters, numbers and spaces.' : '';
     return ok || v.length === 0;
 }
 function validateCode(inp, errId) {
@@ -780,37 +926,31 @@ function validateCode(inp, errId) {
     return ok;
 }
 function clientValidateAdd() {
-    var ddl  = document.getElementById('<%= ddlStream.ClientID %>');
-    var nm   = document.getElementById('<%= txtCourseName.ClientID %>');
-    var cd   = document.getElementById('<%= txtCourseCode.ClientID %>');
-    var eS   = document.getElementById('errAddStream');
-    var ok   = true;
-    if (!ddl.value || ddl.value === '') {
-        if (eS) eS.textContent = 'Please select a stream.';
-        ok = false;
-    } else { if (eS) eS.textContent = ''; }
-    if (!nm.value.trim() || nm.value.trim().length < 2 ||
-        !/^[A-Za-z][A-Za-z0-9 ]*$/.test(nm.value.trim())) {
+    var ddl = document.getElementById('<%= ddlStream.ClientID %>');
+    var nm  = document.getElementById('<%= txtCourseName.ClientID %>');
+    var cd  = document.getElementById('<%= txtCourseCode.ClientID %>');
+    var eS  = document.getElementById('errAddStream');
+    var ok  = true;
+    if (!ddl.value || ddl.value === '') { if(eS) eS.textContent='Please select a stream.'; ok=false; }
+    else { if(eS) eS.textContent=''; }
+    if (!nm.value.trim() || nm.value.trim().length < 2 || !/^[A-Za-z][A-Za-z0-9 ]*$/.test(nm.value.trim())) {
         nm.classList.add('is-invalid');
         document.getElementById('errAddName').textContent = 'Enter a valid course name (min 2 chars, start with letter).';
         ok = false;
     }
-    if (!validateCode(cd, 'errAddCode')) ok = false;
+    if (!validateCode(cd,'errAddCode')) ok = false;
     if (!ok) showToast('Please fix the errors before saving.', 'error');
     return ok;
 }
 function clientValidateEdit() {
-    var ddl  = document.getElementById('<%= ddlStreamEdit.ClientID %>');
-    var nm   = document.getElementById('<%= txtCourseNameEdit.ClientID %>');
-    var cd   = document.getElementById('<%= txtCourseCodeEdit.ClientID %>');
+    var ddl = document.getElementById('<%= ddlStreamEdit.ClientID %>');
+    var nm  = document.getElementById('<%= txtCourseNameEdit.ClientID %>');
+    var cd  = document.getElementById('<%= txtCourseCodeEdit.ClientID %>');
         var eS = document.getElementById('errEditStream');
         var ok = true;
-        if (!ddl.value || ddl.value === '') {
-            if (eS) eS.textContent = 'Please select a stream.';
-            ok = false;
-        } else { if (eS) eS.textContent = ''; }
-        if (!nm.value.trim() || nm.value.trim().length < 2 ||
-            !/^[A-Za-z][A-Za-z0-9 ]*$/.test(nm.value.trim())) {
+        if (!ddl.value || ddl.value === '') { if (eS) eS.textContent = 'Please select a stream.'; ok = false; }
+        else { if (eS) eS.textContent = ''; }
+        if (!nm.value.trim() || nm.value.trim().length < 2 || !/^[A-Za-z][A-Za-z0-9 ]*$/.test(nm.value.trim())) {
             nm.classList.add('is-invalid');
             document.getElementById('errEditName').textContent = 'Enter a valid course name.';
             ok = false;

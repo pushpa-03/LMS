@@ -33,6 +33,15 @@ namespace LearningManagementSystem.Admin
         protected global::System.Web.UI.WebControls.HiddenField hfReenrolIds;
 
         /// <summary>
+        /// lbGotoPage control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.LinkButton lbGotoPage;
+
+        /// <summary>
         /// lblSessionName control.
         /// </summary>
         /// <remarks>
@@ -139,15 +148,6 @@ namespace LearningManagementSystem.Admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.GridView gvTeachers;
-
-        /// <summary>
-        /// pnlPager control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlPager;
 
         /// <summary>
         /// txtFullName control.

@@ -433,7 +433,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 
 <div id="toast-root"></div>
 
-<script>
+<%--<script>
     const AI_BASE = 'http://localhost:8000';
     const filePath = document.getElementById('<%= hfFilePath.ClientID %>').value;
     const matId = parseInt(document.getElementById('<%= hfMaterialId.ClientID %>').value) || 0;
@@ -562,6 +562,341 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
     document.getElementById('txtDoubt')?.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askDoubt(); }
     });
+</script>--%>
+
+
+<script>
+    const AI_URL = 'http://localhost:8000';
+
+    const curMatPath = document.getElementById('<%= hfFilePath.ClientID %>').value;
+    const matId = parseInt(document.getElementById('<%= hfMaterialId.ClientID %>').value) || 0;
+
+    let lastResult = '';
+    let myHist = [];
+
+    /* ───────────────── TOAST ───────────────── */
+    function toast(msg, type = 'inf') {
+        const w = document.getElementById('toast-root'),
+            d = document.createElement('div');
+
+        d.className = 'toast ' + type;
+        d.textContent = msg;
+
+        w.appendChild(d);
+
+        setTimeout(() => d.remove(), 4500);
+    }
+
+    /* ───────────────── TAB SWITCH ───────────────── */
+    function switchTab(el, paneId) {
+        document.querySelectorAll('.ai-tab')
+            .forEach(t => t.classList.remove('active'));
+
+        document.querySelectorAll('.ai-pane')
+            .forEach(p => p.classList.remove('active'));
+
+        el.classList.add('active');
+        document.getElementById(paneId).classList.add('active');
+    }
+
+    /* ───────────────── ESCAPE HTML ───────────────── */
+    function esc(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    /* ───────────────── ENABLE/DISABLE BUTTONS ───────────────── */
+    function setAIBtns(off) {
+        ['bQuiz', 'bNotes', 'bSummary', 'bMind'].forEach(id => {
+            const b = document.getElementById(id);
+            if (b) b.disabled = off;
+        });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       GENERATE AI (Summary / Quiz / Notes / MindMap)
+    ═══════════════════════════════════════════════════════ */
+    function genAI(type) {
+
+        if (!curMatPath) {
+            toast('Please select a material first', 'err');
+            return;
+        }
+
+        const box = document.getElementById('genBox');
+        const copyBtn = document.getElementById('copyBtn');
+
+        setAIBtns(true);
+        copyBtn.style.display = 'none';
+
+        let dots = 0;
+
+        const labels = {
+            summary: 'Summarising',
+            notes: 'Generating notes',
+            quiz: 'Creating quiz',
+            mindmap: 'Building mind map'
+        };
+
+        const baseLabel = labels[type] || 'Generating';
+
+        box.innerHTML = `
+            <div class="ai-spinner">
+                <div class="spin"></div>
+                <span id="genStatus">${baseLabel}...</span>
+            </div>`;
+
+        const stat = document.getElementById('genStatus');
+
+        const spinner = setInterval(() => {
+            dots = (dots + 1) % 4;
+            stat.innerText = baseLabel + '.'.repeat(dots + 1);
+        }, 600);
+
+        fetch(AI_URL + '/material-' + type, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                file_path: curMatPath
+            })
+        })
+            .then(r => {
+                if (!r.ok)
+                    return r.json()
+                        .then(e => {
+                            throw new Error(e.detail || ('HTTP ' + r.status));
+                        });
+
+                return r.json();
+            })
+            .then(d => {
+
+                clearInterval(spinner);
+
+                const txt =
+                    d.result ||
+                    d.error ||
+                    JSON.stringify(d);
+
+                lastResult = txt;
+
+                box.innerHTML = `
+                    <pre style="
+                        white-space:pre-wrap;
+                        font-size:13px;
+                        line-height:1.7;
+                        font-family:${type === 'mindmap'
+                        ? `'Courier New', monospace`
+                        : 'var(--font)'};
+                    ">${esc(txt)}</pre>`;
+
+                copyBtn.style.display = 'block';
+
+                saveHist(type, 'Generated ' + type, txt);
+                addMyHist(type, 'Generated ' + type, txt);
+
+                toast(type + ' generated successfully!', 'ok');
+            })
+            .catch(err => {
+
+                clearInterval(spinner);
+
+                box.innerHTML = `
+                    <div class="ai-placeholder">
+                        <i class="fa fa-exclamation-triangle"
+                           style="color:var(--danger)"></i>
+
+                        <p style="color:var(--danger)">
+                            ${esc(err.message)}
+                            <br><br>
+
+                            <small>
+                                1. Start Ollama:
+                                <b>ollama serve</b><br>
+
+                                2. Start FastAPI:
+                                <b>uvicorn ai_server:app --port 8000</b><br>
+
+                                3. Pull phi3:
+                                <b>ollama pull phi3</b>
+                            </small>
+                        </p>
+                    </div>`;
+
+                toast('AI server error', 'err');
+            })
+            .finally(() => {
+                setAIBtns(false);
+            });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       ASK DOUBT AI
+    ═══════════════════════════════════════════════════════ */
+    function askDoubt() {
+
+        const inp = document.getElementById('txtDoubt');
+
+        const q = inp.value.trim();
+
+        if (!q) {
+            toast('Please type a question', 'err');
+            return;
+        }
+
+        if (!curMatPath) {
+            toast('Please select material first', 'err');
+            return;
+        }
+
+        const box = document.getElementById('askBox');
+
+        box.innerHTML =
+            '<div style="background:#eef2ff;border-radius:8px;padding:10px 13px;margin-bottom:10px;font-size:12px">'
+            + '<strong style="color:var(--primary)">'
+            + '<i class="fa fa-question-circle me-1"></i>Question:</strong><br>'
+            + esc(q)
+            + '</div>'
+            + '<div id="_matAnsDiv" style="white-space:pre-wrap;font-size:13px;line-height:1.7">'
+            + '<em style="color:var(--muted)">Thinking...</em>'
+            + '</div>';
+
+        const ansDiv = document.getElementById('_matAnsDiv');
+
+        inp.disabled = true;
+
+        fetch(AI_URL + '/material-ask', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                file_path: curMatPath,
+                question: q
+            })
+        })
+            .then(r => {
+
+                if (!r.ok)
+                    return r.json()
+                        .then(e => {
+                            throw new Error(e.detail || ('HTTP ' + r.status));
+                        });
+
+                return r.json();
+            })
+            .then(d => {
+
+                const txt =
+                    d.result ||
+                    d.error ||
+                    JSON.stringify(d);
+
+                ansDiv.innerText = txt;
+
+                saveHist('Doubt', q, txt);
+                addMyHist('Doubt', q, txt);
+
+                inp.value = '';
+
+                toast('Answer received!', 'ok');
+            })
+            .catch(err => {
+
+                ansDiv.innerText = '⚠ ' + err.message;
+
+                toast('Failed to get answer', 'err');
+            })
+            .finally(() => {
+
+                inp.disabled = false;
+                inp.focus();
+            });
+    }
+
+    /* ───────────────── SAVE HISTORY ───────────────── */
+    async function saveHist(type, question, response) {
+
+        try {
+
+            await fetch('MaterialPlayer.aspx/SaveToHistory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8'
+                },
+                body: JSON.stringify({
+                    materialId: matId,
+                    type,
+                    question,
+                    response
+                })
+            });
+
+        } catch { }
+    }
+
+    /* ───────────────── MY HISTORY ───────────────── */
+    function addMyHist(type, q, resp) {
+
+        myHist.unshift({
+            type,
+            q,
+            resp,
+            time: new Date().toLocaleString()
+        });
+
+        const list = document.getElementById('myHistList');
+
+        list.innerHTML = myHist.map(h => `
+            <div class="hi">
+
+                <span class="hi-type">${esc(h.type)}</span>
+
+                <div class="hi-q">
+                    ${esc(h.q)}
+                </div>
+
+                <div class="hi-a">
+                    ${esc(h.resp.substring(0, 200))}
+                    ${h.resp.length > 200 ? '…' : ''}
+                </div>
+
+                <div class="hi-time">
+                    <i class="fa fa-clock me-1"></i>
+                    ${h.time}
+                </div>
+
+            </div>
+        `).join('');
+    }
+
+    /* ───────────────── COPY RESULT ───────────────── */
+    function copyResult() {
+
+        if (!lastResult) return;
+
+        navigator.clipboard.writeText(lastResult)
+            .then(() => toast('Copied!', 'ok'))
+            .catch(() => toast('Copy failed', 'err'));
+    }
+
+    /* ───────────────── ENTER KEY ASK ───────────────── */
+    document.getElementById('txtDoubt')
+        ?.addEventListener('keydown', e => {
+
+            if (e.key === 'Enter' && !e.shiftKey) {
+
+                e.preventDefault();
+
+                askDoubt();
+            }
+        });
+
 </script>
+
+
 </asp:Content>
 

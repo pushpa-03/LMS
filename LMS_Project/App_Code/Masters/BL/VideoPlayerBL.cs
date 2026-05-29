@@ -192,55 +192,71 @@ using System.Data.SqlClient;
             return _dl.GetDataTable(cmd) ?? new DataTable();
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  COMMENTS  (top-level only — parent IS NULL)
-        // ══════════════════════════════════════════════════════════════════════
-        public DataTable GetComments(int videoId, int sessionId)
-        {
-            SqlCommand cmd = new SqlCommand(@"
-                SELECT
-                    C.CommentId,
-                    U.Username,
-                    C.Comment,
-                    C.CommentedOn
-                FROM VideoComments C
-                INNER JOIN Users U ON C.UserId = U.UserId
-                WHERE C.VideoId         = @Vid
-                  AND C.SessionId       = @SessionId
-                  AND C.ParentCommentId IS NULL
-                ORDER BY C.CommentedOn DESC");
-            cmd.Parameters.AddWithValue("@Vid", videoId);
-            cmd.Parameters.AddWithValue("@SessionId", sessionId);
-            return _dl.GetDataTable(cmd) ?? new DataTable();
-        }
+   
+    public DataTable GetComments(int videoId, int sessionId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+        SELECT
+            VC.CommentId,
+            VC.ParentCommentId,
+            VC.Comment,
+            VC.CommentedOn,
+            ISNULL(UP.FullName, U.Username) AS Username,
+            ISNULL(R.RoleName, 'User') AS RoleName
+        FROM VideoComments VC
+        INNER JOIN Users U
+            ON VC.UserId = U.UserId
+        LEFT JOIN UserProfile UP
+            ON U.UserId = UP.UserId
+        LEFT JOIN Roles R
+            ON U.RoleId = R.RoleId
+        WHERE VC.VideoId = @Vid
+          AND VC.SessionId = @SessionId
+          AND VC.ParentCommentId IS NULL
+        ORDER BY VC.CommentedOn DESC");
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  REPLIES  (child comments for a given parent)
-        // ══════════════════════════════════════════════════════════════════════
-        public DataTable GetReplies(int parentCommentId, int sessionId)
-        {
-            SqlCommand cmd = new SqlCommand(@"
-                SELECT
-                    C.CommentId,
-                    U.Username,
-                    C.Comment,
-                    C.CommentedOn
-                FROM VideoComments C
-                INNER JOIN Users U ON C.UserId = U.UserId
-                WHERE C.ParentCommentId = @ParentId
-                  AND C.SessionId       = @SessionId
-                ORDER BY C.CommentedOn ASC");
-            cmd.Parameters.AddWithValue("@ParentId", parentCommentId);
-            cmd.Parameters.AddWithValue("@SessionId", sessionId);
-            return _dl.GetDataTable(cmd) ?? new DataTable();
-        }
+        cmd.Parameters.AddWithValue("@Vid", videoId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  SAVE COMMENT / REPLY
-        //  parentCommentId = null  → top-level comment
-        //  parentCommentId = int   → reply
-        // ══════════════════════════════════════════════════════════════════════
-        public void SaveComment(int videoId, int sessionId, int userId,
+        return _dl.GetDataTable(cmd) ?? new DataTable();
+    }
+
+
+   
+    public DataTable GetReplies(int parentCommentId, int sessionId)
+    {
+        SqlCommand cmd = new SqlCommand(@"
+        SELECT
+            VC.CommentId,
+            VC.ParentCommentId,
+            VC.Comment,
+            VC.CommentedOn,
+            ISNULL(UP.FullName, U.Username) AS Username,
+            ISNULL(R.RoleName, 'User') AS RoleName
+        FROM VideoComments VC
+        INNER JOIN Users U
+            ON VC.UserId = U.UserId
+        LEFT JOIN UserProfile UP
+            ON U.UserId = UP.UserId
+        LEFT JOIN Roles R
+            ON U.RoleId = R.RoleId
+        WHERE VC.ParentCommentId = @ParentId
+          AND VC.SessionId = @SessionId
+        ORDER BY VC.CommentedOn ASC");
+
+        cmd.Parameters.AddWithValue("@ParentId", parentCommentId);
+        cmd.Parameters.AddWithValue("@SessionId", sessionId);
+
+        return _dl.GetDataTable(cmd) ?? new DataTable();
+    }
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  SAVE COMMENT / REPLY
+    //  parentCommentId = null  → top-level comment
+    //  parentCommentId = int   → reply
+    // ══════════════════════════════════════════════════════════════════════
+    public void SaveComment(int videoId, int sessionId, int userId,
             string comment, int societyId, int instituteId, int? parentCommentId)
         {
             if (string.IsNullOrWhiteSpace(comment)) return;
@@ -507,14 +523,7 @@ using System.Data.SqlClient;
     }
 
 
-    //used in progressTracker page
-
-    // ═════════════════════════════════════════════════════════════════════=
-    //  PROGRESS AGGREGATION
-    //  - Subject level: average completion across videos in subject for a user
-    //  - Chapter level: average completion across videos in chapter
-    //  - Video level: individual video progress rows
-    // ═════════════════════════════════════════════════════════════════════=
+    
     public DataTable GetSubjectProgress(int userId, int sessionId)
     {
         SqlCommand cmd = new SqlCommand(@"
